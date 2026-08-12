@@ -1,5 +1,25 @@
 import { useRef, useCallback, useEffect } from "react";
 
+// Lokale Typen für die Web Speech API (nicht in allen TS-DOM-Libs enthalten)
+type SpeechRecognitionResultLike = { transcript: string };
+interface SpeechRecognitionEventLike {
+  resultIndex: number;
+  results: ArrayLike<ArrayLike<SpeechRecognitionResultLike> & { isFinal: boolean }>;
+}
+interface SpeechRecognitionLike {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((ev: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((ev: Event & { error?: string }) => void) | null;
+  onend: (() => void) | null;
+  onstart: (() => void) | null;
+  start(): void;
+  stop(): void;
+  abort(): void;
+}
+type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+
 interface HeyHufiProps {
   onWakeWord: () => void;
   enabled?: boolean;
@@ -10,13 +30,13 @@ const SR =
   typeof window !== "undefined"
     ? (
         window as unknown as {
-          SpeechRecognition?: typeof SpeechRecognition;
-          webkitSpeechRecognition?: typeof SpeechRecognition;
+          SpeechRecognition?: SpeechRecognitionCtor;
+          webkitSpeechRecognition?: SpeechRecognitionCtor;
         }
       ).SpeechRecognition ||
       (
         window as unknown as {
-          webkitSpeechRecognition?: typeof SpeechRecognition;
+          webkitSpeechRecognition?: SpeechRecognitionCtor;
         }
       ).webkitSpeechRecognition
     : null;
@@ -38,7 +58,7 @@ const MIN_HEALTHY_SESSION_MS = 1500;
 const MAX_CONSECUTIVE_FAILURES = 3;
 
 export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps) {
-  const recRef = useRef<SpeechRecognition | null>(null);
+  const recRef = useRef<SpeechRecognitionLike | null>(null);
   const runningRef = useRef(false);
   const onWakeWordRef = useRef(onWakeWord);
   const isSpeakingRef = useRef(isSpeaking ?? false);
@@ -58,13 +78,13 @@ export function HeyHufi({ onWakeWord, enabled = true, isSpeaking }: HeyHufiProps
   const startRecognition = useCallback(() => {
     if (!SR || recRef.current) return;
 
-    const rec: SpeechRecognition = new SR();
+    const rec: SpeechRecognitionLike = new SR();
     rec.lang = "de-DE";
     rec.continuous = true;
     rec.interimResults = true;
     recRef.current = rec;
 
-    rec.onresult = (ev: SpeechRecognitionEvent) => {
+    rec.onresult = (ev: SpeechRecognitionEventLike) => {
       // Erhalten wir ein echtes Ergebnis, läuft die Session stabil —
       // die Fehler-Zählung wird zurückgesetzt.
       failCountRef.current = 0;

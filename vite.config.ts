@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => ({
     {
       // index.html-Branding pro Flavor (Titel + Apple-Touch-Icon)
       name: "html-flavor-branding",
-      transformIndexHtml(html) {
+      transformIndexHtml(html: string) {
         if (APP_FLAVOR !== "hufiapp") return html;
         const TITLE = "Hufi — Dein KI-Assistent für Pferdeprofis";
         const DESC =
@@ -83,8 +83,8 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "robots.txt", "hufi-logo.svg", "apple-touch-icon.png"],
-      cacheId: "hufmanager-v1",
       workbox: {
+        cacheId: "hufmanager-v1",
         // Limit auf 6 MB erhöht für große Bundles
         maximumFileSizeToCacheInBytes: 15000000,
         
