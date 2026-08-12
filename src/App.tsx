@@ -32,6 +32,9 @@ const NotFound    = lazy(() => import("@/pages/NotFound"));
 const Auth        = lazy(() => import("@/pages/Auth"));
 const AppLayout   = lazy(() => import("@/components/layout/AppLayout").then((m) => ({ default: m.AppLayout })));
 const MobileShell = lazy(() => import("@/components/layout/MobileShell").then((m) => ({ default: m.MobileShell })));
+const HufManagerSlimShell = lazy(() => import("@/components/slim/HufManagerSlimShell").then((m) => ({ default: m.HufManagerSlimShell })));
+const TodayScreen = lazy(() => import("@/components/slim/TodayScreen").then((m) => ({ default: m.TodayScreen })));
+const SlimPlaceholderScreen = lazy(() => import("@/components/slim/SlimPlaceholderScreen").then((m) => ({ default: m.SlimPlaceholderScreen })));
 
 // Auth
 const ResetPassword  = lazy(() => import("@/pages/ResetPassword"));
@@ -573,11 +576,53 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             <Route path="/admin-nachrichten"            element={<ProtectedRoute allowedRoles={["admin"]}><AdminNachrichten /></ProtectedRoute>} />
 
             {/* ── PROVIDER (HUFBEARBEITER) ───────────────────────────── */}
-            <Route path="/home" element={
+            <Route element={
               <ProtectedRoute allowedRoles={["provider", "admin"]}>
-                <MobileShell />
+                <HufManagerSlimShell />
               </ProtectedRoute>
-            } />
+            }>
+              <Route path="/home" element={<TodayScreen />} />
+              <Route path="/home/tour" element={
+                <SlimPlaceholderScreen
+                  title="Tour"
+                  description="WAVE 1 legt die Tour-Shell an. In der nächsten Wave werden Karte, Route, Kunden in der Nähe und Fahrtenbuch hier zusammengeführt."
+                  primaryActionLabel="Zurück zu Heute"
+                  primaryActionPath="/home"
+                />
+              } />
+              <Route path="/home/kunden" element={
+                <SlimPlaceholderScreen
+                  title="Kunden & Pferde"
+                  description="Der schlanke Arbeitskontext folgt in der nächsten Ausbaustufe. Heute bleibt hier nur der Einstiegspunkt in den Tagesfluss."
+                  primaryActionLabel="Zurück zu Heute"
+                  primaryActionPath="/home"
+                />
+              } />
+              <Route path="/home/hufi-hufanalyse" element={
+                <SlimPlaceholderScreen
+                  title="Hufi Hufanalyse"
+                  description="Die Fachanalyse wird in einer späteren Wave kontrolliert aufgebaut. Die neue Produktbezeichnung bleibt verbindlich."
+                  primaryActionLabel="Zurück zu Heute"
+                  primaryActionPath="/home"
+                />
+              } />
+              <Route path="/home/finanzen" element={
+                <SlimPlaceholderScreen
+                  title="Finanzen"
+                  description="Rechnungen und Preise werden in einer späteren Wave auf die Slim-Version reduziert."
+                  primaryActionLabel="Zurück zu Heute"
+                  primaryActionPath="/home"
+                />
+              } />
+              <Route path="/home/mehr" element={
+                <SlimPlaceholderScreen
+                  title="Mehr / Einstellungen"
+                  description="Seltene Systemfunktionen liegen hier gesammelt, ohne die Tagesarbeit zu stören."
+                  primaryActionLabel="Zurück zu Heute"
+                  primaryActionPath="/home"
+                />
+              } />
+            </Route>
 
             <Route element={<ProtectedRoute allowedRoles={["provider", "admin"]}><AppLayout /></ProtectedRoute>}>
               {/* CRM – Kern */}
