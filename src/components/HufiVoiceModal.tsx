@@ -279,7 +279,6 @@ export function HufiVoiceModal({ open, onClose, onTranscript }: Props) {
                 onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
                 onTouchEnd={stopRecording}
                 className={isRecording ? "hv-pulse" : ""}
-                disabled={state === "transcribing"}
                 style={{
                   width: 96, height: 96, borderRadius: "50%",
                   background: isRecording ? "#EF4444" : state === "error" ? "#F3F4F6" : "#F97316",
