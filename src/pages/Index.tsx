@@ -3,6 +3,7 @@ import { lazy } from "react";
 import { Navigate } from "react-router-dom";
 import { getPostLoginPath } from "@/lib/portal-user-detect";
 import { ACTIVE_FLAVOR } from "@/config/appFlavor";
+import { LimitedAccessState } from "@/components/auth/LimitedAccessState";
 
 const WebsiteHome = lazy(() => import("@/pages/website/WebsiteHome"));
 
@@ -17,7 +18,7 @@ function isPWAStandalone(): boolean {
 }
 
 const Index = () => {
-  const { user, role, loading } = useAuth();
+  const { user, role, roleResolution, loading, signOut } = useAuth();
 
   // Noch am Laden → nichts zeigen (AuthLoadingScreen in App.tsx übernimmt)
   if (loading) return null;
@@ -25,6 +26,10 @@ const Index = () => {
   // Eingeloggt → rollenspezifische Startseite
   if (user && role) {
     return <Navigate to={getPostLoginPath(role, user.email)} replace />;
+  }
+
+  if (user && roleResolution !== "resolved") {
+    return <LimitedAccessState onSignOut={signOut} />;
   }
 
   // Nicht eingeloggt:

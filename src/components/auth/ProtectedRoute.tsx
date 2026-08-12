@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PaymentBlockedScreen } from "@/components/subscription/PaymentBlockedScreen";
 import { Loader2 } from "lucide-react";
+import { LimitedAccessState } from "@/components/auth/LimitedAccessState";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -19,8 +20,7 @@ function RouteLoader() {
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, role, loading } = useAuth();
-  const { status, loading: subLoading } = useSubscription();
+  const { user, role, roleResolution, loading, signOut } = useAuth();
   const location = useLocation();
   const lastKnownUserRef = useRef(user);
   const [authGraceExpired, setAuthGraceExpired] = useState(false);
@@ -51,7 +51,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const isBotschafterRoute = location.pathname.startsWith("/botschafter");
   const isRecoveringRecentSession = !user && !!lastKnownUserRef.current && !authGraceExpired;
 
-  if (loading || subLoading || isRecoveringRecentSession) {
+  if (loading || isRecoveringRecentSession) {
     return <RouteLoader />;
   }
 
@@ -70,8 +70,22 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <>{children}</>;
   }
 
-  // Role not yet loaded (non-botschafter routes)
-  if (!role) {
+  // Role still resolving (non-botschafter routes)
+  if (roleResolution === "resolving") {
+    return <RouteLoader />;
+  }
+
+  if (roleResolution !== "resolved" || !role) {
+    return <LimitedAccessState onSignOut={signOut} />;
+  }
+
+  return <ResolvedProtectedRoute role={role} allowedRoles={allowedRoles}>{children}</ResolvedProtectedRoute>;
+}
+
+function ResolvedProtectedRoute({ children, allowedRoles, role }: ProtectedRouteProps & { role: NonNullable<ReturnType<typeof useAuth>["role"]> }) {
+  const { status, loading: subLoading } = useSubscription();
+
+  if (subLoading) {
     return <RouteLoader />;
   }
 

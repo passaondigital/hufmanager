@@ -5,13 +5,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { clear } from "idb-keyval";
 import { getAttribution } from "@/lib/attribution";
+import { resolveTrustedRole } from "@/lib/authRoleResolution";
+import type { RoleResolution, RoleResolutionStatus, TrustedUserRole } from "@/lib/authRoleResolution";
 
-type UserRole = "provider" | "client" | "admin" | "employee" | "partner" | null;
+type UserRole = TrustedUserRole | null;
+type AuthRoleResolutionStatus = RoleResolutionStatus | "resolving" | "anonymous";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: UserRole;
+  roleResolution: AuthRoleResolutionStatus;
   loading: boolean;
   isPasswordRecovery: boolean;
   forcePasswordChange: boolean;
@@ -31,11 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<UserRole>(null);
+  const [roleResolution, setRoleResolution] = useState<AuthRoleResolutionStatus>("resolving");
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [forcePasswordChange, setForcePasswordChange] = useState(false);
 
-  const fetchUserRole = async (userId: string): Promise<UserRole> => {
+  const fetchUserRole = async (userId: string): Promise<RoleResolution> => {
     const { data, error } = await supabase
       .from("user_roles")
       .select("role")
@@ -44,40 +49,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       console.error("Error fetching role:", error);
-      return null;
-    }
-    
-    if (data?.role) {
-      return data.role as UserRole;
+      return { status: "error", role: null };
     }
 
-    // Auto-repair: if no role found, try to assign based on user metadata
-    console.warn("No role found for user, attempting auto-repair...");
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const metaRole = user?.user_metadata?.role;
-      const roleToAssign = metaRole === "provider" ? "provider" 
-        : metaRole === "partner" ? "partner" 
-        : "client";
-      
-      const { error: insertError } = await supabase
-        .from("user_roles")
-        .insert({ user_id: userId, role: roleToAssign })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error("Auto-repair role failed:", insertError);
-        // Fallback: return meta role anyway so user isn't stuck
-        return (metaRole as UserRole) || "client";
-      }
-      
-      console.log("Auto-repaired role:", roleToAssign);
-      return roleToAssign as UserRole;
-    } catch (err) {
-      console.error("Auto-repair error:", err);
-      return "client"; // Ultimate fallback
+    const resolved = resolveTrustedRole(data?.role);
+    if (resolved.status !== "resolved") {
+      console.warn("Trusted role resolution failed:", resolved.status);
     }
+    return resolved;
   };
 
   const clearPasswordRecovery = () => setIsPasswordRecovery(false);
@@ -182,8 +161,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let initialSessionHandled = false;
     const isRoleFetching = { current: false };
 
-    const fetchRoleGuarded = async (userId: string): Promise<UserRole> => {
-      if (isRoleFetching.current) return null;
+    const fetchRoleGuarded = async (userId: string): Promise<RoleResolution> => {
+      if (isRoleFetching.current) return { status: "error", role: null };
       isRoleFetching.current = true;
       try {
         return await fetchUserRole(userId);
@@ -202,18 +181,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setSession(session);
         setUser(session?.user ?? null);
+        if (session?.user) setRoleResolution("resolving");
 
         // Defer role fetching with setTimeout
         if (session?.user) {
           setTimeout(async () => {
             if (!isMounted) return;
-            const fetchedRole = await fetchRoleGuarded(session.user.id);
+            const roleResult = await fetchRoleGuarded(session.user.id);
             if (isMounted) {
-              if (fetchedRole !== null) setRole(fetchedRole);
+              setRole(roleResult.role);
+              setRoleResolution(roleResult.status);
               setLoading(false);
             }
             // Process invite code on sign in
-            if (event === "SIGNED_IN") {
+            if (event === "SIGNED_IN" && roleResult.status === "resolved") {
               // Botschafter login redirect
               if (sessionStorage.getItem("botschafter_login_source") === "true") {
                 sessionStorage.removeItem("botschafter_login_source");
@@ -318,6 +299,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, 0);
         } else {
           setRole(null);
+          setRoleResolution("anonymous");
           // No session means not authenticated - stop loading
           if (isMounted) setLoading(false);
         }
@@ -331,17 +313,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setSession(session);
       setUser(session?.user ?? null);
+      if (session?.user) setRoleResolution("resolving");
       
       if (session?.user) {
-        fetchRoleGuarded(session.user.id).then((r) => {
+        fetchRoleGuarded(session.user.id).then((roleResult) => {
           if (isMounted) {
-            if (r !== null) setRole(r);
+            setRole(roleResult.role);
+            setRoleResolution(roleResult.status);
             setLoading(false);
           }
+          if (roleResult.status === "resolved") {
+            processInviteCode(session.user.id);
+          }
         });
-        // Also process invite code on initial load (in case of email confirmation redirect)
-        processInviteCode(session.user.id);
       } else {
+        setRoleResolution("anonymous");
         if (isMounted) setLoading(false);
       }
     });
@@ -374,10 +360,6 @@ const signIn = async (email: string, password: string) => {
     }
 
     if (data.user) {
-      // FAST PATH: Read role from user_metadata first (instant, no DB query)
-      const metaRole = data.user.user_metadata?.role as UserRole;
-
-
       // Fetch profile + role in parallel
       const profilePromise = (async () => {
         try {
@@ -390,11 +372,6 @@ const signIn = async (email: string, password: string) => {
           return { data: null, error: null };
         }
       })();
-
-      if (metaRole) {
-        setRole(metaRole);
-        setLoading(false);
-      }
 
       const [profileResult, dbRole] = await Promise.all([
         profilePromise,
@@ -416,7 +393,7 @@ const signIn = async (email: string, password: string) => {
       }
 
       // 2. Client Pro check — block login if provider doesn't have Pro
-      if (dbRole === "client" && profile?.created_by_provider_id) {
+      if (dbRole.role === "client" && profile?.created_by_provider_id) {
         const { data: providerProfile } = await supabase
           .from("profiles")
           .select("subscription_plan, subscription_status, plan_override, access_valid_until, email")
@@ -441,13 +418,15 @@ const signIn = async (email: string, password: string) => {
 
       // 3. Force password change
       if (profile?.force_password_reset) {
-        if (dbRole !== null) setRole(dbRole);
+        setRole(dbRole.role);
+        setRoleResolution(dbRole.status);
         setLoading(false);
         setForcePasswordChange(true);
         return { error: null };
       }
 
-      if (dbRole !== null) setRole(dbRole);
+      setRole(dbRole.role);
+      setRoleResolution(dbRole.status);
       setLoading(false);
 
       // Redirect to password change if first login with temporary password
@@ -503,6 +482,7 @@ function _checkProviderHasPro(provider: {
     }
 
     setRole(null);
+    setRoleResolution("anonymous");
 
     // Clear React Query cache
     queryClient.clear();
@@ -535,6 +515,7 @@ function _checkProviderHasPro(provider: {
     user,
     session,
     role,
+    roleResolution,
     loading,
     isPasswordRecovery,
     forcePasswordChange,
