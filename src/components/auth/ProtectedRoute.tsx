@@ -5,6 +5,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { PaymentBlockedScreen } from "@/components/subscription/PaymentBlockedScreen";
 import { Loader2 } from "lucide-react";
 import { LimitedAccessState } from "@/components/auth/LimitedAccessState";
+import { ProductChoiceGate } from "@/components/auth/ProductChoiceGate";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -79,7 +80,11 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <LimitedAccessState onSignOut={signOut} />;
   }
 
-  return <ResolvedProtectedRoute role={role} allowedRoles={allowedRoles}>{children}</ResolvedProtectedRoute>;
+  return (
+    <ProductChoiceGate userId={user.id} onReady={(readyChildren) => readyChildren}>
+      <ResolvedProtectedRoute role={role} allowedRoles={allowedRoles}>{children}</ResolvedProtectedRoute>
+    </ProductChoiceGate>
+  );
 }
 
 function ResolvedProtectedRoute({ children, allowedRoles, role }: ProtectedRouteProps & { role: NonNullable<ReturnType<typeof useAuth>["role"]> }) {
