@@ -96,8 +96,7 @@ export async function executeHufiAction(
 ): Promise<ActionResult> {
   // Log every AI action for EU AI Act compliance
   try {
-    const from = (t: string) =>
-      db.from(t);
+    const from = db.from.bind(db);
     await from("hufi_context_log").insert({
       user_id: userId,
       session_id: crypto.randomUUID(),

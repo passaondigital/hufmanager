@@ -81,7 +81,7 @@ export async function fetchHufiContext(
   const today = format(new Date(), "yyyy-MM-dd");
 
   const db = supabase as unknown as Record<string, (...args: unknown[]) => unknown>;
-  const from = (table: string) => (db.from as (t: string) => ReturnType<typeof supabase.from>)(table);
+  const from = db.from.bind(db);
 
   const [
     profileRes,
@@ -323,8 +323,7 @@ export async function updateHufiMemory(
   source: HufiMemory["source"],
 ): Promise<void> {
   try {
-    const from = (table: string) =>
-      db.from(table);
+    const from = db.from.bind(db);
 
     const { data: existing } = await from("hufi_memory")
       .select("id, confidence")
@@ -367,8 +366,7 @@ export async function deleteHufiMemory(
   key?: string,
 ): Promise<number> {
   try {
-    const from = (table: string) =>
-      db.from(table);
+    const from = db.from.bind(db);
 
     let q = from("hufi_memory").delete().eq("user_id", userId);
     if (category) q = (q as unknown as { eq: (k: string, v: string) => typeof q }).eq("category", category);
@@ -388,8 +386,7 @@ export async function deleteHufiMemory(
 // Wird aufgerufen wenn Nutzer sagt "vergiss das" / "lösch das" / "nicht speichern".
 export async function deleteLastLearnedMemory(userId: string): Promise<string | null> {
   try {
-    const from = (table: string) =>
-      db.from(table);
+    const from = db.from.bind(db);
 
     const { data } = await from("hufi_memory")
       .select("id, category, key")
@@ -419,8 +416,7 @@ export async function learnFromInteraction(
   sessionId?: string,
 ): Promise<void> {
   try {
-    const from = (table: string) =>
-      db.from(table);
+    const from = db.from.bind(db);
 
     await from("hufi_context_log").insert({
       user_id: userId,
@@ -502,8 +498,7 @@ export async function checkProactiveAlerts(userId: string): Promise<string[]> {
     }
 
     // Active memory alerts
-    const from = (table: string) =>
-      db.from(table);
+    const from = db.from.bind(db);
 
     const { data: memAlerts } = (await from("hufi_memory")
       .select("key, value")
@@ -537,8 +532,7 @@ export async function checkDsgvoConsent(userId: string): Promise<boolean> {
 
   // DB lookup
   try {
-    const from = (table: string) =>
-      db.from(table);
+    const from = db.from.bind(db);
 
     const { data } = (await from("hufi_memory")
       .select("value")
@@ -591,8 +585,7 @@ export async function hydrateUserSettingsFromDB(userId: string): Promise<void> {
   if (sessionStorage.getItem(sessionFlag)) return;
 
   try {
-    const from = (table: string) =>
-      db.from(table);
+    const from = db.from.bind(db);
 
     const { data } = (await from("hufi_memory")
       .select("category, key, value")
@@ -846,8 +839,7 @@ export async function checkPermission(
   requiredLevel: "read" | "write" | "full",
 ): Promise<boolean> {
   try {
-    const from = (t: string) =>
-      db.from(t);
+    const from = db.from.bind(db);
 
     const { data } = (await from("hufi_permissions")
       .select("permission_level")
@@ -928,8 +920,7 @@ export async function fetchPferdeakteHub(
   requesterId: string,
 ): Promise<PferdeakteHub | null> {
   try {
-    const from = (t: string) =>
-      db.from(t);
+    const from = db.from.bind(db);
 
     const { data: horse } = await db
       .from("horses")
@@ -1091,8 +1082,7 @@ export async function notifyColleague(
       return false;
     }
 
-    const from = (t: string) =>
-      db.from(t);
+    const from = db.from.bind(db);
 
     await from("hufi_context_log").insert({
       user_id: senderId,

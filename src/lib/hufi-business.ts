@@ -19,8 +19,7 @@ export interface HufiBusinessContext {
 // ── fetchBusinessContext ──────────────────────────────────────────────────────
 
 export async function fetchBusinessContext(userId: string): Promise<HufiBusinessContext> {
-  const from = (t: string) =>
-    db.from(t);
+  const from = db.from.bind(db);
 
   const startOfMonth = format(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1),
@@ -136,8 +135,7 @@ export async function generateClientOffer(
   priceEstimate: number,
 ): Promise<{ offerId: string; message: string } | null> {
   try {
-    const from = (t: string) =>
-      db.from(t);
+    const from = db.from.bind(db);
 
     const { data: offer, error } = (await from("hufi_offers")
       .insert({
