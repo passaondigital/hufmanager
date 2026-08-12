@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { executeHufiAction, type HufiAction } from "./hufi-actions";
 import {
+import { db } from "@/lib/supabase-loose";
   type AgentTaskType, taskTypeLabel, taskTypeToActionType,
 } from "./hufi-agent-tasks";
 
@@ -114,7 +115,7 @@ async function executeTool(
     case "get_overdue_clients": {
       const days = (params.days_overdue as number) ?? 56;
       const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-      const { data } = await supabase
+      const { data } = await db
         .from("appointments")
         .select("client:profiles!client_id(id, full_name, phone, whatsapp_number), date")
         .eq("provider_id", userId)
@@ -146,7 +147,7 @@ async function executeTool(
 
     case "get_today_appointments": {
       const date = (params.date as string) ?? today;
-      const { data } = await supabase
+      const { data } = await db
         .from("appointments")
         .select("id, time, service_type, horses(name), client:profiles!client_id(id, full_name)")
         .eq("provider_id", userId)
@@ -160,7 +161,7 @@ async function executeTool(
       const appointments = (context.appointments as Array<{ id: string; client?: { id?: string }; horses?: { name?: string }; service_type?: string }>) ?? [];
       const created: string[] = [];
       for (const appt of appointments) {
-        const { data: inv } = await supabase
+        const { data: inv } = await db
           .from("invoices")
           .insert({
             provider_id: userId,
@@ -180,7 +181,7 @@ async function executeTool(
 
     case "get_day_appointments": {
       const date = (params.date as string) === "today" || !params.date ? today : params.date as string;
-      const { data } = await supabase
+      const { data } = await db
         .from("appointments")
         .select("id, time, horses(name), client:profiles!client_id(full_name, address)")
         .eq("provider_id", userId)
@@ -208,7 +209,7 @@ async function executeTool(
       return { rain_likely: true, description: "Regenwetter erwartet" };
 
     case "get_outdoor_appointments": {
-      const { data } = await supabase
+      const { data } = await db
         .from("appointments")
         .select("id, time, horses(name), client:profiles!client_id(id, full_name, phone)")
         .eq("provider_id", userId)
@@ -232,7 +233,7 @@ async function executeTool(
 
     case "get_incomplete_horses": {
       const maxScore = (params.max_score as number) ?? 80;
-      const { data } = await supabase
+      const { data } = await db
         .from("horses")
         .select("id, name, date_of_birth, breed, color, notes")
         .eq("owner_id", userId)
@@ -289,7 +290,7 @@ export async function detectAndCreateTask(
     status: "pending" as const,
   }));
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("hufi_task_queue")
     .insert({
       user_id: userId,
@@ -323,7 +324,7 @@ export async function executeNextStep(
   if (!step) return { done: true, needsConfirm: false, step: null, task };
 
   if (step.requires_confirm && !step.confirmed_at) {
-    await supabase
+    await db
       .from("hufi_task_queue")
       .update({ status: "awaiting_confirm" })
       .eq("id", task.id)
@@ -334,7 +335,7 @@ export async function executeNextStep(
   // Step ausführen
   const updatedSteps = [...task.steps];
   updatedSteps[stepIdx] = { ...step, status: "running" };
-  await supabase
+  await db
     .from("hufi_task_queue")
     .update({ status: "running", started_at: new Date().toISOString(), steps: updatedSteps })
     .eq("id", task.id)
@@ -362,7 +363,7 @@ export async function executeNextStep(
     ? buildSummary(task.title, updatedSteps)
     : undefined;
 
-  await supabase
+  await db
     .from("hufi_task_queue")
     .update({
       steps: updatedSteps,
@@ -435,7 +436,7 @@ export async function createActionTask(
     requires_confirm: true,
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("hufi_task_queue")
     .insert({
       user_id: userId,
@@ -463,7 +464,7 @@ export async function confirmStep(
   stepId: string,
   userId: string,
 ): Promise<HufiTask | null> {
-  const { data } = await supabase
+  const { data } = await db
     .from("hufi_task_queue")
     .select()
     .eq("id", taskId)
@@ -476,7 +477,7 @@ export async function confirmStep(
     s.id === stepId ? { ...s, confirmed_at: new Date().toISOString() } : s
   );
   const updatedTask = { ...task, steps: updatedSteps };
-  await supabase
+  await db
     .from("hufi_task_queue")
     .update({ steps: updatedSteps, status: "running" })
     .eq("id", taskId)
@@ -487,7 +488,7 @@ export async function confirmStep(
 }
 
 export async function getActiveTasks(userId: string): Promise<HufiTask[]> {
-  const { data } = await supabase
+  const { data } = await db
     .from("hufi_task_queue")
     .select()
     .eq("user_id", userId)
@@ -498,7 +499,7 @@ export async function getActiveTasks(userId: string): Promise<HufiTask[]> {
 }
 
 export async function cancelTask(taskId: string, userId: string): Promise<void> {
-  await supabase
+  await db
     .from("hufi_task_queue")
     .update({ status: "cancelled", completed_at: new Date().toISOString() })
     .eq("id", taskId)

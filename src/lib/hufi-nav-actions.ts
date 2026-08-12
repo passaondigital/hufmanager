@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/supabase-loose";
 
 /**
  * Hufi Navigation Action Layer — Phase C.
@@ -171,7 +172,7 @@ export async function resolveHorseByName(
   const cleaned = query.replace(/[%_]/g, " ").trim();
   if (!cleaned) return [];
   const like = `%${cleaned}%`;
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("horses")
     .select("id, name, deleted_at")
     .eq("user_id", ctx.userId)
@@ -287,7 +288,7 @@ async function fetchNextAppointment(ctx: ResolveContext): Promise<{
   horseName: string | null;
 } | null> {
   const today = new Date().toISOString().slice(0, 10);
-  const { data } = await supabase
+  const { data } = await db
     .from("appointments")
     .select("id, date, time, horses(name)")
     .eq("provider_id", ctx.userId)
@@ -312,7 +313,7 @@ async function resolveLeadByName(
   ctx: ResolveContext
 ): Promise<{ id: string; name: string }[]> {
   if (!query.trim()) return [];
-  const { data } = await supabase
+  const { data } = await db
     .from("leads")
     .select("id, name")
     .eq("provider_id", ctx.userId)

@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { chatWithHufAI } from "./ai-routing";
 import { format } from "date-fns";
+import { db } from "@/lib/supabase-loose";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ export interface HufiBusinessContext {
 
 export async function fetchBusinessContext(userId: string): Promise<HufiBusinessContext> {
   const from = (t: string) =>
-    (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(t);
+    db.from(t);
 
   const startOfMonth = format(
     new Date(new Date().getFullYear(), new Date().getMonth(), 1),
@@ -29,18 +30,18 @@ export async function fetchBusinessContext(userId: string): Promise<HufiBusiness
 
   const [invoicesRes, completedApptsRes, newClientsRes, pendingOffersRes, churnRes] =
     await Promise.allSettled([
-      supabase
+      db
         .from("invoices")
         .select("total_amount, payment_status")
         .eq("provider_id", userId)
         .gte("created_at", startOfMonth),
-      supabase
+      db
         .from("appointments")
         .select("horse_id, horses(name)")
         .eq("provider_id", userId)
         .eq("status", "completed")
         .gte("date", startOfMonth),
-      supabase
+      db
         .from("appointments")
         .select("client_id", { count: "exact", head: true })
         .eq("provider_id", userId)
@@ -49,7 +50,7 @@ export async function fetchBusinessContext(userId: string): Promise<HufiBusiness
         .select("*", { count: "exact", head: true })
         .eq("provider_id", userId)
         .eq("status", "pending"),
-      supabase
+      db
         .from("appointments")
         .select("client_id, date, client:profiles!client_id(full_name)")
         .eq("provider_id", userId)
@@ -136,7 +137,7 @@ export async function generateClientOffer(
 ): Promise<{ offerId: string; message: string } | null> {
   try {
     const from = (t: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(t);
+      db.from(t);
 
     const { data: offer, error } = (await from("hufi_offers")
       .insert({

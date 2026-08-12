@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { IntentEntities } from "./hufi-intent";
+import { db } from "@/lib/supabase-loose";
 
 export interface RelevantContext {
   horse?: {
@@ -29,7 +30,7 @@ export async function fetchRelevantContext(
   const parts: string[] = [];
 
   if (entities.horseName) {
-    const { data: horse } = await supabase
+    const { data: horse } = await db
       .from("horses")
       .select("id, name, breed")
       .eq("provider_id", userId)
@@ -37,7 +38,7 @@ export async function fetchRelevantContext(
       .maybeSingle();
 
     if (horse) {
-      const { data: befund } = await supabase
+      const { data: befund } = await db
         .from("ai_befunde")
         .select("befund_text, massnahme, created_at")
         .eq("user_id", userId)
@@ -47,7 +48,7 @@ export async function fetchRelevantContext(
         .maybeSingle();
 
       const today = new Date().toISOString().split("T")[0];
-      const { data: appt } = await supabase
+      const { data: appt } = await db
         .from("appointments")
         .select("date, time")
         .eq("provider_id", userId)
@@ -82,7 +83,7 @@ export async function fetchRelevantContext(
   }
 
   if (entities.clientName) {
-    const { data: contact } = await supabase
+    const { data: contact } = await db
       .from("contacts")
       .select("id, full_name")
       .eq("provider_id", userId)
@@ -90,7 +91,7 @@ export async function fetchRelevantContext(
       .maybeSingle();
 
     if (contact) {
-      const { data: invoices } = await supabase
+      const { data: invoices } = await db
         .from("invoices")
         .select("id, total_amount")
         .eq("provider_id", userId)
@@ -101,7 +102,7 @@ export async function fetchRelevantContext(
         (s: number, inv: { total_amount?: number }) => s + (inv.total_amount ?? 0), 0
       );
 
-      const { data: lastAppt } = await supabase
+      const { data: lastAppt } = await db
         .from("appointments")
         .select("date")
         .eq("provider_id", userId)
@@ -110,7 +111,7 @@ export async function fetchRelevantContext(
         .limit(1)
         .maybeSingle();
 
-      const { data: horses } = await supabase
+      const { data: horses } = await db
         .from("horses")
         .select("name")
         .eq("owner_contact_id", contact.id);

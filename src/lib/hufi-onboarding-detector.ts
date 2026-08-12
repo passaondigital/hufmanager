@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/supabase-loose";
 
 export type OnboardingType = "new_user" | "hufmanager_migration" | "returning";
 
@@ -11,7 +12,7 @@ export interface HufManagerStats {
 }
 
 export async function detectOnboardingType(userId: string): Promise<OnboardingType> {
-  const { data: profile } = await supabase
+  const { data: profile } = await db
     .from("profiles")
     .select("onboarding_completed, full_name")
     .eq("id", userId)
@@ -20,15 +21,15 @@ export async function detectOnboardingType(userId: string): Promise<OnboardingTy
   if (profile?.onboarding_completed === true) return "returning";
 
   const [appts, horses, clients] = await Promise.all([
-    supabase
+    db
       .from("appointments")
       .select("id", { count: "exact", head: true })
       .eq("provider_id", userId),
-    supabase
+    db
       .from("horses")
       .select("id", { count: "exact", head: true })
       .or(`owner_id.eq.${userId},provider_id.eq.${userId}`),
-    supabase
+    db
       .from("profiles")
       .select("id", { count: "exact", head: true })
       .eq("provider_id", userId),
@@ -46,11 +47,11 @@ export async function loadHufManagerStats(userId: string): Promise<HufManagerSta
   const today = new Date().toISOString().split("T")[0];
 
   const [profileRes, clientsRes, horsesRes, apptsRes, invoicesRes] = await Promise.allSettled([
-    supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
-    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("provider_id", userId),
-    supabase.from("horses").select("id", { count: "exact", head: true }).or(`owner_id.eq.${userId},provider_id.eq.${userId}`),
-    supabase.from("appointments").select("id", { count: "exact", head: true }).eq("provider_id", userId).gte("date", today),
-    supabase.from("invoices").select("id", { count: "exact", head: true }).eq("provider_id", userId),
+    db.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
+    db.from("profiles").select("id", { count: "exact", head: true }).eq("provider_id", userId),
+    db.from("horses").select("id", { count: "exact", head: true }).or(`owner_id.eq.${userId},provider_id.eq.${userId}`),
+    db.from("appointments").select("id", { count: "exact", head: true }).eq("provider_id", userId).gte("date", today),
+    db.from("invoices").select("id", { count: "exact", head: true }).eq("provider_id", userId),
   ]);
 
   return {
@@ -63,7 +64,7 @@ export async function loadHufManagerStats(userId: string): Promise<HufManagerSta
 }
 
 export async function markOnboardingComplete(userId: string): Promise<void> {
-  await supabase
+  await db
     .from("profiles")
     .update({ onboarding_completed: true })
     .eq("id", userId);
