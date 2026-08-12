@@ -120,7 +120,7 @@ export function HufiPermissionsSettings({ userId = "" }: { userId?: string }) {
 
       // ── Check actual browser permission state via Permissions API ──────────
       async function checkPerm(name: PermissionName): Promise<PermStatus> {
-        if (!("permissions" in navigator)) return (saved as Record<string, unknown>)?.[name] as PermStatus ?? "pending";
+        if (!("permissions" in navigator)) return (saved as unknown as Record<string, unknown>)?.[name] as PermStatus ?? "pending";
         try {
           const s = await navigator.permissions.query({ name });
           if (s.state === "granted") return "granted";

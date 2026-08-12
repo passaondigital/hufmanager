@@ -5,6 +5,7 @@ import { getProfessionDiscovery, buildValuePitch } from "@/lib/profession-discov
 import { updateHufiMemory } from "@/lib/hufi-brain";
 import { HUFI_VOICES, setSelectedVoice, DEFAULT_MODEL, type HufiVoice } from "@/lib/hufi-voice-config";
 import { previewVoice } from "@/components/voice/HufiVoiceSelector";
+import { db } from "@/lib/supabase-loose";
 
 interface HufiOnboardingChatProps {
   userId: string;
@@ -15,7 +16,7 @@ interface HufiOnboardingChatProps {
 type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 // Die beiden Basis-Stimmen (nicht Basis+/Premium) für die Onboarding-Auswahl.
-const ONBOARDING_VOICES = HUFI_VOICES.filter((v) => !v.premium);
+const ONBOARDING_VOICES = HUFI_VOICES.filter((v) => !v.isCustom);
 
 interface Message {
   from: "hufi" | "user";
@@ -143,7 +144,7 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
     // M3: anonymisierter Cross-User-Einblick ("andere [Beruf] nutzen mich oft für…")
     let hint = "";
     try {
-      const { data } = await supabase
+      const { data } = await db
         .from("profession_insights")
         .select("challenge_key, count")
         .eq("profession_type", professionKey)
@@ -248,7 +249,7 @@ export function HufiOnboardingChat({ userId, onComplete }: HufiOnboardingChatPro
 
       // M3: anonymisiertes Berufs-Aggregat hochzählen (keine User-Verknüpfung)
       if (challenges.length > 0) {
-        await supabase.rpc("increment_profession_insights", {
+        await db.rpc("increment_profession_insights", {
           _profession_type: professionType,
           _challenge_keys: challenges,
         }).then(undefined, () => { /* Tabelle/RPC ggf. noch nicht da → ignorieren */ });

@@ -60,10 +60,10 @@ export default function PartnerNotes() {
 
       {showNewNote && (
         <PartnerTreatmentNoteModal
-          isOpen={showNewNote}
+          open={showNewNote}
           onClose={() => setShowNewNote(false)}
           horseId={selectedHorseId ?? ""}
-          partnerId={user?.id ?? ""}
+          onSaved={() => setShowNewNote(false)}
         />
       )}
 

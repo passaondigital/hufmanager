@@ -34,6 +34,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { AutoFlowSetupWizard } from "@/components/autoflow/AutoFlowSetupWizard";
 import { AiDisclosure } from "@/components/legal/AiDisclosure";
+import { db } from "@/lib/supabase-loose";
 
 interface AutoFlowSettings {
   id?: string;
@@ -127,7 +128,7 @@ const AutoFlow = () => {
     queryKey: ["autoflow-log", user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("autoflow_log")
         .select("*")
         .eq("provider_id", user.id)

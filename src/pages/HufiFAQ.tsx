@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { db } from "@/lib/supabase-loose";
 
 interface FaqRow {
   id: string;
@@ -27,8 +28,7 @@ export default function HufiFAQ() {
   async function loadFaqs() {
     setLoading(true);
     try {
-      const from = (table: string) =>
-        (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+      const from = db.from.bind(db);
 
       const { data } = await from("hufi_faq")
         .select("id, question, answer, category, sort_order")

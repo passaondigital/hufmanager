@@ -27,6 +27,7 @@ import { de } from "date-fns/locale";
 import { BroadcastModal } from "@/components/broadcast/BroadcastModal";
 import { useCommunicationMode } from "@/hooks/useCommunicationMode";
 import { openWhatsApp, waTextLeadReply } from "@/lib/whatsappTemplates";
+import { db } from "@/lib/supabase-loose";
 
 interface Lead {
   id: string;
@@ -91,7 +92,7 @@ const Anfragen = () => {
     queryKey: ['leads', user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('leads')
         .select('*')
         .eq('provider_id', user!.id)
@@ -119,7 +120,7 @@ const Anfragen = () => {
 
   const updateTier = useMutation({
     mutationFn: async ({ id, plan_tier }: { id: string; plan_tier: string | null }) => {
-      const { error } = await supabase
+      const { error } = await db
         .from('leads')
         .update({ plan_tier })
         .eq('id', id)

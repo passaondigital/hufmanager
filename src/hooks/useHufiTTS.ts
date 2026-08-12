@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getSelectedVoiceId, getSelectedModel } from "@/lib/hufi-voice-config";
 
 interface UseHufiTTS {
-  speak: (text: string, onEnd?: () => void, fastMode?: boolean) => boolean;
+  speak: (text: string, onEnd?: () => void, fastMode?: boolean) => Promise<boolean>;
   cancel: () => void;
   isSupported: boolean;
   isSpeaking: boolean;

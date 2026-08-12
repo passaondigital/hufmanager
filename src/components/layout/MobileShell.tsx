@@ -1062,7 +1062,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         clientLocation: _lat && _lon ? { lat: parseFloat(_lat), lon: parseFloat(_lon) } : undefined,
       });
       if (resp.actionPlan?.taskType) {
-        taskType    = resp.actionPlan.taskType;
+        taskType    = resp.actionPlan.taskType as typeof taskType;
         payload     = resp.actionPlan.payload;
         explanation = resp.actionPlan.explanation;
       }
