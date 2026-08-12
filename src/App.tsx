@@ -31,6 +31,7 @@ const Auth        = lazy(() => import("@/pages/Auth"));
 const OAuthConsent = lazy(() => import("@/pages/OAuthConsent"));
 const AppLayout   = lazy(() => import("@/components/layout/AppLayout").then((m) => ({ default: m.AppLayout })));
 const MobileShell = lazy(() => import("@/components/layout/MobileShell").then((m) => ({ default: m.MobileShell })));
+const ProviderHome = lazy(() => import("@/components/layout/ProviderHome").then((m) => ({ default: m.ProviderHome })));
 
 // Auth
 const ResetPassword  = lazy(() => import("@/pages/ResetPassword"));
@@ -537,7 +538,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* ── PROVIDER (HUFBEARBEITER) ───────────────────────────── */}
             <Route path="/home" element={
               <ProtectedRoute allowedRoles={["provider", "admin"]}>
-                <MobileShell />
+                <ProviderHome />
               </ProtectedRoute>
             } />
 
