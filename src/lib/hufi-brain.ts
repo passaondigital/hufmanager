@@ -80,7 +80,6 @@ export async function fetchHufiContext(
 ): Promise<HufiContext> {
   const today = format(new Date(), "yyyy-MM-dd");
 
-  const db = supabase as unknown as Record<string, (...args: unknown[]) => unknown>;
   const from = db.from.bind(db);
 
   const [
