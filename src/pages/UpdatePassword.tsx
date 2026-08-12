@@ -79,8 +79,7 @@ export default function UpdatePassword() {
           .from("profiles")
           .update({ force_password_reset: false } as any)
           .eq("id", user.id)
-          .then(() => {})
-          .catch(() => {});
+          .then(() => {}, () => {});
         clearForcePasswordChange();
       }
 

@@ -17,7 +17,7 @@ const startPerformanceMeasurement = () => {
   import("./lib/performance").then(({ measurePerformance }) => measurePerformance());
 };
 
-if ("requestIdleCallback" in window) {
+if (typeof window.requestIdleCallback === "function") {
   window.requestIdleCallback(startPerformanceMeasurement, { timeout: 2500 });
 } else {
   window.setTimeout(startPerformanceMeasurement, 1500);

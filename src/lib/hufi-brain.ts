@@ -1,13 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ulset } from "@/lib/user-storage";
+import { db } from "@/lib/supabase-loose";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface HufiMemory {
   id: string;
   user_id: string;
-  category: "routine" | "preference" | "horse_pattern" | "client_note" | "alert" | "dsgvo" | "permission";
+  category: "routine" | "preference" | "horse_pattern" | "client_note" | "alert" | "dsgvo" | "permission" | "migration";
   key: string;
   value: Record<string, unknown>;
   confidence: number;
@@ -79,8 +80,7 @@ export async function fetchHufiContext(
 ): Promise<HufiContext> {
   const today = format(new Date(), "yyyy-MM-dd");
 
-  const db = supabase as unknown as Record<string, (...args: unknown[]) => unknown>;
-  const from = (table: string) => (db.from as (t: string) => ReturnType<typeof supabase.from>)(table);
+  const from = db.from.bind(db);
 
   const [
     profileRes,
@@ -93,29 +93,29 @@ export async function fetchHufiContext(
     ordersRes,
     permissionsRes,
   ] = await Promise.allSettled([
-    supabase
+    db
       .from("profiles")
       .select("full_name, role")
       .eq("id", userId)
       .single(),
-    supabase
+    db
       .from("appointments")
       .select("id, date, time, status, horses(name), client:profiles!client_id(full_name)")
       .eq("provider_id", userId)
       .eq("date", today)
       .in("status", ["scheduled", "confirmed"])
       .order("time", { ascending: true }),
-    supabase
+    db
       .from("leads")
       .select("*", { count: "exact", head: true })
       .eq("provider_id", userId)
       .eq("status", "neu"),
-    supabase
+    db
       .from("invoices")
       .select("*", { count: "exact", head: true })
       .eq("provider_id", userId)
       .neq("payment_status", "paid"),
-    supabase
+    db
       .from("appointments")
       .select("horse_id, date, horses(id, name, shoeing_interval)")
       .eq("provider_id", userId)
@@ -131,7 +131,7 @@ export async function fetchHufiContext(
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(5),
-    supabase
+    db
       .from("service_orders")
       .select("*", { count: "exact", head: true })
       .eq("provider_id", userId)
@@ -322,8 +322,7 @@ export async function updateHufiMemory(
   source: HufiMemory["source"],
 ): Promise<void> {
   try {
-    const from = (table: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+    const from = db.from.bind(db);
 
     const { data: existing } = await from("hufi_memory")
       .select("id, confidence")
@@ -366,8 +365,7 @@ export async function deleteHufiMemory(
   key?: string,
 ): Promise<number> {
   try {
-    const from = (table: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+    const from = db.from.bind(db);
 
     let q = from("hufi_memory").delete().eq("user_id", userId);
     if (category) q = (q as unknown as { eq: (k: string, v: string) => typeof q }).eq("category", category);
@@ -387,8 +385,7 @@ export async function deleteHufiMemory(
 // Wird aufgerufen wenn Nutzer sagt "vergiss das" / "lösch das" / "nicht speichern".
 export async function deleteLastLearnedMemory(userId: string): Promise<string | null> {
   try {
-    const from = (table: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+    const from = db.from.bind(db);
 
     const { data } = await from("hufi_memory")
       .select("id, category, key")
@@ -418,8 +415,7 @@ export async function learnFromInteraction(
   sessionId?: string,
 ): Promise<void> {
   try {
-    const from = (table: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+    const from = db.from.bind(db);
 
     await from("hufi_context_log").insert({
       user_id: userId,
@@ -474,7 +470,7 @@ export async function checkProactiveAlerts(userId: string): Promise<string[]> {
     const timeNow = format(now, "HH:mm:ss");
     const timePlus30 = format(new Date(now.getTime() + 30 * 60 * 1000), "HH:mm:ss");
 
-    const { data: upcoming } = await supabase
+    const { data: upcoming } = await db
       .from("appointments")
       .select("time, horses(name), client:profiles!client_id(full_name)")
       .eq("provider_id", userId)
@@ -501,8 +497,7 @@ export async function checkProactiveAlerts(userId: string): Promise<string[]> {
     }
 
     // Active memory alerts
-    const from = (table: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+    const from = db.from.bind(db);
 
     const { data: memAlerts } = (await from("hufi_memory")
       .select("key, value")
@@ -536,8 +531,7 @@ export async function checkDsgvoConsent(userId: string): Promise<boolean> {
 
   // DB lookup
   try {
-    const from = (table: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+    const from = db.from.bind(db);
 
     const { data } = (await from("hufi_memory")
       .select("value")
@@ -590,8 +584,7 @@ export async function hydrateUserSettingsFromDB(userId: string): Promise<void> {
   if (sessionStorage.getItem(sessionFlag)) return;
 
   try {
-    const from = (table: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+    const from = db.from.bind(db);
 
     const { data } = (await from("hufi_memory")
       .select("category, key, value")
@@ -845,8 +838,7 @@ export async function checkPermission(
   requiredLevel: "read" | "write" | "full",
 ): Promise<boolean> {
   try {
-    const from = (t: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(t);
+    const from = db.from.bind(db);
 
     const { data } = (await from("hufi_permissions")
       .select("permission_level")
@@ -927,10 +919,9 @@ export async function fetchPferdeakteHub(
   requesterId: string,
 ): Promise<PferdeakteHub | null> {
   try {
-    const from = (t: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(t);
+    const from = db.from.bind(db);
 
-    const { data: horse } = await supabase
+    const { data: horse } = await db
       .from("horses")
       .select(
         "id, name, breed, birth_year, hoof_type, shoeing_status, shoeing_interval, health_status, current_medications, special_notes, photo_url, owner_id, last_appointment_date",
@@ -945,7 +936,7 @@ export async function fetchPferdeakteHub(
     }
 
     const [apptsRes, befundeRes, permRes] = await Promise.allSettled([
-      supabase
+      db
         .from("appointments")
         .select("id, date, status, provider:profiles!provider_id(full_name)")
         .eq("horse_id" as never, horseId)
@@ -1048,7 +1039,7 @@ export async function check30DayServiceCheck(
       "yyyy-MM-dd",
     );
 
-    const { data } = await supabase
+    const { data } = await db
       .from("horses")
       .select("id, name, last_appointment_date, owner:profiles!owner_id(full_name)")
       .eq("owner_id" as never, userId)
@@ -1090,8 +1081,7 @@ export async function notifyColleague(
       return false;
     }
 
-    const from = (t: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(t);
+    const from = db.from.bind(db);
 
     await from("hufi_context_log").insert({
       user_id: senderId,

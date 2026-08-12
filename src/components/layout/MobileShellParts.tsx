@@ -256,6 +256,7 @@ const INTENT_META: Record<HufiIntent, { icon: string; label: string; color: stri
   agent_proactive: { icon: "🧠", label: "Analysiere…",          color: "#F97316" },
   emergency:       { icon: "🚨", label: "Notfall erkannt!",     color: "#EF4444" },
   navigation:      { icon: "🧭", label: "Navigiere…",           color: "#10B981" },
+  correction:      { icon: "✏️", label: "Korrigiere…",          color: "#F97316" },
 };
 
 const BEFUND_ACTIONS: { icon: React.ReactNode; label: string; route: string }[] = [

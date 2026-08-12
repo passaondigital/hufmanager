@@ -402,7 +402,12 @@ export function MobileShell() {
       const briefingTime = getCurrentBriefingTime();
       if (briefingTime && userId && !hasBriefingShownToday(userId, briefingTime)) {
         markBriefingShown(userId, briefingTime);
-        const timeBriefing = buildDailyBriefing(ctx, briefingTime, null);
+        const daily = buildDailyBriefing(ctx, briefingTime, null);
+        const timeBriefing: BriefingPayload = {
+          text: [daily.greeting, ...daily.sections.map((sec) => sec.spoken)].join(" "),
+          lines: [daily.greeting, ...daily.sections.map((sec) => `${sec.title}: ${sec.content}`)],
+          actions: daily.sections.flatMap((sec) => sec.action ? [sec.action] : []),
+        };
         setProactiveBriefing((prev) => prev ?? timeBriefing);
       }
 
@@ -922,7 +927,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
   async function answerFromKnowledge(text: string) {
     const history: AIChatMessage[] = [
       { role: "system", content: KNOWLEDGE_SYSTEM_PROMPT },
-      ...messages.slice(-4).map((m) => ({ role: m.role === "user" ? "user" : "assistant" as const, content: m.text })),
+      ...messages.slice(-4).map((m) => ({ role: (m.role === "user" ? "user" : "assistant") as "user" | "assistant", content: m.text })),
       { role: "user", content: text },
     ];
     await addStreamingMsg(history, user?.id ?? "anonymous", "hufiai-fast");
@@ -1057,7 +1062,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
         clientLocation: _lat && _lon ? { lat: parseFloat(_lat), lon: parseFloat(_lon) } : undefined,
       });
       if (resp.actionPlan?.taskType) {
-        taskType    = resp.actionPlan.taskType;
+        taskType    = resp.actionPlan.taskType as typeof taskType;
         payload     = resp.actionPlan.payload;
         explanation = resp.actionPlan.explanation;
       }
@@ -1143,7 +1148,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       try {
         const skill = await matchSkills(cleaned, user.id);
         if (skill && !skill.ask_first && skill.confidence > 0.7) {
-          const task = await detectAndCreateTask(skill.name, user.id, hufiCtx ?? {});
+          const task = await detectAndCreateTask(skill.name, user.id, (hufiCtx ?? {}) as unknown as Record<string, unknown>);
           if (task) {
             addMsg({ role: "user", text: cleaned, ts: Date.now() });
             const taskTs = Date.now() + 1;
@@ -1164,7 +1169,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     // Task-Detection: Trigger-Phrasen prüfen
     if (user?.id) {
       try {
-        const task = await detectAndCreateTask(cleaned, user.id, hufiCtx ?? {});
+        const task = await detectAndCreateTask(cleaned, user.id, (hufiCtx ?? {}) as unknown as Record<string, unknown>);
         if (task) {
           addMsg({ role: "user", text: cleaned, ts: Date.now() });
           const taskTs = Date.now() + 1;
@@ -1376,23 +1381,23 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
           if (targetName) {
             const { data: contacts } = await supabase
               .from("contacts")
-              .select("name, phone, email")
-              .eq("user_id", user.id)
-              .ilike("name", `%${targetName}%`)
+              .select("full_name, phone, email")
+              .eq("provider_id", user.id)
+              .ilike("full_name", `%${targetName}%`)
               .limit(1);
             const contact = contacts?.[0];
             if (contact && (contact.phone || contact.email)) {
               const template = generateAppointmentReminder({
-                clientName: contact.name,
+                clientName: contact.full_name,
                 horseName: "deinem Pferd",
                 date: "beim nächsten Termin",
                 senderName: hufiCtx?.user.name ?? undefined,
               });
               const draft = (commIntent === "email" || commIntent === "both") && contact.email
-                ? buildEmailDraft({ email: contact.email, name: contact.name, subject: "Terminbestätigung", body: template })
-                : buildWhatsAppDraft({ phone: contact.phone ?? "", name: contact.name, text: template });
+                ? buildEmailDraft({ email: contact.email, name: contact.full_name, subject: "Terminbestätigung", body: template })
+                : buildWhatsAppDraft({ phone: contact.phone ?? "", name: contact.full_name, text: template });
               setPendingDraft(draft);
-              addMsg({ role: "ai", text: `Ich habe einen Entwurf für ${contact.name} vorbereitet.`, ts: Date.now() + 1 });
+              addMsg({ role: "ai", text: `Ich habe einen Entwurf für ${contact.full_name} vorbereitet.`, ts: Date.now() + 1 });
               setResponding(false);
               setHufiPresenceState("bereit");
               setActiveIntent(null);

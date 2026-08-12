@@ -165,7 +165,7 @@ export default function ProviderHorseDetail() {
       ownerId:  user.id,
       blob,
       type:     type as HorseMediaType,
-      notes:    null ?? undefined,
+      notes:    undefined,
       tags:     [],
     });
     setMediaUploadPending(false);

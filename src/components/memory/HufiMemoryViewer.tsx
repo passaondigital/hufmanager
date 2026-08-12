@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/supabase-loose";
 
 interface MemoryRow {
   id: string;
@@ -51,8 +52,7 @@ export function HufiMemoryViewer({ userId, onClose }: HufiMemoryViewerProps) {
   async function loadMemory() {
     setLoading(true);
     try {
-      const from = (table: string) =>
-        (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+      const from = db.from.bind(db);
 
       const { data } = await from("hufi_memory")
         .select("id, user_id, category, key, value, source, last_updated")
@@ -72,8 +72,7 @@ export function HufiMemoryViewer({ userId, onClose }: HufiMemoryViewerProps) {
   async function handleDelete(id: string) {
     setDeletingId(id);
     try {
-      const from = (table: string) =>
-        (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(table);
+      const from = db.from.bind(db);
 
       await from("hufi_memory").delete().eq("id", id);
       setRows((prev) => prev.filter((r) => r.id !== id));

@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { RecognizedEntity, buildB2BReportContext } from "./ontology-service";
+import { db } from "@/lib/supabase-loose";
 
 const WHISPER_ENDPOINT = "/api/local-ai/transcribe";
 const OLLAMA_ENDPOINT = "/api/ollama/api/chat";
@@ -27,7 +28,7 @@ export async function checkAndUseCredit(
   if (bypass) return true;
   const modelName = model === "fast" ? "claude-haiku" : "claude-sonnet";
   try {
-    const { data, error } = await supabase.rpc("use_hufi_credit", {
+    const { data, error } = await db.rpc("use_hufi_credit", {
       p_user_id: userId,
       p_model: modelName,
     });
@@ -136,8 +137,8 @@ export async function chatWithHufAI(
   if (!model || model === "hufiai-fast" || model === "hufiai-core") {
     if (!model) {
       const [{ data: profile }, { data: roleData }] = await Promise.all([
-        supabase.from("profiles").select("user_type").eq("id", userId).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+        db.from("profiles").select("user_type").eq("id", userId).maybeSingle(),
+        db.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
       ]);
       model = (profile?.user_type === "pro" || roleData?.role === "provider" || roleData?.role === "admin")
         ? "hufiai-core" : "hufiai-fast";

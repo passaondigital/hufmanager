@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { executeHufiAction, type HufiAction, type ActionResult } from "./hufi-actions";
+import { db } from "@/lib/supabase-loose";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 //
@@ -115,7 +116,7 @@ export async function createAgentTask(
   userMessage: string,
   sessionId?: string,
 ): Promise<AgentTask | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("agent_tasks")
     .insert({
       user_id: userId,
@@ -137,7 +138,7 @@ export async function createAgentTask(
 }
 
 export async function rejectTask(taskId: string): Promise<void> {
-  await supabase
+  await db
     .from("agent_tasks")
     .update({ status: "rejected" })
     .eq("id", taskId);
@@ -148,12 +149,12 @@ export async function approveAndExecuteTask(
   task: AgentTask,
   userId: string,
 ): Promise<ActionResult> {
-  await supabase
+  await db
     .from("agent_tasks")
     .update({ status: "approved" })
     .eq("id", task.id);
 
-  await supabase
+  await db
     .from("agent_tasks")
     .update({ status: "executing" })
     .eq("id", task.id);
@@ -173,7 +174,7 @@ export async function approveAndExecuteTask(
     result = { success: false, message: (err as Error).message };
   }
 
-  await supabase
+  await db
     .from("agent_tasks")
     .update({
       status: result.success ? "executed" : "failed",

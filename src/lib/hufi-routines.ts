@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/supabase-loose";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -238,7 +239,7 @@ export function computeNextTrigger(type: TriggerType, config: TriggerConfig): Da
 // ── CRUD ──────────────────────────────────────────────────────────────────────
 
 export async function getRoutines(userId: string): Promise<HufiRoutine[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("hufi_routines")
     .select("*")
     .eq("user_id", userId)
@@ -252,7 +253,7 @@ export async function createRoutine(
   routine: Omit<HufiRoutine, "id" | "user_id" | "created_at" | "last_triggered_at" | "trigger_count">,
 ): Promise<HufiRoutine> {
   const nextTrigger = computeNextTrigger(routine.trigger_type, routine.trigger_config);
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("hufi_routines")
     .insert({ ...routine, user_id: userId, next_trigger_at: nextTrigger?.toISOString() ?? null })
     .select()
@@ -271,17 +272,17 @@ export async function updateRoutine(
     const next = computeNextTrigger(type, config);
     if (next) (changes as Record<string, unknown>).next_trigger_at = next.toISOString();
   }
-  const { error } = await supabase.from("hufi_routines").update(changes).eq("id", id);
+  const { error } = await db.from("hufi_routines").update(changes).eq("id", id);
   if (error) throw error;
 }
 
 export async function deleteRoutine(id: string): Promise<void> {
-  const { error } = await supabase.from("hufi_routines").delete().eq("id", id);
+  const { error } = await db.from("hufi_routines").delete().eq("id", id);
   if (error) throw error;
 }
 
 export async function toggleRoutine(id: string, enabled: boolean): Promise<void> {
-  const { error } = await supabase.from("hufi_routines").update({ enabled }).eq("id", id);
+  const { error } = await db.from("hufi_routines").update({ enabled }).eq("id", id);
   if (error) throw error;
 }
 

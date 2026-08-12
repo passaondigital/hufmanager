@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { updateHufiMemory } from "./hufi-brain";
 import { extractLineItems } from "./hufi-tool-definitions";
+import { db } from "@/lib/supabase-loose";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -95,8 +96,7 @@ export async function executeHufiAction(
 ): Promise<ActionResult> {
   // Log every AI action for EU AI Act compliance
   try {
-    const from = (t: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(t);
+    const from = db.from.bind(db);
     await from("hufi_context_log").insert({
       user_id: userId,
       session_id: crypto.randomUUID(),
@@ -134,7 +134,7 @@ async function _createAppointment(
   userId: string,
 ): Promise<ActionResult> {
   try {
-    const { error } = await supabase.from("appointments").insert({
+    const { error } = await db.from("appointments").insert({
       provider_id: userId,
       horse_id: payload.horse_id ?? null,
       date: payload.date as string,
@@ -167,7 +167,7 @@ async function _createInvoice(
       : null;
 
     // Rechnungs-Kopf anlegen
-    const { data: inv, error: invErr } = await supabase
+    const { data: inv, error: invErr } = await db
       .from("invoices")
       .insert({
         provider_id:    userId,
@@ -196,14 +196,14 @@ async function _createInvoice(
         unit_price:        li.unit_price,
         total_price:       li.quantity * li.unit_price,
       }));
-      const { error: itemsErr } = await supabase.from("invoice_items").insert(itemRows);
+      const { error: itemsErr } = await db.from("invoice_items").insert(itemRows);
       if (itemsErr) console.error("[invoice] items insert error:", itemsErr.message);
     }
 
     // Lagerbestand abziehen
     const stockDeductions = lineItems.filter((li) => li.inventory_item_id);
     for (const li of stockDeductions) {
-      const { data: inv } = await supabase
+      const { data: inv } = await db
         .from("inventory_items")
         .select("current_stock")
         .eq("id", li.inventory_item_id!)
@@ -211,7 +211,7 @@ async function _createInvoice(
         .maybeSingle();
       if (inv) {
         const newStock = Math.max(0, (inv as { current_stock: number }).current_stock - li.quantity);
-        await supabase
+        await db
           .from("inventory_items")
           .update({ current_stock: newStock })
           .eq("id", li.inventory_item_id!)
@@ -398,7 +398,7 @@ async function _addExpense(
       return { success: false, message: "Bitte beschreibe die Ausgabe kurz." };
     }
 
-    const { error } = await supabase.from("expenses").insert({
+    const { error } = await db.from("expenses").insert({
       user_id:      userId,
       amount,
       category,
@@ -434,7 +434,7 @@ async function _setPriceGroup(
 
   try {
     // Kunde anhand des Namens suchen (case-insensitive, fuzzy über ilike)
-    const { data: matches, error: searchErr } = await supabase
+    const { data: matches, error: searchErr } = await db
       .from("profiles")
       .select("id, full_name, price_group")
       .eq("provider_id", userId)
@@ -452,7 +452,7 @@ async function _setPriceGroup(
       standard: "Standard", vip: "VIP", grossstall: "Großstall", individuell: "Individuell",
     };
 
-    const { error: updateErr } = await supabase
+    const { error: updateErr } = await db
       .from("profiles")
       .update({ price_group: priceGroup, price_group_label: groupLabels[priceGroup] ?? priceGroup })
       .eq("id", customer.id)

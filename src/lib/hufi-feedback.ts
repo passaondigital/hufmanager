@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { updateHufiMemory } from "./hufi-brain";
 import { format } from "date-fns";
+import { db } from "@/lib/supabase-loose";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -25,8 +26,7 @@ export async function scheduleFeedbackRequest(
   delayHours = 2,
 ): Promise<void> {
   try {
-    const from = (t: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(t);
+    const from = db.from.bind(db);
 
     const scheduledAt = new Date(Date.now() + delayHours * 60 * 60 * 1000).toISOString();
 
@@ -63,8 +63,7 @@ export async function submitFeedback(
   comment: string,
 ): Promise<void> {
   try {
-    const from = (t: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(t);
+    const from = db.from.bind(db);
 
     await from("hufi_feedback")
       .update({
@@ -111,8 +110,7 @@ export async function getPendingFeedbackRequests(
   userId: string,
 ): Promise<FeedbackRequest[]> {
   try {
-    const from = (t: string) =>
-      (supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }).from(t);
+    const from = db.from.bind(db);
 
     const { data } = (await from("hufi_feedback")
       .select("*")

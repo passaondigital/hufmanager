@@ -34,6 +34,7 @@ import {
   Plus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { db } from "@/lib/supabase-loose";
 
 // ─── Type definitions ────────────────────────────────────────────────────────
 
@@ -417,7 +418,7 @@ function ErkrankungenTab() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: err } = await supabase
+      const { data, error: err } = await db
         .from("hufi_health_conditions")
         .select("id, name, name_en, category, urgency, hoof_relevance, is_active")
         .order("name");

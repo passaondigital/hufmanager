@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/lib/supabase-loose";
 
 export type ConversationStatus = "active" | "archived" | "deleted";
 
@@ -32,7 +33,7 @@ export async function createConversation(
   firstMessage?: string
 ): Promise<HufiConversation | null> {
   const title = firstMessage ? generateConversationTitle(firstMessage) : "Neues Gespräch";
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("hufi_conversations")
     .insert({ user_id: userId, title })
     .select()
@@ -48,14 +49,14 @@ export async function addConvMessage(
   content: string,
   metadata: Record<string, unknown> = {}
 ): Promise<HufiConvMessage | null> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("hufi_messages")
     .insert({ conversation_id: conversationId, user_id: userId, role, content, metadata })
     .select()
     .single();
   if (error) { console.error("[hufi-conv] addMsg:", error); return null; }
   // Conversation updated_at aktualisieren
-  await supabase
+  await db
     .from("hufi_conversations")
     .update({ updated_at: new Date().toISOString() })
     .eq("id", conversationId)
@@ -67,7 +68,7 @@ export async function listConversations(
   userId: string,
   limit = 20
 ): Promise<HufiConversation[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("hufi_conversations")
     .select()
     .eq("user_id", userId)
@@ -83,7 +84,7 @@ export async function getConversationMessages(
   userId: string,
   limit = 20
 ): Promise<HufiConvMessage[]> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("hufi_messages")
     .select()
     .eq("conversation_id", conversationId)
@@ -98,7 +99,7 @@ export async function archiveConversation(
   conversationId: string,
   userId: string
 ): Promise<void> {
-  await supabase
+  await db
     .from("hufi_conversations")
     .update({ status: "archived" })
     .eq("id", conversationId)
@@ -109,7 +110,7 @@ export async function deleteConversation(
   conversationId: string,
   userId: string
 ): Promise<void> {
-  await supabase
+  await db
     .from("hufi_conversations")
     .update({ status: "deleted" })
     .eq("id", conversationId)
@@ -119,7 +120,7 @@ export async function deleteConversation(
 export async function getLastActiveConversation(
   userId: string
 ): Promise<HufiConversation | null> {
-  const { data } = await supabase
+  const { data } = await db
     .from("hufi_conversations")
     .select()
     .eq("user_id", userId)
