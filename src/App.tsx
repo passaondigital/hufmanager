@@ -537,7 +537,7 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             {/* ── PROVIDER (HUFBEARBEITER) ───────────────────────────── */}
             <Route path="/home" element={
               <ProtectedRoute allowedRoles={["provider", "admin"]}>
-                <MobileShell />
+                <ProviderHome />
               </ProtectedRoute>
             } />
 
