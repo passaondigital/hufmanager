@@ -402,7 +402,12 @@ export function MobileShell() {
       const briefingTime = getCurrentBriefingTime();
       if (briefingTime && userId && !hasBriefingShownToday(userId, briefingTime)) {
         markBriefingShown(userId, briefingTime);
-        const timeBriefing = buildDailyBriefing(ctx, briefingTime, null);
+        const daily = buildDailyBriefing(ctx, briefingTime, null);
+        const timeBriefing: BriefingPayload = {
+          text: [daily.greeting, ...daily.sections.map((sec) => sec.spoken)].join(" "),
+          lines: [daily.greeting, ...daily.sections.map((sec) => `${sec.title}: ${sec.content}`)],
+          actions: daily.sections.flatMap((sec) => sec.action ? [sec.action] : []),
+        };
         setProactiveBriefing((prev) => prev ?? timeBriefing);
       }
 
@@ -1143,7 +1148,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
       try {
         const skill = await matchSkills(cleaned, user.id);
         if (skill && !skill.ask_first && skill.confidence > 0.7) {
-          const task = await detectAndCreateTask(skill.name, user.id, hufiCtx ?? {});
+          const task = await detectAndCreateTask(skill.name, user.id, (hufiCtx ?? {}) as unknown as Record<string, unknown>);
           if (task) {
             addMsg({ role: "user", text: cleaned, ts: Date.now() });
             const taskTs = Date.now() + 1;
@@ -1164,7 +1169,7 @@ Aktuelles Datum und Uhrzeit: ${nowStamp()}`;
     // Task-Detection: Trigger-Phrasen prüfen
     if (user?.id) {
       try {
-        const task = await detectAndCreateTask(cleaned, user.id, hufiCtx ?? {});
+        const task = await detectAndCreateTask(cleaned, user.id, (hufiCtx ?? {}) as unknown as Record<string, unknown>);
         if (task) {
           addMsg({ role: "user", text: cleaned, ts: Date.now() });
           const taskTs = Date.now() + 1;

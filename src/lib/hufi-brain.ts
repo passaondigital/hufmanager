@@ -8,7 +8,7 @@ import { db } from "@/lib/supabase-loose";
 export interface HufiMemory {
   id: string;
   user_id: string;
-  category: "routine" | "preference" | "horse_pattern" | "client_note" | "alert" | "dsgvo" | "permission";
+  category: "routine" | "preference" | "horse_pattern" | "client_note" | "alert" | "dsgvo" | "permission" | "migration";
   key: string;
   value: Record<string, unknown>;
   confidence: number;
