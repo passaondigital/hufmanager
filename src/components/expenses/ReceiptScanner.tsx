@@ -207,10 +207,7 @@ export function ReceiptScanner({ isOpen, onClose, onBack }: ReceiptScannerProps)
         if (uploadError) {
           console.error("Upload error:", uploadError);
         } else {
-          const { data: urlData } = supabase.storage
-            .from("documents")
-            .getPublicUrl(fileName);
-          receiptUrl = urlData.publicUrl;
+          receiptUrl = fileName;
         }
       }
 

@@ -109,11 +109,7 @@ export function AddExpenseModal({ isOpen, onClose, onBack }: AddExpenseModalProp
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("documents")
-        .getPublicUrl(fileName);
-
-      setReceiptUrl(urlData.publicUrl);
+      setReceiptUrl(fileName);
       toast.success("Beleg hochgeladen");
     } catch (error) {
       console.error("Upload error:", error);

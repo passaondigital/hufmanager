@@ -145,11 +145,7 @@ export function ServiceRequestDialog({
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("horse-documents")
-        .getPublicUrl(fileName);
-
-      return urlData.publicUrl;
+      return fileName;
     } catch (error) {
       console.error("Upload error:", error);
       return null;

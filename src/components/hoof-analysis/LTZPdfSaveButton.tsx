@@ -360,18 +360,13 @@ export function LTZPdfSaveButton({ analysis, horseId, horseName, ownerName }: LT
         throw new Error(`Upload fehlgeschlagen: ${uploadError.message}`);
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("horse-documents")
-        .getPublicUrl(storagePath);
-
       // Create database entry
       const { error: dbError } = await supabase
         .from("horse_documents")
         .insert({
           horse_id: horseId,
           file_name: fileName,
-          file_url: urlData.publicUrl,
+          file_url: storagePath,
           file_type: "application/pdf",
           category: "hufanalyse",
           notes: `LTZ-Analyse vom ${dateStr}`,
