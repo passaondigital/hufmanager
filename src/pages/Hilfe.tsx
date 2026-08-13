@@ -166,7 +166,7 @@ const FAQ_DATA: FAQCategory[] = [
     items: [
       {
         question: 'Welcher Plan passt zu mir?',
-        answer: 'Hufi hat aktuell ein Angebot: das Early Bird Paket für 9,95 € / Monat — voller Zugang zu allen Features, unabhängig von Pferde-Anzahl oder Team-Größe.',
+        answer: 'HufManager Slim startet mit einem Tarif: 19,95 € / Monat, 14 Tage kostenloser In-App-Test, Tourenplaner inklusive und kostenloser Kundenzugang.',
         navigateTo: '/settings/abo',
         navigateLabel: 'Zur Abo-Übersicht',
       },

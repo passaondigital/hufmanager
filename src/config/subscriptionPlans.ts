@@ -2,6 +2,8 @@ export type SubscriptionPlanId = "hufmanager_slim" | "hufiapp_premium";
 
 export interface SubscriptionPlanMarketingText {
   productUrl: string;
+  copecartProductId?: string;
+  checkoutUrl?: string;
   supportEmail: string;
   productName: string;
   tariffName: string;
@@ -19,6 +21,8 @@ export interface SubscriptionPlanMarketingText {
 
 export const HUFMANAGER_SLIM_TEXT: SubscriptionPlanMarketingText = {
   productUrl: "https://hufmanager.de",
+  copecartProductId: "3a97bd25",
+  checkoutUrl: "https://copecart.com/products/3a97bd25/checkout",
   supportEmail: "teamhufmanager@gmail.com",
   productName: "HufManager Slim",
   tariffName: "Ein Tarif",

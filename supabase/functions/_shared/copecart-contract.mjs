@@ -5,6 +5,8 @@ export const PRODUCT_PRICING = Object.freeze({
   HUFMANAGER_SLIM: Object.freeze({
     product: "HUFMANAGER",
     plan: "HUFMANAGER_SLIM",
+    copecartProductId: "3a97bd25",
+    checkoutUrl: "https://copecart.com/products/3a97bd25/checkout",
     priceMonthlyEur: "19.95",
     trialDays: 14,
     customerAccess: "free_relationship_scoped",

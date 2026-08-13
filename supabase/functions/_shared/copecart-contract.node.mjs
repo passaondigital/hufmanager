@@ -16,6 +16,7 @@ test("known purchases activate while unknown products never get a default plan",
 
 test("launch pricing keeps HufManager trial separate from HufiApp direct paid", () => {
   assert.equal(PRODUCT_PRICING.HUFMANAGER_SLIM.priceMonthlyEur, "19.95");
+  assert.equal(PRODUCT_PRICING.HUFMANAGER_SLIM.copecartProductId, "3a97bd25");
   assert.equal(PRODUCT_PRICING.HUFMANAGER_SLIM.trialDays, 14);
   assert.equal(PRODUCT_PRICING.HUFIAPP_PREMIUM.priceMonthlyEur, "29.95");
   assert.equal(PRODUCT_PRICING.HUFIAPP_PREMIUM.trialDays, 0);

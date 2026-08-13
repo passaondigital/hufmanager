@@ -35,7 +35,7 @@ const PRICING_PLANS = [
     features: [
       ...HUFMANAGER_SLIM_TEXT.included,
     ],
-    checkoutUrl: "",
+    checkoutUrl: HUFMANAGER_SLIM_TEXT.checkoutUrl || "",
     icon: Sparkles,
     highlighted: true,
     badge: HUFMANAGER_SLIM_TEXT.tariffName,
@@ -208,7 +208,7 @@ export function PricingModal({
           <p>{HUFMANAGER_SLIM_TEXT.productName} · {HUFMANAGER_SLIM_TEXT.productUrl}</p>
           <p>{HUFMANAGER_SLIM_TEXT.billing}</p>
           <p>{HUFMANAGER_SLIM_TEXT.delivery}</p>
-          <p>Neue CopeCart-Produkt-ID noch erforderlich. Kein Legacy-Checkout wird für neue Verkäufe verwendet.</p>
+          <p>CopeCart Product ID: {HUFMANAGER_SLIM_TEXT.copecartProductId}. Legacy-Checkouts werden nicht für neue Verkäufe verwendet.</p>
         </div>
       </DialogContent>
     </Dialog>

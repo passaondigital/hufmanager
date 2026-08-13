@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, ArrowRight, Check } from "lucide-react";
 import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
 import { logConsent } from "@/lib/consent";
+import { HUFMANAGER_SLIM_TEXT } from "@/config/subscriptionPlans";
 
 const PRO_CHECKOUT_URL =
-  "https://www.copecart.com/products/0a0921ba/checkout?utm_source=app&utm_medium=feature-lock&utm_campaign=pro-gate";
+  `${HUFMANAGER_SLIM_TEXT.checkoutUrl || "https://copecart.com/products/3a97bd25/checkout"}?utm_source=app&utm_medium=feature-lock&utm_campaign=pro-gate`;
 
 interface ProGateDialogProps {
   open: boolean;
@@ -54,10 +55,10 @@ export function ProGateDialog({
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <Sparkles className="h-5 w-5 text-primary" />
             </div>
-            <DialogTitle>Hufi Early Bird</DialogTitle>
+            <DialogTitle>HufManager Slim</DialogTitle>
           </div>
           <DialogDescription>
-            {featureName} ist im Hufi Early Bird enthalten.
+            {featureName} ist in HufManager Slim enthalten.
           </DialogDescription>
         </DialogHeader>
 
@@ -65,9 +66,9 @@ export function ProGateDialog({
           <ul className="space-y-1.5 text-sm text-muted-foreground">
             {[
               "Kunden per WhatsApp, E-Mail oder Link einladen",
-              "Kostenlose Kunden-App für Pferdebesitzer",
-              "Bis zu 75 Pferde verwalten",
-              "AutoFlow, HM Connect & Netzwerk",
+              "Kostenloser Kundenzugang für Pferdebesitzer",
+              "Tourenplaner inklusive",
+              "Pferdeakte, Termine und Rechnungen",
             ].map((f) => (
               <li key={f} className="flex items-start gap-2">
                 <Check className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
@@ -86,7 +87,7 @@ export function ProGateDialog({
           />
 
           <Button onClick={handleUpgrade} className="w-full gap-2 min-h-[48px] font-semibold">
-            Jetzt Early Bird sichern
+            Jetzt HufManager buchen
             <ArrowRight className="h-4 w-4" />
           </Button>
 

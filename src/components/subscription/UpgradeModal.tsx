@@ -29,7 +29,7 @@ const PLANS = [
     icon: Sparkles,
     badge: HUFMANAGER_SLIM_TEXT.tariffName,
     features: HUFMANAGER_SLIM_TEXT.included.slice(0, 4),
-    checkoutUrl: "",
+    checkoutUrl: HUFMANAGER_SLIM_TEXT.checkoutUrl || "",
   },
 ];
 

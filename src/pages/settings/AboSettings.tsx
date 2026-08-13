@@ -5,23 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { useSubscription, PLAN_HORSE_LIMITS } from "@/hooks/useSubscription";
 import { cn } from "@/lib/utils";
+import { HUFMANAGER_SLIM_TEXT } from "@/config/subscriptionPlans";
 
-const EARLY_BIRD_CHECKOUT_URL = "https://copecart.com/products/0a0921ba/checkout";
+const HUFMANAGER_SLIM_CHECKOUT_URL = HUFMANAGER_SLIM_TEXT.checkoutUrl || "https://copecart.com/products/3a97bd25/checkout";
 
-const EARLY_BIRD_PLAN = {
-  name: "Early Bird",
-  price: "9,95",
+const HUFMANAGER_SLIM_PLAN = {
+  name: HUFMANAGER_SLIM_TEXT.productName,
+  price: "19,95",
   interval: "monatlich",
-  features: [
-    "Kalender & smarte Tourenplanung",
-    "Kunden- & Pferdeverwaltung",
-    "Vollständige Pferdeakte & Befunde",
-    "Rechnungen in Sekunden",
-    "Hufi KI-Assistent & Sprachsteuerung",
-    "Material-Verwaltung",
-    "Offline-Modus & PWA",
-    "Voller Zugang, unbegrenzt Pferde",
-  ],
+  features: HUFMANAGER_SLIM_TEXT.included,
 };
 
 const PLAN_LABELS: Record<string, string> = {
@@ -40,17 +32,17 @@ export default function AboSettings() {
   const isLifetime = status === "lifetime" || planOverride === "lifetime_grant";
 
   const handleUpgrade = () => {
-    window.open(EARLY_BIRD_CHECKOUT_URL, "_blank");
+    window.open(HUFMANAGER_SLIM_CHECKOUT_URL, "_blank");
   };
 
   const handleKuendigung = () => {
-    const subject = encodeURIComponent(`Kündigung Hufi ${currentPlanLabel}`);
-    window.open(`mailto:kontakt@hufiapp.de?subject=${subject}`, "_blank");
+    const subject = encodeURIComponent(`Kündigung HufManager ${currentPlanLabel}`);
+    window.open(`mailto:teamhufmanager@gmail.com?subject=${subject}`, "_blank");
   };
 
   const handleRechnungsanfrage = () => {
-    const subject = encodeURIComponent("Rechnungsanfrage Hufi");
-    window.open(`mailto:kontakt@hufiapp.de?subject=${subject}`, "_blank");
+    const subject = encodeURIComponent("Rechnungsanfrage HufManager");
+    window.open(`mailto:teamhufmanager@gmail.com?subject=${subject}`, "_blank");
   };
 
   return (
@@ -103,7 +95,7 @@ export default function AboSettings() {
         <CardContent className="space-y-4">
           {/* Features checklist */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {EARLY_BIRD_PLAN.features.map((f) => (
+            {HUFMANAGER_SLIM_PLAN.features.map((f) => (
               <div key={f} className="flex items-center gap-2 text-sm">
                 <Check className="h-4 w-4 text-green-600 shrink-0" />
                 <span>{f}</span>
@@ -136,27 +128,27 @@ export default function AboSettings() {
       {/* Upgrade Option */}
       {!isLifetime && plan !== "pro" && plan !== "advanced" && (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold">Early Bird Paket</h2>
+          <h2 className="text-lg font-semibold">HufManager Slim</h2>
           <Card className="relative border border-primary/60 transition-shadow hover:shadow-md">
             <div className="absolute -top-2.5 left-4">
-              <Badge className="bg-primary text-white text-xs">Early Bird</Badge>
+              <Badge className="bg-primary text-white text-xs">Ein Tarif</Badge>
             </div>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">{EARLY_BIRD_PLAN.name}</CardTitle>
-                <span className="text-lg font-bold">{EARLY_BIRD_PLAN.price}€<span className="text-xs font-normal text-muted-foreground">/Monat</span></span>
+                <CardTitle className="text-base">{HUFMANAGER_SLIM_PLAN.name}</CardTitle>
+                <span className="text-lg font-bold">{HUFMANAGER_SLIM_PLAN.price}€<span className="text-xs font-normal text-muted-foreground">/Monat</span></span>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <ul className="space-y-1">
-                {EARLY_BIRD_PLAN.features.slice(0, 3).map((f) => (
+                {HUFMANAGER_SLIM_PLAN.features.slice(0, 3).map((f) => (
                   <li key={f} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                     <Check className="h-3 w-3 text-primary shrink-0" />
                     {f}
                   </li>
                 ))}
-                {EARLY_BIRD_PLAN.features.length > 3 && (
-                  <li className="text-xs text-muted-foreground pl-4">+{EARLY_BIRD_PLAN.features.length - 3} weitere</li>
+                {HUFMANAGER_SLIM_PLAN.features.length > 3 && (
+                  <li className="text-xs text-muted-foreground pl-4">+{HUFMANAGER_SLIM_PLAN.features.length - 3} weitere</li>
                 )}
               </ul>
               <Button size="sm" className="w-full" onClick={handleUpgrade}>
@@ -186,8 +178,8 @@ export default function AboSettings() {
 
       {/* Legal footer */}
       <p className="text-xs text-center text-muted-foreground">
-        Alle Preise netto. Gemäß § 19 UStG wird keine Umsatzsteuer erhoben.
-        Bei Fragen: <a href="mailto:kontakt@hufiapp.de" className="underline">kontakt@hufiapp.de</a>
+        Der Checkout läuft über CopeCart. Die App zeigt den beworbenen monatlichen Preis.
+        Bei Fragen: <a href="mailto:teamhufmanager@gmail.com" className="underline">teamhufmanager@gmail.com</a>
       </p>
     </div>
   );

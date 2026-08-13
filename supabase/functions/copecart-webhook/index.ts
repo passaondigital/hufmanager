@@ -15,10 +15,9 @@ const corsHeaders = {
 };
 
 // Map legacy CopeCart product IDs to legacy subscription plans.
-// New launch products are intentionally config-gated until Pascal creates the
-// real CopeCart products:
-// - HufManager Slim: 19,95 €/month, 14d in-app trial before checkout
-// - HufiApp: 29,95 €/month, no trial
+// New launch products:
+// - HufManager Slim: 19,95 €/month, 14d in-app trial before checkout, Product ID 3a97bd25.
+// - HufiApp: 29,95 €/month, no trial, Product ID still config-required.
 // Do not repurpose legacy IDs and never default unknown IDs to a paid plan.
 const PRODUCT_PLAN_MAP: Record<string, string> = {
   // Legacy Early Bird product retained only for existing subscriptions.
@@ -53,13 +52,13 @@ interface NewSaasProductMeta {
 }
 
 const NEW_SAAS_PRODUCT_MAP: Record<string, NewSaasProductMeta> = {
-  // CONFIG_REQUIRED after manual CopeCart product creation:
-  // "HUFMANAGER_SLIM_PRODUCT_ID": {
-  //   product: "HUFMANAGER",
-  //   plan: "HUFMANAGER_SLIM",
-  //   priceMonthlyEur: "19.95",
-  //   trialDays: 14,
-  // },
+  "3a97bd25": {
+    product: "HUFMANAGER",
+    plan: "HUFMANAGER_SLIM",
+    priceMonthlyEur: "19.95",
+    trialDays: 14,
+  },
+  // CONFIG_REQUIRED after manual HufiApp CopeCart product creation:
   // "HUFIAPP_STANDARD_PRODUCT_ID": {
   //   product: "HUFIAPP",
   //   plan: "HUFIAPP_PREMIUM",

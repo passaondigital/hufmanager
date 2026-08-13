@@ -37,7 +37,7 @@ serve(async (req: Request): Promise<Response> => {
 
     const safeProviderEmail = escapeHtml(providerEmail);
     const safeClientEmail = escapeHtml(clientEmail || "");
-    const upgradeUrl = "https://www.copecart.com/products/0a0921ba/checkout?utm_source=app&utm_medium=provider-notify&utm_campaign=client-blocked";
+    const upgradeUrl = "https://copecart.com/products/3a97bd25/checkout?utm_source=app&utm_medium=provider-notify&utm_campaign=client-blocked";
 
     const emailHtml = `<!DOCTYPE html>
 <html>
@@ -67,7 +67,7 @@ serve(async (req: Request): Promise<Response> => {
         ? `<p><strong>${safeClientEmail}</strong> hat versucht, sich in der HufManager Kunden-App einzuloggen.</p>`
         : `<p>Ein Kunde hat versucht, sich in der HufManager Kunden-App einzuloggen.</p>`
       }
-      <p>Die Kunden-App ist in <strong>HufManager Pro</strong> enthalten. Upgrade jetzt und gib deinen Kunden Zugriff auf:</p>
+      <p>Der Kundenzugang ist in <strong>HufManager Slim</strong> kostenlos enthalten. Buche HufManager Slim und gib deinen Kunden Zugriff auf:</p>
       <ul>
         <li>Ihre Termine & Pferdeakten</li>
         <li>Behandlungsberichte & Fotos</li>
@@ -75,7 +75,7 @@ serve(async (req: Request): Promise<Response> => {
         <li>Rechnungen & Zahlungshistorie</li>
       </ul>
       <div style="text-align:center">
-        <a href="${upgradeUrl}" class="cta-btn">Jetzt auf Pro upgraden →</a>
+        <a href="${upgradeUrl}" class="cta-btn">Jetzt HufManager buchen →</a>
       </div>
       <p style="font-size:13px;color:#888">Fragen? Schreib uns: info@hufiapp.de</p>
     </div>

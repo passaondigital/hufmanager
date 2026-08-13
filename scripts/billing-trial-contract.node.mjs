@@ -15,6 +15,8 @@ const webhookSource = readFileSync(
 
 test("HufManager Slim launch price and trial are product-specific", () => {
   assert.equal(PRODUCT_PRICING.HUFMANAGER_SLIM.priceMonthlyEur, "19.95");
+  assert.equal(PRODUCT_PRICING.HUFMANAGER_SLIM.copecartProductId, "3a97bd25");
+  assert.equal(PRODUCT_PRICING.HUFMANAGER_SLIM.checkoutUrl, "https://copecart.com/products/3a97bd25/checkout");
   assert.equal(PRODUCT_PRICING.HUFMANAGER_SLIM.trialDays, 14);
   assert.match(entitlementMigration, /trial_ends_at = trial_started_at \+ interval '14 days'/);
   assert.match(entitlementMigration, /start_hufmanager_trial/);
@@ -40,8 +42,9 @@ test("unknown CopeCart product fails closed instead of defaulting to pro", () =>
   assert.match(webhookSource, /return PRODUCT_PLAN_MAP\[productId\] \?\? null/);
 });
 
-test("new CopeCart product ids are config-required and do not repurpose legacy ids", () => {
-  assert.match(webhookSource, /HUFMANAGER_SLIM_PRODUCT_ID/);
+test("HufManager Slim CopeCart product id is configured and HufiApp remains separate", () => {
+  assert.match(webhookSource, /"3a97bd25": \{/);
+  assert.match(webhookSource, /plan: "HUFMANAGER_SLIM"/);
   assert.match(webhookSource, /HUFIAPP_STANDARD_PRODUCT_ID/);
   assert.match(webhookSource, /CONFIG_REQUIRED/);
   assert.match(webhookSource, /NEW_SAAS_PRODUCT_MAP/);

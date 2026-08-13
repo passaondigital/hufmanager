@@ -6,10 +6,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Crown, ArrowRight, Smartphone } from "lucide-react";
+import { HUFMANAGER_SLIM_TEXT } from "@/config/subscriptionPlans";
 
-// CopeCart-Produkt-URL für Hufi Early Bird (€9,95/Monat)
+// CopeCart-Produkt-URL für HufManager Slim (19,95 €/Monat)
 const PRO_CHECKOUT_URL =
-  "https://www.copecart.com/products/0a0921ba/checkout?utm_source=app&utm_medium=upgrade&utm_campaign=clientapp";
+  `${HUFMANAGER_SLIM_TEXT.checkoutUrl || "https://copecart.com/products/3a97bd25/checkout"}?utm_source=app&utm_medium=upgrade&utm_campaign=clientapp`;
 
 interface ClientAppUpgradeModalProps {
   open: boolean;
@@ -25,7 +26,7 @@ export function ClientAppUpgradeModal({ open, onOpenChange }: ClientAppUpgradeMo
             <Crown className="h-6 w-6 text-primary" />
           </div>
           <DialogTitle className="text-xl flex items-center gap-2">
-            Hufi Early Bird
+            HufManager Slim
           </DialogTitle>
         </DialogHeader>
 
@@ -33,7 +34,7 @@ export function ClientAppUpgradeModal({ open, onOpenChange }: ClientAppUpgradeMo
           <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-4">
             <Smartphone className="h-5 w-5 text-primary shrink-0 mt-0.5" />
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Die Kundenapp ist im Hufi Early Bird enthalten. Deine Kunden können
+              Der Kundenzugang ist in HufManager Slim kostenlos enthalten. Deine Kunden können
               ihre Pferdeakte einsehen, Termine buchen und Rechnungen empfangen.
             </p>
           </div>
@@ -45,7 +46,7 @@ export function ClientAppUpgradeModal({ open, onOpenChange }: ClientAppUpgradeMo
               onOpenChange(false);
             }}
           >
-            Jetzt upgraden → €9,95/Monat
+            Jetzt HufManager buchen → 19,95 €/Monat
             <ArrowRight className="h-4 w-4" />
           </Button>
 
