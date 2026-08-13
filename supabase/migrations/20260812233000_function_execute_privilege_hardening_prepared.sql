@@ -5,6 +5,18 @@
 -- - Close default PUBLIC/anon EXECUTE exposure for SECURITY DEFINER functions.
 -- - Keep body-level authorization as the real security boundary.
 -- - Avoid mass revokes without explicit function classification.
+--
+-- Live read-only finding 2026-08-13:
+-- - SECURITY DEFINER total: 153
+-- - anon executable: 148
+-- - authenticated executable: 151
+-- - neither anon nor authenticated executable: 2
+--
+-- Impact audit:
+-- - search_horse_by_readable_id is used by src/components/network/ConnectionSearch.tsx.
+-- - delete_client_cascade and delete_horse_safe are used by CustomerDetailModal.tsx
+--   and have live-confirmed internal auth.uid/relationship checks.
+-- - generate_random_id has no frontend/edge call; only generator/admin-repair SQL use.
 
 DO $$
 DECLARE
@@ -85,4 +97,43 @@ BEGIN
     EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO anon', fn);
     EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated', fn);
   END IF;
+END $$;
+
+-- Broader prepared INTERNAL_ONLY hardening.
+--
+-- This intentionally uses local/source classification prefixes instead of
+-- applying a blind revoke to every SECURITY DEFINER function. These functions
+-- are trigger/helper style and should not remain direct /rpc endpoints unless
+-- a live caller proves necessity during staging.
+DO $$
+DECLARE
+  fn regprocedure;
+BEGIN
+  FOR fn IN
+    SELECT p.oid::regprocedure
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.prosecdef = true
+      AND (
+        p.proname LIKE 'handle_%'
+        OR p.proname LIKE 'notify_%'
+        OR p.proname LIKE 'validate_%'
+        OR p.proname LIKE 'generate_%'
+        OR p.proname LIKE 'prevent_%'
+        OR p.proname LIKE 'protect_%'
+        OR p.proname LIKE 'log_%'
+        OR p.proname LIKE 'auto_%'
+        OR p.proname LIKE 'autoflow_%'
+        OR p.proname LIKE 'calculate_%'
+        OR p.proname LIKE 'set_%'
+        OR p.proname LIKE 'update_%'
+        OR p.proname LIKE 'sync_%'
+        OR p.proname LIKE 'touch_%'
+      )
+  LOOP
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC', fn);
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM anon', fn);
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM authenticated', fn);
+  END LOOP;
 END $$;

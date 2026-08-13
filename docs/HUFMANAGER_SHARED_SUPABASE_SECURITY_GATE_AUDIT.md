@@ -1,6 +1,6 @@
 # HufManager Shared Supabase Security Gate Audit
 
-Datum: 2026-08-12
+Datum: 2026-08-13
 
 Scope: READ-ONLY Live-Befunde des Nutzers, lokale Migrationen, lokale Source-Referenzen, vorbereitete Migrations-/Testartefakte. Keine Production-Migration wurde angewendet.
 
@@ -30,6 +30,11 @@ Production bleibt blockiert, bis folgende Gates erledigt sind:
 | `client_subscriptions` | 4 active | KundenApp-/Client-Kontext, nicht SaaS-Provider-Beweis |
 | `profiles.copecart_subscription_id` | 1 gesetzt | Ein möglicher Payment Marker |
 | `subscription_status` | `active`/`trialing` nicht ausreichend | Nicht `VERIFIED_PAID` |
+| SECURITY DEFINER Functions | 153 live total; 148 anon executable; 151 authenticated executable; 2 neither anon nor authenticated executable | Confirmed overbroad RPC surface |
+| Core RLS | Enabled on profiles, user_roles, horses, appointments, hoof_analyses, hoof_photos, horse_documents, horse_media, horse_partner_access, access_grants, invoices, invoice_items, expenses, leads, client_subscriptions, provider_subscriptions | Positive, but not proof of secure policies |
+| Storage public SELECT | `hoof_photos` policy `Public Access`; `horse-photos` policy `Public can view horse photos` | CONFIRMED P0 before production |
+| Storage broad authenticated SELECT | `hoof_images`, `documents`, `hoof_photos` entire buckets | CONFIRMED P0/P1 hardening requirement |
+| Bucket public flag | `hufcam-images` public; `blog-images`, `gallery`, `logos` public | `hufcam-images` requires content/use audit |
 
 ## Canonical ID Truth
 
@@ -58,7 +63,9 @@ Konsequenz:
 
 ## SECURITY DEFINER Surface
 
-Local migration scan using `scripts/security-definer-surface-audit.mjs` found 162 unique `SECURITY DEFINER` function names in the local migration history, including newly prepared functions. This is a local minimum/source classification, not a live `pg_proc` export.
+Live reality on 2026-08-13 confirms 153 SECURITY DEFINER functions, of which 148 are executable by `anon` and 151 by `authenticated`. Only 2 are neither `anon` nor `authenticated` executable. The Function-Privilege-Surface is therefore confirmed too broad.
+
+Local migration scan using `scripts/security-definer-surface-audit.mjs` found 162 unique `SECURITY DEFINER` function names in the local migration history, including newly prepared functions. This is a source-side classification; live `pg_proc` remains the authority before production apply.
 
 | Classification | Count | Examples / Notes |
 | --- | ---: | --- |
@@ -72,11 +79,23 @@ Local migration scan using `scripts/security-definer-surface-audit.mjs` found 16
 
 Critical findings:
 
-- `search_horse_by_readable_id(text)` originally returned horse basic data by guessed `readable_id` without `auth.uid()` or relationship check. Previous migration revoked anon but left authenticated enumeration risk.
+- `search_horse_by_readable_id(text)` is a confirmed P0. Live body has no `auth.uid()`, relationship or permission check and currently returns horse UUID, readable_id, name, photo_url, breed and owner_id from guessed EQID. Live grants include anon and authenticated EXECUTE.
 - `generate_random_id(text)` is an internal helper but may be directly executable if grants are not hardened.
 - Trigger functions should not be callable as public RPC endpoints.
 - `admin_repair_user_role(...)` can change role-related `readable_id` prefix in historical logic. That conflicts with the new canonical ID immutability rule and requires review before future use.
-- Delete cascade functions are highly sensitive and must be denied to anon and protected by actor/owner/admin checks.
+- `delete_client_cascade` and `delete_horse_safe` have live-confirmed internal auth.uid/relationship checks, so they are not equivalent to the EQID leak. They still should not be anon-executable.
+
+## Function Usage Audit
+
+| Function / Surface | Usage | Classification | Hardening Impact |
+| --- | --- | --- | --- |
+| `search_horse_by_readable_id` | `src/components/network/ConnectionSearch.tsx`; docs/QA references; Observation flow explicitly avoids it | USED_FRONTEND | Anon must be revoked. Authenticated may remain only with hardened body and relationship checks. UI must handle `found:false` for unauthorized EQID. |
+| `delete_client_cascade` | `src/components/customers/CustomerDetailModal.tsx` | USED_FRONTEND | Revoke anon; keep authenticated only with body authorization. |
+| `delete_horse_safe` | `src/components/customers/CustomerDetailModal.tsx` | USED_FRONTEND | Revoke anon; keep authenticated only with body authorization. |
+| `generate_random_id` | SQL generator functions and admin role repair; no frontend/edge call found | USED_DATABASE | Revoke anon/authenticated direct RPC; trigger/SQL execution remains internal. |
+| `hoof_photos` bucket | `HufCamPro.tsx`, `generate-collages.js`; HufCam stores `photo_url=fileName`, `url=publicUrl` | USED_FRONTEND / SCRIPT | Removing public read may break direct publicUrl rendering until signed/authorized URL path is used. |
+| `horse-photos` bucket | Historical bucket; no direct current frontend storage call found in focused search | LEGACY_UNKNOWN | Public read should be removed; owner-folder read only until mapping confirmed. |
+| `hufcam-images` bucket | No active code path found; historical docs say public/empty | UNKNOWN | Do not flip bucket public flag before live object-content audit. |
 
 ## RLS Audit Result
 
@@ -130,13 +149,28 @@ Local migrations show many storage buckets and policies. Relevant buckets includ
 
 Findings:
 
-- `horse-photos` was once public/broadly readable, later set non-public, but one migration still contains a broad authenticated read (`auth.uid() IS NOT NULL`). Live policy export is required.
+- `hoof_photos` has confirmed live public SELECT policy `Public Access` with `bucket_id = 'hoof_photos'`.
+- `horse-photos` has confirmed live public SELECT policy `Public can view horse photos` with `bucket_id = 'horse-photos'`.
+- `hoof_images`, `documents` and `hoof_photos` have confirmed live broad authenticated SELECT on entire buckets.
+- `horse-photos` was once public/broadly readable, later set non-public, but broad policies remain active by OR-effect.
 - `horse-documents` has several policy rewrites and relationship-based policies; live state must be verified because migration history contains superseded variants.
 - `horse-media` has a dedicated bucket with allowed MIME types and owner path checks; live cross-user object tests still required.
 - Some buckets are intentionally public or broadly readable for website/content assets (`logos`, `blog-images`, `gallery`), but they must not contain customer/horse data.
+- `hufcam-images` bucket is public and not blindly changed because current repository evidence does not prove whether it contains horse/customer data or active content.
 - `office-pdfs` had historical public-read removal; live verification required.
 
-No storage migration was prepared in this step because live bucket/policy export is required before safe targeted changes.
+Prepared storage migration:
+
+- `supabase/migrations/20260813001000_storage_policy_hardening_prepared.sql`
+- Removes confirmed broad/public SELECT policies.
+- Adds relationship-scoped `hoof_photos` object SELECT using `hoof_photos` + `horses` relationship.
+- Adds conservative owner-folder SELECT for `horse-photos`, `hoof_images`, `documents`, and `hufcam-images`.
+- Does not flip `hufcam-images` bucket public flag.
+
+Expected breaking impact:
+
+- `HufCamPro.tsx` currently stores/uses `getPublicUrl()` for `hoof_photos`; public-read removal requires signed URLs or authenticated object fetch in runtime before production apply.
+- `scripts/generate-collages.js` uses `getPublicUrl()` for `hoof_photos`; should be updated or run only in an authorized/server context.
 
 ## Security Advisor Additional Findings
 
@@ -165,6 +199,11 @@ Prepared only, not applied:
    - Adds immutability triggers for existing `readable_id`.
    - Protects non-empty legacy `horses.eqid` if present in another environment.
    - Does not backfill, rewrite, delete or generate IDs.
+
+4. `supabase/migrations/20260813001000_storage_policy_hardening_prepared.sql`
+   - Drops confirmed public/broad storage SELECT policies.
+   - Adds relationship/owner scoped replacements.
+   - Leaves `hufcam-images` bucket public flag unchanged pending object-content audit.
 
 Existing splitter migration remains:
 
@@ -195,6 +234,11 @@ Live tests still required:
 - HUFMANAGER membership does not imply HUFIAPP access.
 - HUFIAPP membership does not imply HUFMANAGER access.
 - Storage object paths cannot be guessed across users.
+- ANON + known EQID returns no horse/owner data.
+- AUTH USER A + USER B EQID returns no data unless relationship exists.
+- ANON `hoof_photos` and `horse-photos` object read denied.
+- AUTH USER A cannot read USER B hoof image/document object.
+- Authorized owner/provider/partner relationship remains allowed.
 
 ## Production Gate
 

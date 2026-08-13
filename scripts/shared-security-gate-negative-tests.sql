@@ -15,6 +15,9 @@ BEGIN
     RAISE EXCEPTION 'FAIL: anon can execute search_horse_by_readable_id';
   END IF;
 
+  -- Authenticated EXECUTE is acceptable only after the hardened function body is
+  -- applied and relationship checks are present. This privilege assertion must
+  -- be combined with cross-user EQID runtime tests.
   IF NOT has_function_privilege('authenticated', 'public.search_horse_by_readable_id(text)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: authenticated cannot execute hardened search_horse_by_readable_id';
   END IF;
@@ -104,6 +107,43 @@ BEGIN
     WHERE tgname = 'trg_prevent_horses_readable_id_change'
   ) THEN
     RAISE EXCEPTION 'FAIL: horses readable_id immutability trigger is missing';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'storage'
+      AND tablename = 'objects'
+      AND policyname IN (
+        'Public Access',
+        'Public can view horse photos',
+        'Authenticated users can view horse photos',
+        'Authenticated users can read hoof photos',
+        'Authenticated users can read documents',
+        'Authenticated select global'
+      )
+  ) THEN
+    RAISE EXCEPTION 'FAIL: broad/public storage SELECT policy still exists';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'storage'
+      AND tablename = 'objects'
+      AND policyname = 'hoof_photos_relationship_select'
+  ) THEN
+    RAISE EXCEPTION 'FAIL: hoof_photos relationship SELECT policy missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'storage'
+      AND tablename = 'objects'
+      AND policyname = 'horse_photos_owner_select'
+  ) THEN
+    RAISE EXCEPTION 'FAIL: horse-photos owner SELECT policy missing';
   END IF;
 END $$;
 
