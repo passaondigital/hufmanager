@@ -244,7 +244,6 @@ export function SlimTourScreen() {
           log_date: today,
           start_km: startKm ? Number(startKm) : null,
           end_km: endKm ? Number(endKm) : null,
-          distance_km: actualDistance.distanceKm,
           fuel_cost: costs.operatingCost,
           appointment_ids: orderedStops.map((stop) => stop.id),
           route_description: actualDistance.status === "complete" ? `${orderedStops.length} Stopps · ${actualDistance.distanceKm} km tatsächlich` : `${orderedStops.length} Stopps · Fahrtenbuch unvollständig`,

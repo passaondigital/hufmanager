@@ -24,9 +24,15 @@ export function SlimHoofAnalysisScreen() {
     enabled: !!user?.id,
     queryFn: async () => {
       if (!user?.id) return [] as AnalysisHorse[];
-      const grants = await supabase.from("access_grants").select("client_id").eq("provider_id", user.id).eq("is_active", true).eq("status", "active");
-      if (grants.error) throw new Error("HORSE_LOAD_FAILED");
-      const ownerIds = (grants.data ?? []).map((grant) => grant.client_id);
+      const [grants, managedCustomers] = await Promise.all([
+        supabase.from("access_grants").select("client_id").eq("provider_id", user.id).eq("is_active", true).eq("status", "active"),
+        supabase.from("profiles").select("id").eq("created_by_provider_id", user.id).is("deleted_at", null),
+      ]);
+      if (grants.error || managedCustomers.error) throw new Error("HORSE_LOAD_FAILED");
+      const ownerIds = [...new Set([
+        ...(grants.data ?? []).map((grant) => grant.client_id),
+        ...(managedCustomers.data ?? []).map((profile) => profile.id),
+      ])];
       if (!ownerIds.length) return [] as AnalysisHorse[];
       const [horsesResult, profilesResult] = await Promise.all([
         supabase.from("horses").select("id, name, breed, owner_id, readable_id").in("owner_id", ownerIds).is("deleted_at", null).order("name"),

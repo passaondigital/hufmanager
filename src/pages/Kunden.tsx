@@ -146,8 +146,8 @@ const Kunden = () => {
       if (profileError) throw profileError;
 
       if (profile) {
-        // access_grant is auto-created by trigger auto_create_access_grant_for_client
-        // when created_by_provider_id is set on the profile
+        // A managed customer remains a business record without a login. The
+        // access grant is created only after a customer identity is linked.
 
         // Create contact entry
         await supabase.from("contacts").insert({

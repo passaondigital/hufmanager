@@ -29,8 +29,7 @@ export function UsageMeter({ collapsed = false }: UsageMeterProps) {
       if (!user?.id) return 0;
       const { count, error } = await (supabase as any)
         .from("horses")
-        .select("*", { count: "exact", head: true })
-        .eq("provider_id", user.id);
+        .select("*", { count: "exact", head: true });
       if (error) return 0;
       return count || 0;
     },

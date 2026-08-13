@@ -44,7 +44,7 @@ export function NearbyDueClientsPanel({ selectedDate, onSelectHorse }: NearbyDue
           owner:profiles!horses_owner_id_fkey (
             id,
             full_name,
-            zip
+            zip_code
           )
         `)
         .is("deleted_at", null);
@@ -106,7 +106,7 @@ export function NearbyDueClientsPanel({ selectedDate, onSelectHorse }: NearbyDue
         }
 
         const ownerData = horse.owner as any;
-        const postalCode = ownerData?.zip || null;
+        const postalCode = ownerData?.zip_code || null;
         const locationKey = postalCode ? postalCode.substring(0, 2) : horse.location_name || "unknown";
 
         if (!locationGroups[locationKey]) {

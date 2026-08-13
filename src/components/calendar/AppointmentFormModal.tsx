@@ -577,6 +577,8 @@ export function AppointmentFormModal({
 
         appointments.push({
           horse_id: horseId,
+          client_id: selectedHorse?.owner_id ?? null,
+          service_id: currentService?.id ?? null,
           date: format(appointmentDate, "yyyy-MM-dd"),
           time: validated.time,
           service_type: validated.serviceType,
