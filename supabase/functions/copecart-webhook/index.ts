@@ -14,13 +14,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Map Copecart product IDs to subscription plans
-// HufManager Copecart Products (NEW – Juli 2026):
-// - Early Bird Abo (9,95€): 0a0921ba → voller Zugang, gemappt auf "pro"-Feature-Set
-// Legacy IDs kept for backward compatibility with existing subscriptions:
+// Map legacy CopeCart product IDs to legacy subscription plans.
+// New launch products are intentionally config-gated until Pascal creates the
+// real CopeCart products:
+// - HufManager Slim: 19,95 €/month, 14d in-app trial before checkout
+// - HufiApp: 29,95 €/month, no trial
+// Do not repurpose legacy IDs and never default unknown IDs to a paid plan.
 const PRODUCT_PLAN_MAP: Record<string, string> = {
-  // Aktuelles Produkt
-  "0a0921ba": "pro",          // Early Bird 9,95€/Monat – voller Zugang
+  // Legacy Early Bird product retained only for existing subscriptions.
+  "0a0921ba": "pro",
   // Legacy product IDs (keep for existing subscriptions)
   "8ef10f74": "starter",
   "1996da6f": "pro",
@@ -41,6 +43,29 @@ const PRODUCT_PLAN_OVERRIDE_MAP: Record<string, string> = {
   "9bb65569": "copecart_starter",
   "ec500b5e": "copecart_pro",
   "483bbb5b": "copecart_pro",
+};
+
+interface NewSaasProductMeta {
+  product: "HUFMANAGER" | "HUFIAPP";
+  plan: "HUFMANAGER_SLIM" | "HUFIAPP_PREMIUM";
+  priceMonthlyEur: "19.95" | "29.95";
+  trialDays: 14 | 0;
+}
+
+const NEW_SAAS_PRODUCT_MAP: Record<string, NewSaasProductMeta> = {
+  // CONFIG_REQUIRED after manual CopeCart product creation:
+  // "HUFMANAGER_SLIM_PRODUCT_ID": {
+  //   product: "HUFMANAGER",
+  //   plan: "HUFMANAGER_SLIM",
+  //   priceMonthlyEur: "19.95",
+  //   trialDays: 14,
+  // },
+  // "HUFIAPP_STANDARD_PRODUCT_ID": {
+  //   product: "HUFIAPP",
+  //   plan: "HUFIAPP_PREMIUM",
+  //   priceMonthlyEur: "29.95",
+  //   trialDays: 0,
+  // },
 };
 
 // Plan → feature_statuses mapping for auto-provisioning
@@ -144,12 +169,16 @@ const PLAN_FEATURE_MAP: Record<string, Record<string, string>> = {
 // payment.pending wird bewusst nicht behandelt: noch nicht verarbeitet,
 // weder freischalten noch sperren.
 
-function getPlanFromProductId(productId: string): string {
-  return PRODUCT_PLAN_MAP[productId] || 'pro';
+function getPlanFromProductId(productId: string): string | null {
+  return PRODUCT_PLAN_MAP[productId] ?? null;
 }
 
 function getPlanOverrideFromProductId(productId: string): string | null {
   return PRODUCT_PLAN_OVERRIDE_MAP[productId] || null;
+}
+
+function getNewSaasProductMeta(productId: string): NewSaasProductMeta | null {
+  return NEW_SAAS_PRODUCT_MAP[productId] ?? null;
 }
 
 // ─── Pferdeakte Tresor (Vault) products ─────────────────────────────────────
@@ -766,6 +795,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Determine plan from product
     const subscriptionPlan = getPlanFromProductId(productId);
     const planOverride = getPlanOverrideFromProductId(productId);
+    const newSaasMeta = getNewSaasProductMeta(productId);
     const vaultMeta = getVaultProductMeta(productId);
 
     // Handle payment/order events - these are when we should create users
@@ -1099,11 +1129,132 @@ const handler = async (req: Request): Promise<Response> => {
     }
     // ─── Ende BHS BALANCE BRANCH ─────────────────────────────────────────────
 
+    // ─── NEW SAAS PRODUCT BRANCH ────────────────────────────────────────────
+    // Product-specific SaaS entitlements for HufManager Slim / HufiApp.
+    // This branch is inactive until the real CopeCart product IDs are entered
+    // in NEW_SAAS_PRODUCT_MAP after manual product creation.
+    if (newSaasMeta) {
+      if (!profile) {
+        console.warn("[copecart][saas] No profile found for SaaS purchase", {
+          product: newSaasMeta.product,
+          plan: newSaasMeta.plan,
+        });
+        return okResponse();
+      }
+
+      if (isPaymentEvent) {
+        const eventId = transactionId || subscriptionId || `${eventType}:${productId}:${profile.id}`;
+        const { error: eventErr } = await supabase
+          .from("saas_billing_events")
+          .insert({
+            provider: "copecart",
+            event_id: eventId,
+            product: newSaasMeta.product,
+            plan: newSaasMeta.plan,
+            user_id: profile.id,
+            event_type: eventType,
+            transition_status: "READY",
+            billing_status: "VERIFIED_PAID",
+            sanitized_payload: {
+              product_id_present: productId !== "",
+              transaction_id_present: !!transactionId,
+              subscription_id_present: !!subscriptionId,
+              is_test_order: isTestOrder,
+            },
+          });
+
+        if (eventErr && !eventErr.message.includes("duplicate key")) {
+          console.error("[copecart][saas] Billing event insert failed:", eventErr.message);
+          return new Response(JSON.stringify({ error: "SaaS billing event failed" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+
+        if (eventErr?.message.includes("duplicate key")) {
+          console.log("[copecart][saas] Duplicate payment event acknowledged", { eventId });
+          return okResponse();
+        }
+
+        await supabase
+          .from("product_memberships")
+          .upsert({
+            user_id: profile.id,
+            product: newSaasMeta.product,
+            status: "ACTIVE",
+            selected_at: new Date().toISOString(),
+            source: "SYSTEM_MIGRATION",
+            migration_version: "hufmanager-slim-pricing-v1",
+          }, { onConflict: "user_id,product" });
+
+        const { error: entitlementErr } = await supabase
+          .from("product_entitlements")
+          .upsert({
+            user_id: profile.id,
+            product: newSaasMeta.product,
+            plan: newSaasMeta.plan,
+            status: "ACTIVE",
+            trial_status: "NONE",
+            billing_status: "VERIFIED_PAID",
+            billing_provider: "copecart",
+            external_subscription_id: subscriptionId || null,
+            source: "COPECART",
+            migration_version: "hufmanager-slim-pricing-v1",
+            metadata: {
+              price_monthly_eur: newSaasMeta.priceMonthlyEur,
+              trial_days: newSaasMeta.trialDays,
+              transaction_id_present: !!transactionId,
+            },
+          }, { onConflict: "user_id,product,plan" });
+
+        if (entitlementErr) {
+          console.error("[copecart][saas] Entitlement update failed:", entitlementErr.message);
+          return new Response(JSON.stringify({ error: "SaaS entitlement update failed" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+
+        console.log("[copecart][saas] Product entitlement activated", {
+          product: newSaasMeta.product,
+          plan: newSaasMeta.plan,
+          userId: profile.id,
+        });
+        return okResponse();
+      }
+
+      if (isPaymentFailureEvent || isCancellationEvent) {
+        const status = isPaymentFailureEvent ? "PAST_DUE" : "CANCELLED";
+        const billingStatus = isPaymentFailureEvent ? "PAST_DUE" : "CANCELLED";
+        const { error: entitlementErr } = await supabase
+          .from("product_entitlements")
+          .update({
+            status,
+            billing_status: billingStatus,
+          })
+          .eq("user_id", profile.id)
+          .eq("product", newSaasMeta.product)
+          .eq("plan", newSaasMeta.plan);
+
+        if (entitlementErr) {
+          console.error("[copecart][saas] Entitlement cancellation/failure update failed:", entitlementErr.message);
+          return new Response(JSON.stringify({ error: "SaaS entitlement status update failed" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders },
+          });
+        }
+        return okResponse();
+      }
+
+      console.log("[copecart][saas] Unhandled event type for SaaS product:", eventType);
+      return okResponse();
+    }
+
     // Unbekannte Produkt-ID bei einem Zahlungsevent: NICHT stillschweigend
-    // "pro" vergeben. getPlanFromProductId() defaultet auf "pro" — damit
-    // würde jedes künftige CopeCart-Produkt dem Käufer einen vollen
-    // Provider-Zugang schenken. Kündigungen/Refunds laufen bewusst weiter.
-    if (isPaymentEvent && !(productId !== "" && productId in PRODUCT_PLAN_MAP)) {
+    // "pro" vergeben. Legacy IDs bleiben erhalten; neue SaaS IDs werden erst
+    // nach CopeCart-Anlage explizit in NEW_SAAS_PRODUCT_MAP eingetragen.
+    // Kündigungen/Refunds für unbekannte Produkte laufen bewusst weiter.
+    if (isPaymentEvent && !subscriptionPlan) {
       console.error("[copecart] Zahlung für unbekannte Produkt-ID — kein Plan vergeben", { productId });
       return okResponse();
     }
@@ -1188,7 +1339,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
 
         // Auto-provision feature_statuses — same logic as for existing users below
-        const featureMapNew = PLAN_FEATURE_MAP[subscriptionPlan];
+        const featureMapNew = subscriptionPlan ? PLAN_FEATURE_MAP[subscriptionPlan] : null;
         if (featureMapNew) {
           const { error: featureErrorNew } = await supabase
             .from("profiles")
@@ -1230,7 +1381,7 @@ const handler = async (req: Request): Promise<Response> => {
         console.log("[copecart] Zahlung erfolgreich:", eventType);
         updateData = {
           subscription_status: "active",
-          subscription_plan: subscriptionPlan,
+          subscription_plan: subscriptionPlan ?? undefined,
           plan_override: planOverride,
           copecart_subscription_id: subscriptionId,
         };
@@ -1296,7 +1447,7 @@ const handler = async (req: Request): Promise<Response> => {
         console.log("[copecart] Subscription updated successfully");
 
         // Auto-provision feature_statuses based on plan
-        const featureMap = PLAN_FEATURE_MAP[subscriptionPlan];
+        const featureMap = subscriptionPlan ? PLAN_FEATURE_MAP[subscriptionPlan] : null;
         if (featureMap && updateData.subscription_status === "active") {
           const { error: featureError } = await supabase
             .from("profiles")

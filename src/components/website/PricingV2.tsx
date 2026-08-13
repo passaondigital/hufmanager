@@ -1,6 +1,7 @@
 import { Check, Users, Mic, Sparkles, ChevronDown, HardDrive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ADD_ON_STORAGE_PLANS } from "@/lib/hufi-storage-plans";
+import { HUFMANAGER_SLIM_TEXT } from "@/config/subscriptionPlans";
 
 const includedFeatures = [
   "Terminkalender & smarte Tourenplanung",
@@ -53,19 +54,19 @@ const PricingV2 = () => (
           </div>
         </div>
 
-        {/* Early Bird Card */}
+        {/* Launch Card */}
         <div className="rounded-2xl border-2 border-primary bg-gradient-to-b from-primary/15 to-transparent p-7 sm:p-10 relative">
           <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-primary text-black text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> Early Bird — begrenzte Plätze
+            <Sparkles className="w-3 h-3" /> {HUFMANAGER_SLIM_TEXT.tariffName}
           </div>
 
           <div className="text-center mb-8">
             <div className="flex items-baseline justify-center gap-2 mb-1">
-              <span className="text-5xl sm:text-6xl font-extrabold text-white">9,95€</span>
+              <span className="text-5xl sm:text-6xl font-extrabold text-white">19,95€</span>
               <span className="text-white/40 text-base">/Monat</span>
             </div>
             <p className="text-white/40 text-sm">
-              statt regulär <span className="line-through">29,95€</span>/Monat — Preis bleibt für dich, solange du dabei bleibst
+              14 Tage kostenlos testen · keine Kreditkarte zum Trial-Start · danach nur per aktivem Checkout
             </p>
           </div>
 
@@ -84,7 +85,7 @@ const PricingV2 = () => (
             <Button size="lg" className="font-bold glow-orange bg-primary hover:bg-primary/90 text-white w-full sm:w-auto sm:px-16" asChild>
               <a href="/auth">14 Tage kostenlos testen</a>
             </Button>
-            <p className="text-white/30 text-xs">Keine Kreditkarte nötig · Monatlich kündbar · Kein Vertrag</p>
+            <p className="text-white/30 text-xs">Tourenplaner inklusive · Kundenzugang kostenlos · Monatlich kündbar</p>
           </div>
 
           {/* Speicher — Produktbestandteil, technische Ablage folgt schrittweise */}
@@ -178,8 +179,12 @@ const PricingV2 = () => (
               Pferdebesitzer nutzen Hufi <strong className="text-white/70">immer kostenlos</strong>.
             </p>
             <p>
-              Hufi ist als Kleinunternehmer nach <strong className="text-white/70">§ 19 UStG</strong> tätig.
-              Es wird keine Umsatzsteuer erhoben — die Preise sind Endpreise.
+              Der Checkout wird über CopeCart abgewickelt. Die App zeigt den beworbenen monatlichen Endpreis;
+              die Checkout- und Rechnungsabwicklung erfolgt dort.
+            </p>
+            <p>
+              Produkt URL: <a href={HUFMANAGER_SLIM_TEXT.productUrl} className="underline text-white/70" target="_blank" rel="noreferrer">{HUFMANAGER_SLIM_TEXT.productUrl}</a>
+              {" "}· Support: <a href={`mailto:${HUFMANAGER_SLIM_TEXT.supportEmail}`} className="underline text-white/70">{HUFMANAGER_SLIM_TEXT.supportEmail}</a>
             </p>
           </div>
         </div>

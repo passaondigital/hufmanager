@@ -1,6 +1,22 @@
 export const PAYMENT_EVENTS = ["payment.made", "payment.trial", "payment.recurring.upcoming"];
 export const CANCELLATION_EVENTS = ["payment.recurring.cancelled", "payment.refunded", "payment.charged_back"];
 export const FAILURE_EVENTS = ["payment.failed"];
+export const PRODUCT_PRICING = Object.freeze({
+  HUFMANAGER_SLIM: Object.freeze({
+    product: "HUFMANAGER",
+    plan: "HUFMANAGER_SLIM",
+    priceMonthlyEur: "19.95",
+    trialDays: 14,
+    customerAccess: "free_relationship_scoped",
+  }),
+  HUFIAPP_PREMIUM: Object.freeze({
+    product: "HUFIAPP",
+    plan: "HUFIAPP_PREMIUM",
+    priceMonthlyEur: "29.95",
+    trialDays: 0,
+    customerAccess: "free_relationship_scoped",
+  }),
+});
 
 export async function hmacSha256Base64(secret, message) {
   const encoder = new TextEncoder();

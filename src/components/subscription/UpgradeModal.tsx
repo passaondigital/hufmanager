@@ -12,6 +12,7 @@ import { Lock, Check, ArrowRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
 import { logConsent } from "@/lib/consent";
+import { HUFMANAGER_SLIM_TEXT } from "@/config/subscriptionPlans";
 
 interface UpgradeModalProps {
   open: boolean;
@@ -23,12 +24,12 @@ interface UpgradeModalProps {
 const PLANS = [
   {
     id: "pro",
-    name: "Early Bird",
-    price: "9,95",
+    name: HUFMANAGER_SLIM_TEXT.productName,
+    price: "19,95",
     icon: Sparkles,
-    badge: "Early Bird",
-    features: ["Kalender & Tourenplanung", "KI-Assistent (Hufi)", "GPS-Navigation", "Rechnungen & mehr"],
-    checkoutUrl: "https://www.copecart.com/products/0a0921ba/checkout?utm_source=app&utm_medium=upgrade&utm_campaign=direktkauf",
+    badge: HUFMANAGER_SLIM_TEXT.tariffName,
+    features: HUFMANAGER_SLIM_TEXT.included.slice(0, 4),
+    checkoutUrl: "",
   },
 ];
 
@@ -45,7 +46,9 @@ export function UpgradeModal({ open, onOpenChange, featureName, requiredPlan = "
     }
 
     await logConsent("widerrufsausschluss");
-    window.open(checkoutUrl, "_blank");
+    if (checkoutUrl) {
+      window.open(checkoutUrl, "_blank");
+    }
     onOpenChange(false);
   };
 
@@ -108,10 +111,11 @@ export function UpgradeModal({ open, onOpenChange, featureName, requiredPlan = "
 
                 <Button
                   onClick={() => handleUpgrade(p.checkoutUrl)}
+                  disabled={!p.checkoutUrl}
                   className="w-full h-11 text-sm gap-2"
                   variant={isHighlighted ? "default" : "secondary"}
                 >
-                  Jetzt upgraden
+                  {p.checkoutUrl ? "Jetzt HufManager buchen" : "Checkout nach CopeCart-Anlage"}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -129,7 +133,7 @@ export function UpgradeModal({ open, onOpenChange, featureName, requiredPlan = "
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          14 Tage kostenlos testen · Monatlich kündbar · Abrechnung über CopeCart
+          {HUFMANAGER_SLIM_TEXT.productUrl} · {HUFMANAGER_SLIM_TEXT.supportEmail}
         </p>
       </DialogContent>
     </Dialog>

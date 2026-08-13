@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { useDemoActivityTracker } from "@/hooks/useDemoActivityTracker";
 import { WiderrufsausschlussCheckbox } from "@/components/consent/WiderrufsausschlussCheckbox";
 import { logConsent } from "@/lib/consent";
+import { HUFMANAGER_SLIM_TEXT } from "@/config/subscriptionPlans";
 
 interface PricingModalProps {
   open: boolean;
@@ -27,23 +28,17 @@ interface PricingModalProps {
 const PRICING_PLANS = [
   {
     id: "pro",
-    name: "Early Bird",
-    price: "9,95",
+    name: HUFMANAGER_SLIM_TEXT.productName,
+    price: "19,95",
     period: "pro Monat",
-    description: "Voller Zugang für Hufbearbeiter, Hufschmiede & Pferde-Profis",
+    description: HUFMANAGER_SLIM_TEXT.description,
     features: [
-      "Kalender & smarte Tourenplanung",
-      "Kunden- & Pferdeverwaltung",
-      "Vollständige Pferdeakte & Befunde",
-      "Rechnungen in Sekunden",
-      "Hufi KI-Assistent & Sprachsteuerung",
-      "AutoFlow, HM Connect & Netzwerk",
-      "Unbegrenzt Pferde",
+      ...HUFMANAGER_SLIM_TEXT.included,
     ],
-    checkoutUrl: "https://www.copecart.com/products/0a0921ba/checkout?utm_source=app&utm_medium=pricing&utm_campaign=direktkauf",
+    checkoutUrl: "",
     icon: Sparkles,
     highlighted: true,
-    badge: "Early Bird",
+    badge: HUFMANAGER_SLIM_TEXT.tariffName,
   },
 ];
 
@@ -72,7 +67,9 @@ export function PricingModal({
     // Track the click for demo analytics
     trackCopecartClick(planId, checkoutUrl);
 
-    window.open(checkoutUrl, "_blank");
+    if (checkoutUrl) {
+      window.open(checkoutUrl, "_blank");
+    }
     onOpenChange(false);
   };
 
@@ -180,6 +177,7 @@ export function PricingModal({
                   onClick={() =>
                     handleSelectPlan(plan.id, plan.checkoutUrl)
                   }
+                  disabled={!plan.checkoutUrl}
                   className={cn(
                     "w-full min-h-[44px] h-12 text-sm font-semibold gap-2"
                   )}
@@ -187,7 +185,9 @@ export function PricingModal({
                 >
                   {isDemoContext
                     ? "Demo verlassen & eigenen Account anlegen"
-                    : "Paket wählen"}
+                    : plan.checkoutUrl
+                      ? "Jetzt HufManager buchen"
+                      : "Checkout nach CopeCart-Anlage"}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -204,9 +204,12 @@ export function PricingModal({
           />
         </div>
 
-        <p className="text-center text-xs text-muted-foreground">
-          Abrechnung über Copecart. Monatlich kündbar.
-        </p>
+        <div className="space-y-2 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+          <p>{HUFMANAGER_SLIM_TEXT.productName} · {HUFMANAGER_SLIM_TEXT.productUrl}</p>
+          <p>{HUFMANAGER_SLIM_TEXT.billing}</p>
+          <p>{HUFMANAGER_SLIM_TEXT.delivery}</p>
+          <p>Neue CopeCart-Produkt-ID noch erforderlich. Kein Legacy-Checkout wird für neue Verkäufe verwendet.</p>
+        </div>
       </DialogContent>
     </Dialog>
   );
