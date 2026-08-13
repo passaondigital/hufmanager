@@ -482,15 +482,11 @@ export function HufCamPro({
             .upload(fileName, blob, { contentType: "image/jpeg", upsert: true });
 
           if (!uploadError) {
-            const {
-              data: { publicUrl },
-            } = supabase.storage.from("hoof_photos").getPublicUrl(fileName);
-
             await supabase.from("hoof_photos").insert({
               horse_id: horseId,
               hoof_position: `${hoofId}_${perspId}`,
               photo_url: fileName,
-              url: publicUrl,
+              url: null,
               taken_at: new Date(photo.timestamp).toISOString(),
             });
             successCount++;
@@ -508,15 +504,11 @@ export function HufCamPro({
             .upload(fileName, blob, { contentType: "image/jpeg", upsert: true });
 
           if (!uploadError) {
-            const {
-              data: { publicUrl },
-            } = supabase.storage.from("hoof_photos").getPublicUrl(fileName);
-
             await supabase.from("hoof_photos").insert({
               horse_id: horseId,
               hoof_position: hoofId,
               photo_url: fileName,
-              url: publicUrl,
+              url: null,
               notes: "collage",
               taken_at: new Date().toISOString(),
             });

@@ -24,6 +24,7 @@ import { Calendar, Upload, Mic, X, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { getStorageUrl } from "@/lib/storage";
 
 interface HoofHistoryEntryModalProps {
   isOpen: boolean;
@@ -53,6 +54,8 @@ export function HoofHistoryEntryModal({
   const [description, setDescription] = useState("");
   const [photoBeforeUrl, setPhotoBeforeUrl] = useState<string | null>(null);
   const [photoAfterUrl, setPhotoAfterUrl] = useState<string | null>(null);
+  const [photoBeforePath, setPhotoBeforePath] = useState<string | null>(null);
+  const [photoAfterPath, setPhotoAfterPath] = useState<string | null>(null);
   const [uploadingBefore, setUploadingBefore] = useState(false);
   const [uploadingAfter, setUploadingAfter] = useState(false);
 
@@ -65,6 +68,8 @@ export function HoofHistoryEntryModal({
     setDescription("");
     setPhotoBeforeUrl(null);
     setPhotoAfterUrl(null);
+    setPhotoBeforePath(null);
+    setPhotoAfterPath(null);
   };
 
   const handleClose = () => {
@@ -78,6 +83,7 @@ export function HoofHistoryEntryModal({
   ): Promise<string | null> => {
     const setUploading = type === "before" ? setUploadingBefore : setUploadingAfter;
     const setUrl = type === "before" ? setPhotoBeforeUrl : setPhotoAfterUrl;
+    const setPath = type === "before" ? setPhotoBeforePath : setPhotoAfterPath;
 
     setUploading(true);
     try {
@@ -90,12 +96,11 @@ export function HoofHistoryEntryModal({
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage
-        .from("hoof_images")
-        .getPublicUrl(fileName);
+      const signedUrl = await getStorageUrl("hoof_images", fileName);
 
-      setUrl(urlData.publicUrl);
-      return urlData.publicUrl;
+      setPath(fileName);
+      setUrl(signedUrl);
+      return fileName;
     } catch (error) {
       console.error("Upload error:", error);
       toast.error("Fehler beim Hochladen des Fotos");
@@ -135,8 +140,8 @@ export function HoofHistoryEntryModal({
         entry_date: entryDate,
         entry_type: entryType,
         description: description || null,
-        photo_before_url: photoBeforeUrl,
-        photo_after_url: photoAfterUrl,
+        photo_before_url: photoBeforePath,
+        photo_after_url: photoAfterPath,
       });
 
       if (error) throw error;
@@ -230,7 +235,10 @@ export function HoofHistoryEntryModal({
                       variant="destructive"
                       size="icon"
                       className="absolute -top-2 -right-2 h-6 w-6"
-                      onClick={() => setPhotoBeforeUrl(null)}
+                      onClick={() => {
+                        setPhotoBeforeUrl(null);
+                        setPhotoBeforePath(null);
+                      }}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -275,7 +283,10 @@ export function HoofHistoryEntryModal({
                       variant="destructive"
                       size="icon"
                       className="absolute -top-2 -right-2 h-6 w-6"
-                      onClick={() => setPhotoAfterUrl(null)}
+                      onClick={() => {
+                        setPhotoAfterUrl(null);
+                        setPhotoAfterPath(null);
+                      }}
                     >
                       <X className="h-3 w-3" />
                     </Button>

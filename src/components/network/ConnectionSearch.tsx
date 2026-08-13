@@ -80,31 +80,12 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
           });
         }
       } else if (searchType === 'horse') {
-        // Use secure RPC function to search horses globally
-        const { data, error } = await supabase
-          .rpc("search_horse_by_readable_id", { search_id: searchId });
-        
-        if (error) throw error;
-        
-        const result = data as { found: boolean; id?: string; readable_id?: string; name?: string; photo_url?: string; breed?: string; owner_id?: string };
-        
-        if (result?.found && result.id) {
-          setResult({
-            id: result.id,
-            type: 'horse',
-            readable_id: result.readable_id || '',
-            name: result.name || 'Unbekannt',
-            avatar_url: result.photo_url || undefined,
-            breed: result.breed || undefined,
-            owner_id: result.owner_id || undefined,
-          });
-        } else {
-          toast({ 
-            title: "Nicht gefunden", 
-            description: "Kein Pferd mit dieser ID gefunden.", 
-            variant: "destructive" 
-          });
-        }
+        // SECURITY: readable horse IDs are not authorization. The legacy RPC leaks
+        // horse UUID/owner/photo data by EQID and is intentionally not called here.
+        toast({
+          title: "Pferde-ID-Suche wird abgesichert",
+          description: "Nutze vorerst KID/PID-Verbindungen. EQID-Anfragen werden als bestätigter Anfrageflow reaktiviert.",
+        });
       }
     } catch (err) {
       console.error("Search error:", err);
@@ -157,14 +138,7 @@ export function ConnectionSearch({ searchType, onConnectionRequested }: Connecti
         grantData.client_id = result.id;
         grantData.partner_name = result.name;
       } else if (searchType === 'horse') {
-        // Provider requesting connection via horse ID (EQID) -> connect to horse owner
-        const ownerId = result.owner_id;
-        if (!ownerId) {
-          throw new Error("Pferdebesitzer nicht gefunden");
-        }
-        
-        grantData.provider_id = user.id;
-        grantData.client_id = ownerId;
+        throw new Error("EQID-Verbindungen benötigen den neuen bestätigten Anfrageflow.");
       }
 
       // NOTE: Do NOT "verify" target profiles via direct SELECT here.

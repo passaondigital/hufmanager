@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { ImageIcon, SlidersHorizontal, Columns2 } from "lucide-react";
+import { getStorageUrl } from "@/lib/storage";
 
 interface Props {
   horseId: string;
@@ -75,8 +76,8 @@ export function HoofPhotoComparison({ horseId, open, onClose }: Props) {
       // Group by appointment
       const groupMap: Record<string, AppointmentPhotos> = {};
 
-      hoofPhotosRes.data?.forEach((p: any) => {
-        if (!p.appointment_id || !dateMap[p.appointment_id]) return;
+      for (const p of hoofPhotosRes.data || []) {
+        if (!p.appointment_id || !dateMap[p.appointment_id]) continue;
         if (!groupMap[p.appointment_id]) {
           groupMap[p.appointment_id] = {
             date: dateMap[p.appointment_id],
@@ -84,15 +85,18 @@ export function HoofPhotoComparison({ horseId, open, onClose }: Props) {
             photos: [],
           };
         }
-        groupMap[p.appointment_id].photos.push({
-          url: p.photo_url,
-          position: p.hoof_position || "general",
-          type: "general",
-        });
-      });
+        const photoUrl = await getStorageUrl("hoof_photos", p.photo_url);
+        if (photoUrl) {
+          groupMap[p.appointment_id].photos.push({
+            url: photoUrl,
+            position: p.hoof_position || "general",
+            type: "general",
+          });
+        }
+      }
 
-      hoofEntriesRes.data?.forEach((e: any) => {
-        if (!e.appointment_id || !dateMap[e.appointment_id]) return;
+      for (const e of hoofEntriesRes.data || []) {
+        if (!e.appointment_id || !dateMap[e.appointment_id]) continue;
         if (!groupMap[e.appointment_id]) {
           groupMap[e.appointment_id] = {
             date: dateMap[e.appointment_id],
@@ -101,12 +105,26 @@ export function HoofPhotoComparison({ horseId, open, onClose }: Props) {
           };
         }
         if (e.photo_before_url) {
-          groupMap[e.appointment_id].photos.push({ url: e.photo_before_url, position: "general", type: "before" });
+          const beforeUrl = await getStorageUrl("hoof_images", e.photo_before_url);
+          if (beforeUrl) {
+            groupMap[e.appointment_id].photos.push({
+              url: beforeUrl,
+              position: "general",
+              type: "before",
+            });
+          }
         }
         if (e.photo_after_url) {
-          groupMap[e.appointment_id].photos.push({ url: e.photo_after_url, position: "general", type: "after" });
+          const afterUrl = await getStorageUrl("hoof_images", e.photo_after_url);
+          if (afterUrl) {
+            groupMap[e.appointment_id].photos.push({
+              url: afterUrl,
+              position: "general",
+              type: "after",
+            });
+          }
         }
-      });
+      }
 
       return Object.values(groupMap).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     },

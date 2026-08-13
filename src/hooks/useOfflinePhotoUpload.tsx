@@ -5,6 +5,7 @@ import {
   getOfflineImageUrl, 
   dataUrlToBlob 
 } from "@/lib/offline/imageQueue";
+import { getStorageUrl } from "@/lib/storage";
 import { toast } from "sonner";
 
 interface UseOfflinePhotoUploadOptions {
@@ -125,13 +126,8 @@ export function useOfflinePhotoUpload(options: UseOfflinePhotoUploadOptions) {
         };
       }
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(path);
-      
       return {
-        url: urlData.publicUrl,
+        url: await getStorageUrl(bucket, path),
         isOffline: false,
       };
       

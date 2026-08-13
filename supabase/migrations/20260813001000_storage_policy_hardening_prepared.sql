@@ -29,6 +29,10 @@ DROP POLICY IF EXISTS "hoof_photos_relationship_update" ON storage.objects;
 DROP POLICY IF EXISTS "hoof_photos_relationship_delete" ON storage.objects;
 DROP POLICY IF EXISTS "horse_photos_owner_select" ON storage.objects;
 DROP POLICY IF EXISTS "hoof_images_owner_select" ON storage.objects;
+DROP POLICY IF EXISTS "hoof_images_relationship_select" ON storage.objects;
+DROP POLICY IF EXISTS "hoof_images_relationship_insert" ON storage.objects;
+DROP POLICY IF EXISTS "hoof_images_relationship_update" ON storage.objects;
+DROP POLICY IF EXISTS "hoof_images_relationship_delete" ON storage.objects;
 DROP POLICY IF EXISTS "documents_owner_select" ON storage.objects;
 DROP POLICY IF EXISTS "hufcam_images_owner_select" ON storage.objects;
 
@@ -128,21 +132,96 @@ USING (
   )
 );
 
--- hoof_images/documents broad authenticated reads:
--- These buckets need a model-specific follow-up. A conservative owner-folder
--- policy preserves common private-object patterns without broad bucket read.
-CREATE POLICY "hoof_images_owner_select"
+-- hoof_images bucket:
+-- Current app uploads hoof-history images as {horse_id}/{filename}. Access is
+-- horse relationship scoped. This replaces the earlier owner-folder draft,
+-- which would break existing HufManager paths after hardening.
+CREATE POLICY "hoof_images_relationship_select"
 ON storage.objects
 FOR SELECT
 TO authenticated
 USING (
   bucket_id = 'hoof_images'
+  AND (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
   AND (
-    (storage.foldername(name))[1] = auth.uid()::text
+    public.is_horse_owner(auth.uid(), ((storage.foldername(name))[1])::uuid)
+    OR public.is_provider_for_horse(auth.uid(), ((storage.foldername(name))[1])::uuid)
+    OR public.is_admin(auth.uid())
+    OR EXISTS (
+      SELECT 1
+      FROM public.hoof_history hh
+      JOIN public.horses h ON h.id = hh.horse_id
+      WHERE (
+        hh.photo_before_url = storage.objects.name
+        OR hh.photo_after_url = storage.objects.name
+        OR hh.photo_before_url LIKE '%' || storage.objects.name
+        OR hh.photo_after_url LIKE '%' || storage.objects.name
+      )
+      AND h.deleted_at IS NULL
+      AND (
+        h.owner_id = auth.uid()
+        OR public.is_provider_for_horse(auth.uid(), h.id)
+        OR public.has_horse_partner_access(auth.uid(), h.id)
+        OR public.is_admin(auth.uid())
+      )
+    )
+  )
+);
+
+CREATE POLICY "hoof_images_relationship_insert"
+ON storage.objects
+FOR INSERT
+TO authenticated
+WITH CHECK (
+  bucket_id = 'hoof_images'
+  AND (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+  AND (
+    public.is_horse_owner(auth.uid(), ((storage.foldername(name))[1])::uuid)
+    OR public.is_provider_for_horse(auth.uid(), ((storage.foldername(name))[1])::uuid)
     OR public.is_admin(auth.uid())
   )
 );
 
+CREATE POLICY "hoof_images_relationship_update"
+ON storage.objects
+FOR UPDATE
+TO authenticated
+USING (
+  bucket_id = 'hoof_images'
+  AND (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+  AND (
+    public.is_horse_owner(auth.uid(), ((storage.foldername(name))[1])::uuid)
+    OR public.is_provider_for_horse(auth.uid(), ((storage.foldername(name))[1])::uuid)
+    OR public.is_admin(auth.uid())
+  )
+)
+WITH CHECK (
+  bucket_id = 'hoof_images'
+  AND (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+  AND (
+    public.is_horse_owner(auth.uid(), ((storage.foldername(name))[1])::uuid)
+    OR public.is_provider_for_horse(auth.uid(), ((storage.foldername(name))[1])::uuid)
+    OR public.is_admin(auth.uid())
+  )
+);
+
+CREATE POLICY "hoof_images_relationship_delete"
+ON storage.objects
+FOR DELETE
+TO authenticated
+USING (
+  bucket_id = 'hoof_images'
+  AND (storage.foldername(name))[1] ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+  AND (
+    public.is_horse_owner(auth.uid(), ((storage.foldername(name))[1])::uuid)
+    OR public.is_provider_for_horse(auth.uid(), ((storage.foldername(name))[1])::uuid)
+    OR public.is_admin(auth.uid())
+  )
+);
+
+-- documents broad authenticated reads:
+-- This bucket still needs model-specific follow-up. A conservative owner-folder
+-- policy preserves common private-object patterns without broad bucket read.
 CREATE POLICY "documents_owner_select"
 ON storage.objects
 FOR SELECT

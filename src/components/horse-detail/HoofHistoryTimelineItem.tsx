@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2, ChevronDown, ChevronUp, ImageIcon } from "lucide-react";
@@ -11,6 +11,7 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import { getStorageUrl } from "@/lib/storage";
 
 interface TimelineItemProps {
   entry: HoofHistoryEntry;
@@ -27,9 +28,33 @@ interface TimelineItemProps {
 export function HoofHistoryTimelineItem({ entry, typeInfo, isFirst, onDelete }: TimelineItemProps) {
   const [isExpanded, setIsExpanded] = useState(isFirst);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [beforeImageUrl, setBeforeImageUrl] = useState<string | null>(null);
+  const [afterImageUrl, setAfterImageUrl] = useState<string | null>(null);
   const Icon = typeInfo.icon;
 
   const hasPhotos = entry.photo_before_url || entry.photo_after_url;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveImages() {
+      const [beforeUrl, afterUrl] = await Promise.all([
+        entry.photo_before_url ? getStorageUrl("hoof_images", entry.photo_before_url) : Promise.resolve(null),
+        entry.photo_after_url ? getStorageUrl("hoof_images", entry.photo_after_url) : Promise.resolve(null),
+      ]);
+
+      if (!cancelled) {
+        setBeforeImageUrl(beforeUrl);
+        setAfterImageUrl(afterUrl);
+      }
+    }
+
+    resolveImages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [entry.photo_after_url, entry.photo_before_url]);
 
   return (
     <>
@@ -95,25 +120,25 @@ export function HoofHistoryTimelineItem({ entry, typeInfo, isFirst, onDelete }: 
               {/* Photos */}
               {hasPhotos && (
                 <div className="mt-4 grid grid-cols-2 gap-3">
-                  {entry.photo_before_url && (
+                  {entry.photo_before_url && beforeImageUrl && (
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Vorher:</p>
                       <img
-                        src={entry.photo_before_url}
+                        src={beforeImageUrl}
                         alt="Vorher"
                         className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => setLightboxImage(entry.photo_before_url)}
+                        onClick={() => setLightboxImage(beforeImageUrl)}
                       />
                     </div>
                   )}
-                  {entry.photo_after_url && (
+                  {entry.photo_after_url && afterImageUrl && (
                     <div>
                       <p className="text-xs text-muted-foreground mb-1">Nachher:</p>
                       <img
-                        src={entry.photo_after_url}
+                        src={afterImageUrl}
                         alt="Nachher"
                         className="w-full h-32 object-cover rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                        onClick={() => setLightboxImage(entry.photo_after_url)}
+                        onClick={() => setLightboxImage(afterImageUrl)}
                       />
                     </div>
                   )}

@@ -9,6 +9,7 @@ import { FocusEffectControls } from "./FocusEffectControls";
 import { useDeviceOrientation } from "@/hooks/useDeviceOrientation";
 import { usePhotoFocusEffect, type FocusIntensity } from "@/hooks/usePhotoFocusEffect";
 import { supabase } from "@/integrations/supabase/client";
+import { getStorageUrl } from "@/lib/storage";
 import { toast } from "sonner";
 
 // Die drei Capture-Modi
@@ -204,24 +205,23 @@ export function HMCamCapture({
       
       if (uploadErr) throw uploadErr;
 
-      // 2. Public URL holen
-      const { data: { publicUrl } } = supabase.storage
-        .from("hoof_photos")
-        .getPublicUrl(filePath);
-
-      // 3. Datenbank-Eintrag
+      // 2. Datenbank-Eintrag: persist the storage path, not a public URL.
       if (horseId) {
         await supabase.from("hoof_photos").insert({
           horse_id: horseId,
-          photo_url: publicUrl,
+          photo_url: filePath,
           file_path: filePath,
+          url: null,
           hoof_position: selectedView,
           notes: `capture_mode:${captureMode}`,
           taken_at: new Date().toISOString()
         });
       }
 
-      onPhotoCapture(publicUrl, selectedView);
+      // 3. Signed URL only for the immediate UI preview after the record exists.
+      const signedUrl = await getStorageUrl("hoof_photos", filePath);
+
+      onPhotoCapture(signedUrl || URL.createObjectURL(blob), selectedView);
       toast.success("Foto gespeichert!");
       
       // Reset

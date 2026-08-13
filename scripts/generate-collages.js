@@ -108,20 +108,17 @@ async function processJobsOnce(supabase) {
 
       const collageBuffer = await canvas.composite(composites).jpeg({ quality: 90 }).toBuffer();
 
-      const filename = `collage_${job.horse_id}_${job.position}_${Date.now()}.jpg`;
-      const path = `hoof_photos/collages/${filename}`;
+      const filename = `collage_${job.position}_${Date.now()}.jpg`;
+      const path = `${job.horse_id}/collages/${filename}`;
 
       // upload
       const { error: uploadErr } = await supabase.storage.from('hoof_photos').upload(path, collageBuffer, { upsert: true });
       if (uploadErr) throw uploadErr;
 
-      const { data: urlData } = supabase.storage.from('hoof_photos').getPublicUrl(path);
-      const publicUrl = urlData.publicUrl;
-
       // insert hoof_photos record
       const { error: insertErr } = await supabase.from('hoof_photos').insert({
         horse_id: job.horse_id,
-        photo_url: publicUrl,
+        photo_url: path,
         file_path: path,
         hoof_position: job.position,
         notes: 'collage',

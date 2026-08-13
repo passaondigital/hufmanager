@@ -26,16 +26,12 @@ async function uploadOfflineImage(image: OfflineImage): Promise<boolean> {
       return false;
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from(image.bucket)
-      .getPublicUrl(image.path);
-
     // If we have horse metadata, also save to hoof_photos table
     if (image.metadata.horseId && image.metadata.hoofPosition) {
       const { error: dbError } = await supabase.from("hoof_photos").insert({
         horse_id: image.metadata.horseId,
-        photo_url: urlData.publicUrl,
+        photo_url: image.path,
+        file_path: image.path,
         hoof_position: image.metadata.hoofPosition,
         view_angle: image.metadata.viewAngle || "side",
         notes: `Offline aufgenommen: ${image.metadata.capturedAt}`,
