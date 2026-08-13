@@ -36,7 +36,7 @@ export function AppHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
 
   const modeColors: Record<AutoflowMode, string> = {
-    basis: "text-blue-500",
+    basis: "text-orange-500",
     plus: "text-amber-500",
     premium: "text-emerald-500",
   };

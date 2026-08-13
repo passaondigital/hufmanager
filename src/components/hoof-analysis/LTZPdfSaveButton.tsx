@@ -345,7 +345,7 @@ export function LTZPdfSaveButton({ analysis, horseId, horseName, ownerName }: LT
 
       // Get PDF as blob
       const pdfBlob = doc.output("blob");
-      const fileName = `LTZ-Analyse_${horseName.replace(/\s+/g, '-')}_${dateStr.replace(/\./g, '-')}.pdf`;
+      const fileName = `Hufi-Hufanalyse_${horseName.replace(/\s+/g, '-')}_${dateStr.replace(/\./g, '-')}.pdf`;
       const storagePath = `${horseId}/${fileName}`;
 
       // Upload to Supabase Storage
@@ -369,7 +369,7 @@ export function LTZPdfSaveButton({ analysis, horseId, horseName, ownerName }: LT
           file_url: storagePath,
           file_type: "application/pdf",
           category: "hufanalyse",
-          notes: `LTZ-Analyse vom ${dateStr}`,
+          notes: `Hufi Hufanalyse vom ${dateStr}`,
           uploaded_by: user.id,
         });
 

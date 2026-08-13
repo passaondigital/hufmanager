@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { FLAVOR_CONFIG } from "@/config/appFlavor";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -207,7 +206,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         { title: "Kalender", url: "/kalender", icon: Calendar, description: "Termine planen" },
         { title: "Tages-Cockpit", url: "/tour", icon: Calendar, description: "Tour · Zeit · km · Sprit" },
         { title: "HufCam Pro", url: "/work-mode?tab=hufcam", icon: Camera, description: "Foto-Dokumentation", featureKey: "hufcam" },
-        { title: "Hufanalyse", url: "/work-mode?tab=analyse", icon: FileCheck, description: "LTZ-Analyse-Bögen", featureKey: "analyse" },
+        { title: "Hufi Hufanalyse", url: "/work-mode?tab=analyse", icon: FileCheck, description: "Hufanalyse-Bögen", featureKey: "analyse" },
         { title: "Feedback", url: "/auffassen/feedback", icon: Star, description: "Bewertungen sammeln" },
       ]
     },
@@ -229,7 +228,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
   // Erweiterungen - Addon modules (locked based on feature flags)
   // featureKey gated berufsspezifisch (siehe profession-config.ts); ohne featureKey universell.
   const addonItems = [
-    { title: "Hufi Business", icon: DollarSign, locked: false, url: "/business" },
+    { title: "HufManager Business", icon: DollarSign, locked: false, url: "/business" },
     { title: "Kundenapp", icon: Smartphone, locked: !isPro, url: "/kunden", proLock: true },
     { title: "Mein Office", icon: FileText, locked: !isFeatureVisible('module_office'), url: "/mein-office" },
     { title: "Lager", icon: Warehouse, locked: !isFeatureVisible('beta_features'), url: "/lager", featureKey: "lager" },
@@ -403,24 +402,22 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
     <>
     <aside
       className={cn(
-        "fixed left-0 top-0 z-bar h-screen bg-sidebar flex flex-col transition-all duration-300 border-r border-sidebar-border",
+        "fixed left-0 top-0 z-bar h-screen flex flex-col transition-all duration-300 border-r border-hm-border",
+        "bg-hm-surface",
         collapsed ? "w-[72px]" : "w-64"
       )}
     >
       {/* Logo */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-sidebar-border">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-hm-border">
         {!collapsed ? (
-          <img
-            src={FLAVOR_CONFIG.logo}
-            alt={FLAVOR_CONFIG.appName}
-            className="h-10 w-auto"
-          />
+          <div className="leading-none">
+            <div className="text-[1.35rem] font-bold tracking-[-0.04em] text-hm-text">
+              Huf<span className="text-[var(--hm-orange)]">Manager</span>
+            </div>
+            <div className="mt-1 text-[11px] font-medium uppercase tracking-[0.18em] text-hm-muted">Slim</div>
+          </div>
         ) : (
-          <img
-            src={FLAVOR_CONFIG.logoMark}
-            alt={FLAVOR_CONFIG.appName}
-            className="h-8 w-auto"
-          />
+          <div className="text-xl font-bold text-[var(--hm-orange)]">HM</div>
         )}
         <div className="flex items-center gap-1">
           <NotificationBell collapsed={collapsed} />
@@ -428,7 +425,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             variant="ghost"
             size="icon"
             onClick={() => setCollapsed(!collapsed)}
-            className="text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            className="text-hm-muted hover:bg-orange-50 hover:text-[var(--hm-orange)] dark:hover:bg-white/5"
             aria-label={collapsed ? "Sidebar aufklappen" : "Sidebar einklappen"}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
@@ -440,7 +437,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         {/* Berufs-Identität */}
         {!collapsed && (
           <div className="px-3 mb-3">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/5 border border-primary/10">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/5 border border-primary/10 shadow-sm">
               <span className="text-base leading-none">{profession.emoji}</span>
               <span className="text-sm font-medium text-sidebar-foreground/80 truncate">{profession.label}</span>
             </div>
@@ -453,9 +450,9 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             to="/home"
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 min-h-[48px]",
+              "flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 min-h-[48px]",
               isActive("/home")
-                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/30"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-lg shadow-primary/20"
                 : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
             )}
           >
@@ -583,7 +580,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
         {!collapsed && (
           <div className="flex items-center justify-center gap-1.5 pt-2 text-[10px] text-sidebar-foreground/40">
             <a 
-              href="https://hufiapp.de/impressum" 
+              href="https://www.hufmanager.de/impressum"
               target="_blank" 
               rel="noopener noreferrer"
               className="hover:text-sidebar-foreground hover:underline"
@@ -592,7 +589,7 @@ export function AppSidebar({ onNavigate }: AppSidebarProps) {
             </a>
             <span>·</span>
             <a 
-              href="https://hufiapp.de/datenschutz" 
+              href="https://www.hufmanager.de/datenschutz"
               target="_blank" 
               rel="noopener noreferrer"
               className="hover:text-sidebar-foreground hover:underline"

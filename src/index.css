@@ -24,18 +24,31 @@
     /* ── Feste Leisten: Hoehen ────────────────────────────────────
        Damit rechnen Seiteninhalt und schwebende Knoepfe. Aendert sich
        die Leiste, verschiebt sich alles andere automatisch mit. */
-    --hufi-nav-h:    68px;  /* MobileBottomNav, ohne Geraete-Sicherheitsabstand */
-    --hufi-header-h: 56px;  /* AppTopBar, ohne Geraete-Sicherheitsabstand       */
-    /* Der zentrale Mic-Knopf ragt bewusst ueber die Leiste hinaus (siehe
-       MobileBottomNav.tsx: bottom:8 + 76px Durchmesser in einer 68px hohen
-       Leiste = 16px Ueberstand). Seiteninhalt muss DAS raeumen, nicht nur
-       die flache Leistenhoehe -- sonst verdeckt der Mic-Knopf den letzten
-       sichtbaren Inhalt (Kalender/Rechnungen/Anfragen, 01.08.2026 gefunden). */
-    --hufi-bottom-obstruction-h: 84px;
+    --hufi-nav-h:    64px;
+    --hufi-header-h: 64px;
+    --hufi-bottom-obstruction-h: 64px;
+
+    /* HufManager V1 Design-DNA (14.10.2025) */
+    --hm-orange: #FF6A00;
+    --hm-dark: #1A1A1A;
+    --hm-canvas: #F4F4F7;
+    --hm-surface: #FFFFFF;
+    --hm-surface-elevated: #FFFFFF;
+    --hm-text-primary: #1A1A1A;
+    --hm-text-secondary: #626975;
+    --hm-border: #E3E5EA;
+    --hm-success: #17803A;
+    --hm-warning: #B86B00;
+    --hm-danger: #D92D20;
+    --hm-radius-card: 16px;
+    --hm-radius-control: 12px;
+    --hm-sidebar-w: 256px;
+    --hm-header-h: 64px;
+    --hm-shadow-card: 0 1px 2px rgba(26,26,26,0.04), 0 12px 28px rgba(26,26,26,0.06);
 
     /* ── Core ─────────────────────────────────────────────────── */
-    --background: 210 40% 98%;      /* #F8FAFC = slate-50 */
-    --foreground: 20 14.3% 4.1%;
+    --background: 240 16% 96%;      /* #F4F4F7 */
+    --foreground: 0 0% 10%;         /* #1A1A1A */
 
     /* ── Card / Popover ───────────────────────────────────────── */
     --card: 0 0% 100%;
@@ -44,7 +57,7 @@
     --popover-foreground: 20 14.3% 4.1%;
 
     /* ── Primary (Amber) ──────────────────────────────────────── */
-    --primary: 38 92% 50%;
+    --primary: 25 100% 50%;         /* #FF6A00 */
     --primary-foreground: 0 0% 100%;
 
     /* ── Secondary ────────────────────────────────────────────── */
@@ -66,7 +79,7 @@
     /* ── Form elements ────────────────────────────────────────── */
     --border: 20 5.9% 92%;
     --input: 20 5.9% 90%;
-    --ring: 38 92% 50%;
+    --ring: 25 100% 50%;
 
     /* ── Radius ───────────────────────────────────────────────── */
     --radius: 1.25rem;
@@ -80,51 +93,58 @@
     --cream: 40 30% 96%;
 
     /* ── Sidebar ──────────────────────────────────────────────── */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 38 92% 50%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 25 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 25 100% 96%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 225 14% 90%;
+    --sidebar-ring: 25 100% 50%;
   }
 
   .dark {
-    /* ── Core (Mission-Control-Palette) ───────────────────────── */
-    --background: 42 100% 2%;       /* #0a0700 */
-    --foreground: 40 29% 92%;       /* #f0ece4 */
+    --hm-canvas: #0F1115;
+    --hm-surface: #171A1F;
+    --hm-surface-elevated: #1D2128;
+    --hm-text-primary: #F5F5F7;
+    --hm-text-secondary: #A8AFBA;
+    --hm-border: #2A2F36;
+    --hm-shadow-card: 0 1px 2px rgba(0,0,0,0.28), 0 16px 34px rgba(0,0,0,0.24);
+
+    --background: 222 17% 7%;       /* #0F1115 */
+    --foreground: 240 11% 96%;      /* #F5F5F7 */
 
     /* ── Card / Popover ───────────────────────────────────────── */
-    --card: 42 22% 9%;              /* #1c1912 */
-    --card-foreground: 40 29% 92%;
-    --popover: 47 32% 6%;           /* #13110a */
-    --popover-foreground: 40 29% 92%;
+    --card: 220 13% 11%;
+    --card-foreground: 240 11% 96%;
+    --popover: 220 13% 11%;
+    --popover-foreground: 240 11% 96%;
 
     /* ── Primary (Amber) ──────────────────────────────────────── */
-    --primary: 36 92% 50%;          /* #F5970A */
-    --primary-foreground: 42 100% 2%;
+    --primary: 25 100% 50%;         /* #FF6A00 */
+    --primary-foreground: 0 0% 100%;
 
     /* ── Secondary ────────────────────────────────────────────── */
-    --secondary: 47 32% 6%;         /* #13110a */
-    --secondary-foreground: 42 12% 68%; /* #b8b2a4 */
+    --secondary: 220 12% 14%;
+    --secondary-foreground: 218 14% 70%;
 
     /* ── Muted ────────────────────────────────────────────────── */
-    --muted: 41 21% 12%;            /* #262219 */
-    --muted-foreground: 44 8% 44%;  /* #7a7568 */
+    --muted: 220 12% 14%;
+    --muted-foreground: 218 14% 70%;
 
     /* ── Accent ───────────────────────────────────────────────── */
-    --accent: 41 21% 12%;           /* #262219 */
-    --accent-foreground: 36 92% 50%; /* #F5970A */
+    --accent: 220 12% 14%;
+    --accent-foreground: 25 100% 50%;
 
     /* ── Destructive ──────────────────────────────────────────── */
     --destructive: 5 78% 60%;       /* #e8564a */
     --destructive-foreground: 40 29% 92%;
 
     /* ── Form elements ────────────────────────────────────────── */
-    --border: 44 18% 15%;           /* #2e2a20 */
+    --border: 216 13% 19%;          /* #2A2F36 */
     --input: 44 18% 15%;
-    --ring: 36 92% 50%;             /* #F5970A */
+    --ring: 25 100% 50%;
 
     /* ── Brand colors ─────────────────────────────────────────── */
     --copper: 36 92% 50%;           /* amber als Kupfer-Proxy */
@@ -135,14 +155,14 @@
     --cream: 40 29% 92%;
 
     /* ── Sidebar ──────────────────────────────────────────────── */
-    --sidebar-background: 47 32% 6%;
-    --sidebar-foreground: 40 29% 92%;
-    --sidebar-primary: 36 92% 50%;
-    --sidebar-primary-foreground: 42 100% 2%;
-    --sidebar-accent: 41 21% 12%;
-    --sidebar-accent-foreground: 40 29% 92%;
-    --sidebar-border: 44 18% 15%;
-    --sidebar-ring: 36 92% 50%;
+    --sidebar-background: 220 13% 11%;
+    --sidebar-foreground: 240 11% 96%;
+    --sidebar-primary: 25 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 12% 14%;
+    --sidebar-accent-foreground: 240 11% 96%;
+    --sidebar-border: 216 13% 19%;
+    --sidebar-ring: 25 100% 50%;
   }
 
   * {
@@ -158,14 +178,109 @@
 
   body {
     @apply text-foreground antialiased;
-    background-color: hsl(var(--background));
+    background-color: var(--hm-canvas);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   }
 }
 
+@layer components {
+  .hm-card {
+    border: 1px solid var(--hm-border);
+    border-radius: var(--hm-radius-card);
+    background: var(--hm-surface);
+    color: var(--hm-text-primary);
+    box-shadow: var(--hm-shadow-card);
+  }
+
+  .hm-card-elevated {
+    border: 1px solid var(--hm-border);
+    border-radius: var(--hm-radius-card);
+    background: var(--hm-surface-elevated);
+    color: var(--hm-text-primary);
+    box-shadow: var(--hm-shadow-card);
+  }
+
+  .hm-button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.625rem 1rem;
+    border-radius: var(--hm-radius-control);
+    background: var(--hm-orange);
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 650;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    transition: filter 160ms ease, box-shadow 160ms ease;
+    box-shadow: 0 8px 18px rgba(255, 106, 0, 0.18);
+  }
+
+  .hm-button-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.625rem 1rem;
+    border-radius: var(--hm-radius-control);
+    border: 1px solid var(--hm-border);
+    background: var(--hm-surface);
+    color: var(--hm-text-primary);
+    font-size: 0.875rem;
+    font-weight: 650;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+  }
+
+  .hm-button-primary:hover {
+    filter: brightness(0.96);
+  }
+
+  .hm-button-secondary:hover {
+    border-color: color-mix(in srgb, var(--hm-orange) 45%, var(--hm-border));
+    color: var(--hm-orange);
+  }
+
+  .hm-auth {
+    color: var(--hm-text-primary);
+  }
+
+  .hm-auth .hm-wordmark {
+    color: var(--hm-text-primary);
+  }
+
+  .hm-auth .text-foreground,
+  .hm-auth label {
+    color: var(--hm-text-primary) !important;
+  }
+
+  .hm-auth .text-muted-foreground {
+    color: var(--hm-text-secondary) !important;
+  }
+
+  .hm-auth .bg-muted\/30 {
+    background: color-mix(in srgb, var(--hm-surface-elevated) 82%, transparent) !important;
+  }
+}
+
+/* Stable HufManager token utilities. They deliberately mirror the Tailwind
+   names so the product shell remains themed even when a config loader skips
+   custom color generation. */
+.bg-hm-canvas { background-color: var(--hm-canvas); }
+.bg-hm-surface { background-color: var(--hm-surface); }
+.bg-hm-elevated { background-color: var(--hm-surface-elevated); }
+.text-hm-text { color: var(--hm-text-primary); }
+.text-hm-muted { color: var(--hm-text-secondary); }
+.border-hm-border { border-color: var(--hm-border); }
+
 /* ── App Container ─────────────────────────────────────────── */
 .app-container {
-  @apply w-full max-w-[480px] mx-auto bg-white min-h-screen relative flex flex-col;
+  @apply w-full bg-white min-h-screen relative flex flex-col;
   box-shadow: 0 0 60px rgba(0,0,0,0.08);
 }
 
@@ -256,6 +371,90 @@ a {
 .above-bottom-nav { bottom: calc(var(--hufi-bottom-obstruction-h) + env(safe-area-inset-bottom, 0px) + 1rem); }
 .pt-app-header    { padding-top: calc(var(--hufi-header-h) + env(safe-area-inset-top, 0px) + 8px); }
 .pb-bottom-nav    { padding-bottom: calc(var(--hufi-bottom-obstruction-h) + env(safe-area-inset-bottom, 0px) + 8px); }
+
+/* HufManager Slim workspace token bridge.
+   Bestehende Screens behalten ihre Fachlogik; direkte Slate/White-Utilities
+   werden im Slim-Kontext auf die V1 Design-DNA gemappt. */
+.hm-slim .bg-white,
+.hm-slim .bg-white\/95,
+.hm-slim .bg-white\/90,
+.hm-slim .bg-white\/85,
+.hm-slim .bg-white\/80,
+.hm-slim .bg-white\/70,
+.hm-slim .bg-white\/65 {
+  background-color: var(--hm-surface) !important;
+}
+
+.hm-slim .bg-slate-50,
+.hm-slim .bg-slate-50\/90,
+.hm-slim .bg-slate-100 {
+  background-color: var(--hm-canvas) !important;
+}
+
+.hm-slim .border-slate-200,
+.hm-slim .border-slate-200\/80,
+.hm-slim .border-slate-300 {
+  border-color: var(--hm-border) !important;
+}
+
+.hm-slim .text-slate-950,
+.hm-slim .text-slate-900,
+.hm-slim .text-slate-800,
+.hm-slim .text-slate-700 {
+  color: var(--hm-text-primary) !important;
+}
+
+.hm-slim .text-slate-600,
+.hm-slim .text-slate-500,
+.hm-slim .text-slate-400 {
+  color: var(--hm-text-secondary) !important;
+}
+
+.hm-slim .text-orange-600,
+.hm-slim .text-orange-700 {
+  color: var(--hm-orange) !important;
+}
+
+.hm-slim .bg-orange-600,
+.hm-slim .bg-orange-500 {
+  background-color: var(--hm-orange) !important;
+}
+
+.hm-slim .border-orange-200,
+.hm-slim .border-orange-500 {
+  border-color: color-mix(in srgb, var(--hm-orange) 42%, var(--hm-border)) !important;
+}
+
+.hm-slim .bg-orange-50,
+.hm-slim .bg-orange-50\/70,
+.hm-slim .bg-orange-50\/80 {
+  background-color: color-mix(in srgb, var(--hm-orange) 9%, var(--hm-surface)) !important;
+}
+
+.hm-app [class*="text-blue"],
+.hm-slim [class*="text-blue"] {
+  color: var(--hm-orange) !important;
+}
+
+.hm-app [class*="bg-blue"],
+.hm-slim [class*="bg-blue"] {
+  background-color: color-mix(in srgb, var(--hm-orange) 12%, var(--hm-surface)) !important;
+}
+
+.hm-app [class*="border-blue"],
+.hm-slim [class*="border-blue"] {
+  border-color: color-mix(in srgb, var(--hm-orange) 34%, var(--hm-border)) !important;
+}
+
+.hm-app [class*="from-blue"],
+.hm-slim [class*="from-blue"],
+.hm-app [class*="to-blue"],
+.hm-slim [class*="to-blue"],
+.hm-app [class*="via-blue"],
+.hm-slim [class*="via-blue"] {
+  --tw-gradient-from: color-mix(in srgb, var(--hm-orange) 18%, transparent) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: transparent var(--tw-gradient-to-position) !important;
+}
 
 /* ── MobileShell-Header: kurze/lange Untertitel-Fassung ────────────
    Der Assistenten-Header (Logo + Wetter + Guthaben + Glocke) lässt auf

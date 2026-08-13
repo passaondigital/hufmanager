@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Calendar, Users, Sparkles, Receipt, CalendarCheck, Settings, Mic } from "lucide-react";
+import { Calendar, CalendarCheck, Map, Receipt, Settings, Sparkles, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface NavTab {
@@ -15,10 +15,12 @@ interface NavTab {
 // In der Mitte sitzt der Mikrofon-Knopf, kein Home-Tab: der Mic-Knopf führt
 // selbst auf den Assistenten-Screen, ein zweiter Weg dorthin ist überflüssig.
 const PROVIDER_TABS: NavTab[] = [
-  { key: "kalender",   label: "Kalender",   Icon: Calendar, path: "/kalender"   },
-  { key: "pferde",     label: "Pferde",     Icon: Sparkles, path: "/pferde"     },
-  { key: "kunden",     label: "Kunden",     Icon: Users,    path: "/kunden"     },
-  { key: "rechnungen", label: "Rechnungen", Icon: Receipt,  path: "/rechnungen" },
+  { key: "heute",      label: "Heute",      Icon: Calendar, path: "/home" },
+  { key: "tour",       label: "Tour",       Icon: Map,      path: "/home/tour" },
+  { key: "kunden",     label: "Kunden",     Icon: Users,    path: "/home/kunden" },
+  { key: "analyse",    label: "Analyse",    Icon: Sparkles, path: "/home/hufi-hufanalyse" },
+  { key: "finanzen",   label: "Finanzen",   Icon: Receipt,  path: "/home/finanzen" },
+  { key: "mehr",       label: "Mehr",       Icon: Settings, path: "/home/mehr" },
 ];
 
 // Client hatte vorher zweimal "Pferde" in der Leiste (l2 und r1 zeigten beide
@@ -29,10 +31,6 @@ const CLIENT_TABS: NavTab[] = [
   { key: "profil",  label: "Profil",  Icon: Settings,      path: "/client-profile" },
 ];
 
-// Der Assistenten-Screen (MobileShell) hört auf dieses Event, wenn man den
-// Mic-Knopf antippt und schon dort ist. Ein Fenster-Event statt Context oder
-// Store: die Leiste und der Screen liegen in verschiedenen Router-Ästen, und
-// es geht um genau ein Signal ohne Zustand.
 export const HUFI_MIC_EVENT = "hufi:mic";
 
 export function MobileBottomNav() {
@@ -42,21 +40,10 @@ export function MobileBottomNav() {
 
   const isClient = role === "client";
   const tabs = isClient ? CLIENT_TABS : PROVIDER_TABS;
-  const assistantPath = isClient ? "/client-home" : "/home";
-  const onAssistant = location.pathname === assistantPath;
-
-  // Ungerade Client-Tab-Zahl: links zwei, rechts der Rest.
-  const half = Math.ceil(tabs.length / 2);
-  const leftTabs = tabs.slice(0, half);
-  const rightTabs = tabs.slice(half);
 
   function isActive(path: string) {
+    if (path === "/home") return location.pathname === "/home";
     return location.pathname.startsWith(path);
-  }
-
-  function handleMic() {
-    if (onAssistant) window.dispatchEvent(new Event(HUFI_MIC_EVENT));
-    else navigate(assistantPath);
   }
 
   function renderTab(tab: NavTab) {
@@ -70,7 +57,7 @@ export function MobileBottomNav() {
           flex: 1, height: "100%", minWidth: 0,
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           gap: 4, border: "none", cursor: "pointer", background: "transparent",
-          color: active ? "#F97316" : "#9CA3AF",
+          color: active ? "#FF6A00" : "var(--hm-text-secondary)",
           userSelect: "none", WebkitUserSelect: "none",
           transition: "color 0.15s",
         }}
@@ -80,7 +67,7 @@ export function MobileBottomNav() {
             4 Tabs teilen sich die Breite neben dem 96px breiten Mic-Bereich,
             das laesst pro Tab wenig Platz. Ellipsis statt hartem Ueberlauf. */}
         <span style={{
-          fontSize: 10, fontWeight: active ? 700 : 400, lineHeight: 1, letterSpacing: "0.01em",
+          fontSize: 10, fontWeight: active ? 700 : 500, lineHeight: 1, letterSpacing: "0.01em",
           width: "100%", textAlign: "center",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
         }}>
@@ -93,42 +80,15 @@ export function MobileBottomNav() {
   return (
     <nav style={{
       position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
-      width: "100%", maxWidth: "28rem", zIndex: "var(--z-bar)",
+      width: "100%", zIndex: "var(--z-bar)",
       display: "flex", alignItems: "center",
-      background: "rgba(255,255,255,0.94)",
-      backdropFilter: "blur(20px) saturate(160%)",
-      WebkitBackdropFilter: "blur(20px) saturate(160%)",
-      borderTop: "0.5px solid rgba(0,0,0,0.08)",
-      boxShadow: "0 -1px 0 rgba(0,0,0,0.04), 0 -4px 20px rgba(0,0,0,0.06)",
-      // Der Sicherheitsabstand des Geraets kommt ZUSAETZLICH zu den 68px,
-      // sonst frisst das padding die Hoehe der Tippflaechen auf.
+      background: "var(--hm-surface)",
+      borderTop: "1px solid var(--hm-border)",
+      boxShadow: "0 -1px 2px rgba(26,26,26,0.04)",
       height: "calc(var(--hufi-nav-h) + env(safe-area-inset-bottom, 0px))",
       paddingBottom: "env(safe-area-inset-bottom, 0px)",
     }}>
-      {leftTabs.map(renderTab)}
-
-      {/* Mikrofon — der wichtigste Knopf der App, deshalb Mitte und groß.
-          Ragt bewusst über die Leiste hinaus; der Ring in Leistenfarbe
-          schneidet ihn optisch frei. */}
-      <div style={{ width: 96, height: "100%", flexShrink: 0, position: "relative" }}>
-        <button
-          onClick={handleMic}
-          aria-label={onAssistant ? "Aufnahme starten" : "Hufi öffnen"}
-          style={{
-            position: "absolute", left: "50%", transform: "translateX(-50%)",
-            bottom: 8,
-            width: 76, height: 76, borderRadius: "50%", border: "none",
-            background: "radial-gradient(circle at 40% 34%, #FFC46B 0%, #F97316 48%, #B23A0A 100%)",
-            color: "#FFFFFF", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 8px 26px rgba(249,115,22,0.44), 0 0 0 6px rgba(255,255,255,0.94)",
-          }}
-        >
-          <Mic size={30} strokeWidth={2} />
-        </button>
-      </div>
-
-      {rightTabs.map(renderTab)}
+      {tabs.map(renderTab)}
     </nav>
   );
 }

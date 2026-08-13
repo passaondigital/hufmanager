@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "dark" | "light";
+type Theme = "dark" | "light" | "system";
 
 type ThemeProviderContextType = {
   theme: Theme;
@@ -18,7 +18,7 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({
   children,
-  defaultTheme = "dark",
+  defaultTheme = "system",
   storageKey = "hufmanager-theme",
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -28,13 +28,25 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(theme);
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+
+    function applyTheme() {
+      const resolvedTheme = theme === "system" ? (media.matches ? "dark" : "light") : theme;
+      root.classList.remove("light", "dark");
+      root.classList.add(resolvedTheme);
+      root.dataset.theme = theme;
+    }
+
+    applyTheme();
     localStorage.setItem(storageKey, theme);
+
+    if (theme !== "system") return;
+    media.addEventListener("change", applyTheme);
+    return () => media.removeEventListener("change", applyTheme);
   }, [theme, storageKey]);
 
   const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
+    setTheme(theme === "dark" ? "light" : theme === "light" ? "system" : "dark");
   };
 
   return (

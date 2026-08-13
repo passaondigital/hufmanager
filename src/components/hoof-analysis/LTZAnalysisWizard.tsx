@@ -91,7 +91,7 @@ export function LTZAnalysisWizard({
       queryClient.invalidateQueries({ queryKey: ["overdue-assessments"] });
       toast({
         title: "Analyse gespeichert",
-        description: `LTZ-Hufanalyse für ${horseName} wurde erfolgreich gespeichert.`,
+        description: `Hufi Hufanalyse für ${horseName} wurde erfolgreich gespeichert.`,
       });
       handleClose();
     },
@@ -140,7 +140,7 @@ export function LTZAnalysisWizard({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>LTZ-Hufanalyse: {horseName}</span>
+            <span>Hufi Hufanalyse: {horseName}</span>
             <span className="text-sm font-normal text-muted-foreground">
               Schritt {currentStep} von {STEPS.length}
             </span>

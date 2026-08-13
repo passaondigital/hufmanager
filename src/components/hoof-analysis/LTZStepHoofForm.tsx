@@ -43,13 +43,13 @@ export function LTZStepHoofForm({ data, onChange, horseId }: LTZStepHoofFormProp
       <div className="text-center mb-6">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full text-primary">
           <Ruler className="h-4 w-4" />
-          <span className="text-sm font-medium">Schritt 2: LTZ-Hufvermessung</span>
+          <span className="text-sm font-medium">Schritt 2: Hufvermessung</span>
         </div>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Hufanalyse nach LTZ-Standard</CardTitle>
+          <CardTitle className="text-base">Strukturierte Hufvermessung</CardTitle>
           <CardDescription>
             Wähle jeden Huf einzeln aus und erfasse die Parameter
           </CardDescription>

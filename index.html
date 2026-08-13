@@ -19,13 +19,13 @@
     <meta name="apple-mobile-web-app-title" content="HufManager" />
 
     <!-- Theme Color (Browser Bar & PWA) -->
-    <meta name="theme-color" content="#0a0700" />
-    <meta name="msapplication-TileColor" content="#0a0700" />
+    <meta name="theme-color" content="#FF6A00" />
+    <meta name="msapplication-TileColor" content="#FF6A00" />
     <meta name="msapplication-TileImage" content="/icon-192.png" />
 
     <!-- Open Graph -->
     <meta property="og:title" content="HufManager — Software für Hufbearbeiter" />
-    <meta property="og:description" content="Kunden, Pferde, Termine, Rechnungen und Touren — alles in einer App. Ab 9,90 € / Monat." />
+    <meta property="og:description" content="Kunden, Pferde, Termine, Rechnungen und Touren — alles in einer App. 19,95 € / Monat." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="/og-image.png" />
     <meta property="og:url" content="https://app.hufmanager.de" />
@@ -38,12 +38,8 @@
     <meta name="twitter:description" content="Kunden, Pferde, Termine, Rechnungen und Touren — alles in einer App." />
 
 
-    <!-- DNS Prefetch & Preconnect for performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="https://vnschgjxkzzwzefqlrji.supabase.co" />
     <link rel="preconnect" href="https://vnschgjxkzzwzefqlrji.supabase.co" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;600;700&family=Lora:wght@400;600;700&family=Merriweather:wght@400;700&family=Open+Sans:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Roboto:wght@400;500;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
 
     <!-- Sentry Error Monitoring (CDN, deferred so React loads first) -->
     <script
@@ -62,22 +58,22 @@
   </head>
 
   <body>
-    <div id="root"><div id="hufi-boot-fallback" style="min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#FFFFFF;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:24px;text-align:center;box-sizing:border-box;">
+    <div id="root"><div id="hufi-boot-fallback" style="min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;background:#F4F4F7;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;padding:24px;text-align:center;box-sizing:border-box;">
       <style>
         @keyframes hufi-boot-spin { to { transform: rotate(360deg); } }
         #hufi-boot-spinner {
           width: 40px; height: 40px; border-radius: 50%;
-          border: 3px solid #F3E8DC; border-top-color: #F97316;
+          border: 3px solid #E3E5EA; border-top-color: #FF6A00;
           animation: hufi-boot-spin 0.9s linear infinite;
         }
       </style>
       <div id="hufi-boot-spinner"></div>
       <div>
-        <div style="font-size:20px;font-weight:800;color:#1A1A1A;letter-spacing:-0.02em;margin-bottom:6px;">Hufi</div>
-        <p id="hufi-boot-message" style="font-size:14px;color:#6B7280;margin:0;max-width:320px;">Einen Moment — Hufi wird geladen …</p>
+        <div style="font-size:20px;font-weight:800;color:#1A1A1A;letter-spacing:-0.02em;margin-bottom:6px;">Huf<span style="color:#FF6A00;">Manager</span></div>
+        <p id="hufi-boot-message" style="font-size:14px;color:#626975;margin:0;max-width:320px;">Einen Moment — HufManager wird geladen …</p>
       </div>
       <div id="hufi-boot-timeout-actions" style="display:none;">
-        <button onclick="window.location.reload()" style="font-size:14px;font-weight:600;color:#fff;background:#F97316;border:none;border-radius:8px;padding:10px 20px;cursor:pointer;">
+        <button onclick="window.location.reload()" style="font-size:14px;font-weight:600;color:#fff;background:#FF6A00;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;">
           Seite neu laden
         </button>
       </div>

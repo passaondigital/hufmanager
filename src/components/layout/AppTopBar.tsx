@@ -27,22 +27,18 @@ export const AppTopBar = () => {
 
   return (
     <header
-      className="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-md z-bar flex flex-col"
+      className="fixed left-0 top-0 z-bar flex w-full flex-col border-b border-hm-border bg-hm-surface lg:left-[var(--hm-sidebar-w)] lg:w-[calc(100%-var(--hm-sidebar-w))]"
       style={{
         paddingTop: "env(safe-area-inset-top, 0px)",
-        background: "rgba(255,255,255,0.92)",
-        backdropFilter: "blur(20px) saturate(160%)",
-        WebkitBackdropFilter: "blur(20px) saturate(160%)",
-        borderBottom: "0.5px solid rgba(0,0,0,0.08)",
       }}
     >
-      <div className="flex h-14 items-center justify-between px-4">
+      <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left: back or logo */}
         <div className="flex items-center gap-2 min-w-0">
           {!isHome ? (
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-1.5 text-primary transition-opacity active:opacity-60"
+              className="flex min-h-11 items-center gap-1.5 rounded-xl border border-hm-border bg-hm-surface px-3 py-2 text-[var(--hm-orange)] shadow-sm transition-all hover:bg-orange-50 active:scale-[0.98]"
               style={{ minWidth: 44, minHeight: 44, marginLeft: -8 }}
               aria-label="Zurück"
             >
@@ -52,16 +48,21 @@ export const AppTopBar = () => {
               )}
             </button>
           ) : (
-            <span style={{ fontSize: "1.05rem", fontWeight: 800, letterSpacing: "-0.02em", color: "#1A1A1A" }}>
-              Huf<span style={{ color: "#F97316" }}>Manager</span>
-            </span>
+            <div className="flex items-center gap-3">
+              <div className="leading-tight">
+                <p className="text-[18px] font-bold tracking-[-0.04em] text-hm-text">
+                  Huf<span className="text-[var(--hm-orange)]">Manager</span>
+                </p>
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-hm-muted">Slim Arbeitsmodus</p>
+              </div>
+            </div>
           )}
         </div>
 
         {/* Right: actions */}
-        <div className="flex items-center gap-1">
-          <NotificationBell className="text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl active:scale-90 transition-all" />
-          <HufiMenu className="rounded-xl hover:text-gray-900 hover:bg-gray-100 active:scale-90 transition-all" />
+        <div className="flex items-center gap-2">
+          <NotificationBell className="rounded-xl border border-hm-border bg-hm-surface text-hm-muted shadow-sm transition-all hover:bg-orange-50 hover:text-[var(--hm-orange)] active:scale-[0.98]" />
+          <HufiMenu className="rounded-xl border border-hm-border bg-hm-surface shadow-sm transition-all hover:bg-orange-50 hover:text-[var(--hm-orange)] active:scale-[0.98]" />
         </div>
       </div>
     </header>

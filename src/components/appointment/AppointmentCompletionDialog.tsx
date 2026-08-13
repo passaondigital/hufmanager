@@ -278,7 +278,7 @@ export function AppointmentCompletionDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Termin beenden</DialogTitle>
+          <DialogTitle>Termin abschließen</DialogTitle>
           <DialogDescription>{horseName}</DialogDescription>
         </DialogHeader>
 
@@ -485,12 +485,7 @@ export function AppointmentCompletionDialog({
           <Button 
             onClick={handleComplete} 
             disabled={saving || (status === 'red' && !problemReason.trim())}
-            className={cn(
-              "flex-1",
-              status === 'green' && "bg-green-600 hover:bg-green-700",
-              status === 'yellow' && "bg-amber-600 hover:bg-amber-700",
-              status === 'red' && "bg-red-600 hover:bg-red-700"
-            )}
+            className="flex-1"
           >
             {saving ? (
               <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -501,7 +496,7 @@ export function AppointmentCompletionDialog({
             ) : (
               <XCircle className="h-4 w-4 mr-1" />
             )}
-            {status === 'red' ? 'Abbrechen' : 'Fertig'}
+            {status === 'red' ? 'Abbruch speichern' : 'Abschluss speichern'}
           </Button>
         </div>
       </DialogContent>

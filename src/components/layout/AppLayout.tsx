@@ -1,21 +1,28 @@
 import { Outlet } from "react-router-dom";
+import { AppSidebar } from "./AppSidebar";
 import { AppTopBar } from "./AppTopBar";
 import { MobileBottomNav } from "./MobileBottomNav";
 
 export const AppLayout = () => {
   return (
-    <div
-      className="relative flex min-h-screen flex-col items-center"
-      style={{ background: "#F8FAFC" }}
-    >
-      <AppTopBar />
+    <div className="hm-app min-h-screen bg-hm-canvas text-hm-text">
+      <div className="hidden lg:block">
+        <AppSidebar />
+      </div>
 
-      {/* Abstaende kommen aus --hufi-header-h / --hufi-nav-h (src/index.css) */}
-      <main className="flex-1 w-full max-w-md px-4 pt-app-header pb-bottom-nav">
-        <Outlet />
-      </main>
+      <div className="lg:pl-[var(--hm-sidebar-w)]">
+        <AppTopBar />
 
-      <MobileBottomNav />
+        <main className="relative z-0 min-h-screen w-full px-4 pb-bottom-nav pt-app-header sm:px-6 lg:px-8 lg:pb-10">
+          <div className="mx-auto w-full max-w-[1440px]">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+
+      <div className="lg:hidden">
+        <MobileBottomNav />
+      </div>
     </div>
   );
 };

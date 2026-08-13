@@ -85,6 +85,14 @@ async function clearClientSessionState() {
 // or data has been removed, the cards just don't render.
 const SHOW_DEMO_LOGIN = false;
 
+function HufManagerWordmark() {
+  return (
+    <span className="hm-wordmark select-none text-[2rem] font-black tracking-[-0.04em]">
+      Huf<span className="text-[var(--hm-orange)]">Manager</span>
+    </span>
+  );
+}
+
 export default function Auth() {
   const { user, role, loading: authLoading, signIn, signUp, forcePasswordChange } = useAuth();
   const [searchParams] = useSearchParams();
@@ -221,7 +229,7 @@ export default function Auth() {
   if (signingOut || isSwitchingAccount) {
     return (
       <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-        <span style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>{FLAVOR_CONFIG.appName.slice(0, 3)}<span style={{ color: "#F97316" }}>{FLAVOR_CONFIG.appName.slice(3)}</span></span>
+        <HufManagerWordmark />
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -235,7 +243,7 @@ export default function Auth() {
       // Show loading while checking onboarding status
       return (
         <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-          <span style={{ fontSize: "2rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>{FLAVOR_CONFIG.appName.slice(0, 3)}<span style={{ color: "#F97316" }}>{FLAVOR_CONFIG.appName.slice(3)}</span></span>
+          <HufManagerWordmark />
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       );
@@ -428,25 +436,35 @@ export default function Auth() {
 
   if (authLoading) {
     return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
-        <img 
-          src={FLAVOR_CONFIG.logo}
-          alt={FLAVOR_CONFIG.appName}
-          className="h-24 w-auto animate-pulse"
-        />
+      <div
+        className="min-h-[100dvh] flex flex-col items-center justify-center gap-6 px-6"
+        style={{
+          background:
+            "radial-gradient(700px 360px at 50% 20%, rgba(255,106,0,0.10), transparent 60%), var(--hm-canvas)",
+        }}
+      >
+        <div className="rounded-2xl border border-hm-border bg-hm-surface px-6 py-5 shadow-[var(--hm-shadow-card)]">
+          <HufManagerWordmark />
+        </div>
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-[100dvh] flex flex-col bg-background">
+    <div
+      className="hm-auth min-h-[100dvh] flex flex-col"
+      style={{
+        background:
+          "radial-gradient(900px 500px at 50% -10%, rgba(255,106,0,0.10), transparent 58%), var(--hm-canvas)",
+      }}
+    >
       {/* Scrollable content area that fills viewport */}
       <div className="flex-1 flex flex-col items-center justify-start px-4 py-6 sm:justify-center overflow-auto">
-      <Card className="w-full max-w-md border-border bg-card shadow-xl">
+      <Card className="w-full max-w-md overflow-hidden">
         {/* Pferdeakte Source Banner */}
         {pferdeakteSource && (
-          <div className="bg-orange-50 border-b border-orange-200 p-4 rounded-t-lg dark:bg-orange-950/30 dark:border-orange-800">
+          <div className="border-b border-orange-200/70 bg-orange-50 p-4">
             <div className="flex items-center gap-3">
               <span className="text-2xl">📋</span>
               <div>
@@ -460,7 +478,7 @@ export default function Auth() {
         )}
         {/* HM Connect Invite Banner */}
         {hmInviteToken && !pferdeakteSource && (
-          <div className="bg-primary/10 border-b border-primary/20 p-4 rounded-t-lg">
+          <div className="border-b border-primary/20 bg-primary/10 p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                 <Link2 className="h-5 w-5 text-primary" />
@@ -476,9 +494,7 @@ export default function Auth() {
         )}
         <CardHeader className="text-center pb-2 pt-4">
           <div className="mx-auto mb-3 select-none">
-            <span style={{ fontSize: "1.9rem", fontWeight: 900, letterSpacing: "-0.03em", color: "#1A1A1A" }}>
-              {FLAVOR_CONFIG.appName.slice(0, 3)}<span style={{ color: "#F97316" }}>{FLAVOR_CONFIG.appName.slice(3)}</span>
-            </span>
+            <HufManagerWordmark />
           </div>
           <CardTitle className="text-2xl font-bold text-foreground sr-only">{FLAVOR_CONFIG.appName}</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
@@ -489,9 +505,9 @@ export default function Auth() {
         </CardHeader>
         <CardContent>
           <Tabs value={activeAuthTab} onValueChange={(v) => setActiveAuthTab(v as "login" | "signup")} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-12 bg-muted">
-              <TabsTrigger value="login" className="h-10 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Anmelden</TabsTrigger>
-              <TabsTrigger value="signup" className="h-10 text-base data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Registrieren</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 h-12 rounded-full bg-slate-100 p-1">
+              <TabsTrigger value="login" className="h-10 rounded-full text-base data-[state=active]:bg-white data-[state=active]:text-slate-950 data-[state=active]:shadow-sm">Anmelden</TabsTrigger>
+              <TabsTrigger value="signup" className="h-10 rounded-full text-base data-[state=active]:bg-white data-[state=active]:text-slate-950 data-[state=active]:shadow-sm">Registrieren</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login" className="mt-6">
@@ -501,7 +517,7 @@ export default function Auth() {
                   type="button"
                   onClick={() => setLoginMode("provider")}
                   className={cn(
-                    "flex-1 py-2 rounded-lg text-sm font-semibold border transition-all",
+                    "flex-1 py-2 rounded-full text-sm font-semibold border transition-all",
                     loginMode === "provider"
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
@@ -513,7 +529,7 @@ export default function Auth() {
                   type="button"
                   onClick={() => setLoginMode("client")}
                   className={cn(
-                    "flex-1 py-2 rounded-lg text-sm font-semibold border transition-all",
+                    "flex-1 py-2 rounded-full text-sm font-semibold border transition-all",
                     loginMode === "client"
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
@@ -525,7 +541,7 @@ export default function Auth() {
                   type="button"
                   onClick={() => setLoginMode("partner")}
                   className={cn(
-                    "flex-1 py-2 rounded-lg text-sm font-semibold border transition-all",
+                    "flex-1 py-2 rounded-full text-sm font-semibold border transition-all",
                     loginMode === "partner"
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-transparent text-muted-foreground border-border hover:border-primary/50"
@@ -626,7 +642,7 @@ export default function Auth() {
                 onCancel={() => setActiveAuthTab("login")}
               />
               {/* CopeCart-Kauf Hinweis */}
-              <div className="mt-4 rounded-lg border border-primary/20 bg-primary/5 p-3 text-center">
+          <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-3 text-center">
                 <p className="text-xs text-muted-foreground">
                   <span className="font-semibold text-foreground">Bereits gekauft?</span>{" "}
                   Registriere dich mit derselben E-Mail-Adresse, die du bei CopeCart verwendet hast.
@@ -733,10 +749,9 @@ export default function Auth() {
       <button
         type="button"
         onClick={() => setAdminDialogOpen(true)}
-        className="mb-4 text-xs text-muted-foreground/40 hover:text-muted-foreground/80 transition-opacity min-h-[44px]"
-      >
-        🚀
-      </button>
+        aria-label="Mission Control"
+        className="mb-4 h-11 w-11 rounded-full opacity-0 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary"
+      />
       </div> {/* end scrollable wrapper */}
 
       {/* Admin Login Dialog */}
@@ -801,7 +816,7 @@ export default function Auth() {
           }} className="space-y-4">
             
             {/* Mode Toggle */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+        <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-full">
               <button
                 type="button"
                 onClick={() => setAdminMode("login")}

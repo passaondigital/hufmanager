@@ -138,7 +138,7 @@ export function LTZComparisonView({ isOpen, onClose, horseId, horseName }: LTZCo
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <GitCompare className="h-5 w-5 text-primary" />
-            LTZ-Analyse Vergleich: {horseName}
+            Hufi Hufanalyse Vergleich: {horseName}
           </DialogTitle>
         </DialogHeader>
 

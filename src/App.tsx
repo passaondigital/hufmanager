@@ -34,7 +34,10 @@ const AppLayout   = lazy(() => import("@/components/layout/AppLayout").then((m) 
 const MobileShell = lazy(() => import("@/components/layout/MobileShell").then((m) => ({ default: m.MobileShell })));
 const HufManagerSlimShell = lazy(() => import("@/components/slim/HufManagerSlimShell").then((m) => ({ default: m.HufManagerSlimShell })));
 const TodayScreen = lazy(() => import("@/components/slim/TodayScreen").then((m) => ({ default: m.TodayScreen })));
-const SlimPlaceholderScreen = lazy(() => import("@/components/slim/SlimPlaceholderScreen").then((m) => ({ default: m.SlimPlaceholderScreen })));
+const SlimMoreScreen = lazy(() => import("@/components/slim/SlimMoreScreen").then((m) => ({ default: m.SlimMoreScreen })));
+const SlimFinanceScreen = lazy(() => import("@/components/slim/SlimFinanceScreen").then((m) => ({ default: m.SlimFinanceScreen })));
+const SlimHoofAnalysisScreen = lazy(() => import("@/components/slim/SlimHoofAnalysisScreen").then((m) => ({ default: m.SlimHoofAnalysisScreen })));
+const SlimCustomerHorseWorkspace = lazy(() => import("@/components/slim/SlimCustomerHorseWorkspace").then((m) => ({ default: m.SlimCustomerHorseWorkspace })));
 
 // Auth
 const ResetPassword  = lazy(() => import("@/pages/ResetPassword"));
@@ -583,44 +586,19 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
             }>
               <Route path="/home" element={<TodayScreen />} />
               <Route path="/home/tour" element={
-                <SlimPlaceholderScreen
-                  title="Tour"
-                  description="WAVE 1 legt die Tour-Shell an. In der nächsten Wave werden Karte, Route, Kunden in der Nähe und Fahrtenbuch hier zusammengeführt."
-                  primaryActionLabel="Zurück zu Heute"
-                  primaryActionPath="/home"
-                />
+                <Tour />
               } />
               <Route path="/home/kunden" element={
-                <SlimPlaceholderScreen
-                  title="Kunden & Pferde"
-                  description="Der schlanke Arbeitskontext folgt in der nächsten Ausbaustufe. Heute bleibt hier nur der Einstiegspunkt in den Tagesfluss."
-                  primaryActionLabel="Zurück zu Heute"
-                  primaryActionPath="/home"
-                />
+                <SlimCustomerHorseWorkspace />
               } />
               <Route path="/home/hufi-hufanalyse" element={
-                <SlimPlaceholderScreen
-                  title="Hufi Hufanalyse"
-                  description="Die Fachanalyse wird in einer späteren Wave kontrolliert aufgebaut. Die neue Produktbezeichnung bleibt verbindlich."
-                  primaryActionLabel="Zurück zu Heute"
-                  primaryActionPath="/home"
-                />
+                <SlimHoofAnalysisScreen />
               } />
               <Route path="/home/finanzen" element={
-                <SlimPlaceholderScreen
-                  title="Finanzen"
-                  description="Rechnungen und Preise werden in einer späteren Wave auf die Slim-Version reduziert."
-                  primaryActionLabel="Zurück zu Heute"
-                  primaryActionPath="/home"
-                />
+                <SlimFinanceScreen />
               } />
               <Route path="/home/mehr" element={
-                <SlimPlaceholderScreen
-                  title="Mehr / Einstellungen"
-                  description="Seltene Systemfunktionen liegen hier gesammelt, ohne die Tagesarbeit zu stören."
-                  primaryActionLabel="Zurück zu Heute"
-                  primaryActionPath="/home"
-                />
+                <SlimMoreScreen />
               } />
             </Route>
 
