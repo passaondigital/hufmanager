@@ -114,6 +114,28 @@ export function TodayScreen() {
   const nextAppointment = appointments.find((appointment) => appointment.status !== "completed") ?? appointments[0] ?? null;
   const totalHorses = useMemo(() => new Set(appointments.flatMap((appointment) => appointment.horses.map((horse) => horse.id))).size, [appointments]);
   const totalCustomers = useMemo(() => new Set(appointments.map((appointment) => appointment.client?.id).filter(Boolean)).size, [appointments]);
+  const totalVisits = useMemo(() => {
+    const visitKeys = appointments.map((appointment) => {
+      const normalizedAddress = [
+        appointment.client?.street,
+        appointment.client?.zip,
+        appointment.client?.city,
+        appointment.location,
+      ]
+        .filter(Boolean)
+        .join("|")
+        .trim()
+        .toLowerCase();
+
+      return [
+        appointment.client?.id ?? appointment.id,
+        appointment.time?.slice(0, 5) ?? "ohne-uhrzeit",
+        normalizedAddress || appointment.id,
+      ].join("::");
+    });
+
+    return new Set(visitKeys).size;
+  }, [appointments]);
   const plannedRevenue = useMemo(() => appointments.reduce((sum, appointment) => sum + (appointment.applied_price ?? appointment.price ?? 0), 0), [appointments]);
   const nextAddress = nextAppointment
     ? [nextAppointment.client?.street, nextAppointment.client?.zip, nextAppointment.client?.city].filter(Boolean).join(", ") || nextAppointment.location
@@ -174,7 +196,7 @@ export function TodayScreen() {
               <div className="border-t border-[var(--hm-border)] bg-[var(--hm-surface-elevated)] p-5 lg:border-l lg:border-t-0 sm:p-6">
                 <div className="grid grid-cols-2 gap-4">
                   <WorkdayValue icon={Route} value={todayQuery.data?.distanceKm == null ? "Route offen" : `${todayQuery.data.distanceKm} km`} label="Tagesstrecke" />
-                  <WorkdayValue icon={Clock3} value={`${appointments.length} Stopps`} label="Tagesplan" />
+                  <WorkdayValue icon={Clock3} value={`${totalVisits} Stopps`} label="Tagesplan" />
                   <WorkdayValue icon={Users} value={`${totalCustomers} Kunden`} label={`${totalHorses} Pferde`} />
                   <WorkdayValue icon={Euro} value={formatCurrency(plannedRevenue)} label="geplante Leistungen" />
                 </div>

@@ -175,8 +175,10 @@ export function SlimTourScreen() {
 
   const routeLine = useMemo<[number, number][]>(() => {
     const coordinates = routeQuery.data?.geometry?.coordinates;
-    return coordinates?.length ? coordinates.map(([lng, lat]) => [lat, lng]) : routePositions;
-  }, [routePositions, routeQuery.data?.geometry]);
+    // Only render real ORS/VROOM road geometry. If routing is unavailable,
+    // keep the stop markers visible instead of drawing misleading straight lines.
+    return coordinates?.length ? coordinates.map(([lng, lat]) => [lat, lng]) : [];
+  }, [routeQuery.data?.geometry]);
   const nextStop = orderedStops.find((stop) => stop.status !== "completed") ?? orderedStops[0] ?? null;
   const stats = useMemo(() => getSlimTourStats(orderedStops), [orderedStops]);
   const routeDistance = routeQuery.data?.distance ?? tourQuery.data?.dailyTour?.total_distance_km ?? estimateDistance(routePositions);

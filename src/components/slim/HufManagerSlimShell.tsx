@@ -1,5 +1,15 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { CalendarDays, Map, Menu, PanelLeftClose, PanelLeftOpen, ReceiptText, Settings, Sparkles, Users } from "lucide-react";
+import {
+  CalendarDays,
+  Map,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ReceiptText,
+  Settings,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { useState } from "react";
 
 const NAV_ITEMS = [
@@ -17,14 +27,67 @@ const PAGE_TITLES: Record<string, string> = {
   "/home/kunden": "Kunden & Pferde",
   "/home/hufi-hufanalyse": "Hufi Hufanalyse",
   "/home/finanzen": "Finanzen",
-  "/home/mehr": "Mehr / Einstellungen",
+  "/home/mehr": "Mehr & Einstellungen",
+  "/pferde": "Kunden & Pferde",
+  "/kunden": "Kunden & Pferde",
+  "/kalender": "Kalender & Termine",
+  "/rechnungen": "Rechnungen",
+  "/mein-angebot": "Leistungen & Angebote",
+  "/anfragen": "Anfragen",
+  "/aufnahme": "Kundenaufnahme",
+  "/tour": "Tour",
+  "/ausgaben": "Ausgaben & Belege",
+  "/buchhaltung": "Buchhaltung",
+  "/guv": "Gewinn & Verlust",
+  "/business": "Finanzen",
+  "/analyse": "Betriebsanalyse",
+  "/fuhrpark": "Fuhrpark & Fahrtenbuch",
+  "/team": "Mitarbeiter",
+  "/management": "Einstellungen",
+  "/hilfe": "Hilfe",
+  "/support": "Support",
 };
+
+function getPageTitle(pathname: string) {
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
+  if (pathname.startsWith("/pferd/")) return "Pferdeakte";
+  if (pathname.startsWith("/management/") || pathname.startsWith("/settings/")) return "Einstellungen";
+  if (pathname.startsWith("/mein-office")) return "Mein Office";
+  if (pathname.startsWith("/analyse/")) return "Betriebsanalyse";
+  return "HufManager";
+}
+
+function getActiveSection(pathname: string) {
+  if (pathname === "/home" || pathname === "/dashboard") return "/home";
+  if (pathname.startsWith("/home/tour") || pathname === "/tour") return "/home/tour";
+  if (
+    pathname.startsWith("/home/kunden") ||
+    pathname === "/kunden" ||
+    pathname === "/pferde" ||
+    pathname.startsWith("/pferd/")
+  ) return "/home/kunden";
+  if (pathname.startsWith("/home/hufi-hufanalyse")) return "/home/hufi-hufanalyse";
+  if (
+    pathname.startsWith("/home/finanzen") ||
+    pathname === "/rechnungen" ||
+    pathname === "/mein-angebot" ||
+    pathname === "/ausgaben" ||
+    pathname === "/buchhaltung" ||
+    pathname === "/guv" ||
+    pathname === "/business" ||
+    pathname.startsWith("/analyse")
+  ) return "/home/finanzen";
+  return "/home/mehr";
+}
 
 export function HufManagerSlimShell() {
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => localStorage.getItem("hm-sidebar-collapsed") === "true");
-  const currentTitle = PAGE_TITLES[location.pathname] ?? "HufManager";
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem("hm-sidebar-collapsed") === "true",
+  );
+  const currentTitle = getPageTitle(location.pathname);
+  const activeSection = getActiveSection(location.pathname);
 
   const toggleSidebar = () => {
     setSidebarCollapsed((collapsed) => {
@@ -35,24 +98,54 @@ export function HufManagerSlimShell() {
 
   return (
     <div className="hm-slim min-h-screen bg-hm-canvas text-hm-text">
-      <aside className={`fixed inset-y-0 left-0 z-bar hidden border-r border-hm-border bg-hm-surface transition-[width] duration-200 lg:flex lg:flex-col ${sidebarCollapsed ? "w-20" : "w-[var(--hm-sidebar-w)]"}`}>
-        <div className={`flex h-[var(--hm-header-h)] items-center border-b border-hm-border ${sidebarCollapsed ? "justify-center px-2" : "px-6"}`}>
+      <aside
+        className={`fixed inset-y-0 left-0 z-bar hidden border-r border-hm-border bg-hm-surface transition-[width] duration-200 lg:flex lg:flex-col ${
+          sidebarCollapsed ? "w-20" : "w-[var(--hm-sidebar-w)]"
+        }`}
+      >
+        <div
+          className={`flex h-[var(--hm-header-h)] items-center border-b border-hm-border ${
+            sidebarCollapsed ? "justify-center px-2" : "px-6"
+          }`}
+        >
           <Brand compact={sidebarCollapsed} />
         </div>
+
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {NAV_ITEMS.map((item) => (
-            <SlimNavItem key={item.path} item={item} onNavigate={() => undefined} />
+            <SlimNavItem
+              key={item.path}
+              item={item}
+              active={activeSection === item.path}
+              compact={sidebarCollapsed}
+              onNavigate={() => undefined}
+            />
           ))}
         </nav>
+
         <div className={`border-t border-hm-border p-3 ${sidebarCollapsed ? "flex justify-center" : ""}`}>
-          <button type="button" onClick={toggleSidebar} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-hm-muted transition hover:bg-orange-50 hover:text-[var(--hm-orange)] dark:hover:bg-white/5" aria-label={sidebarCollapsed ? "Sidebar ausklappen" : "Sidebar einklappen"}>
-            {sidebarCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <><PanelLeftClose className="h-5 w-5" /><span>Sidebar einklappen</span></>}
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold text-hm-muted transition hover:bg-orange-50 hover:text-[var(--hm-orange)] dark:hover:bg-white/5"
+            aria-label={sidebarCollapsed ? "Sidebar ausklappen" : "Sidebar einklappen"}
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen className="h-5 w-5" />
+            ) : (
+              <>
+                <PanelLeftClose className="h-5 w-5" />
+                <span>Sidebar einklappen</span>
+              </>
+            )}
           </button>
         </div>
       </aside>
 
-      <div className={`transition-[padding] duration-200 ${sidebarCollapsed ? "lg:pl-20" : "lg:pl-[var(--hm-sidebar-w)]"}`}>
-        <header className="sticky top-0 z-bar border-b border-hm-border bg-hm-surface">
+      <div className={`transition-[padding] duration-200 ${
+        sidebarCollapsed ? "lg:pl-20" : "lg:pl-[var(--hm-sidebar-w)]"
+      }`}>
+        <header className="sticky top-0 z-bar border-b border-hm-border bg-hm-surface/95 backdrop-blur">
           <div className="flex h-[var(--hm-header-h)] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
               <button
@@ -64,22 +157,27 @@ export function HufManagerSlimShell() {
               >
                 <Menu className="h-5 w-5" />
               </button>
-              <div className="hidden sm:block lg:hidden">
-                <Brand />
-              </div>
+              <div className="hidden sm:block lg:hidden"><Brand /></div>
               <div className="min-w-0">
                 <p className="text-xs font-medium text-hm-muted">HufManager</p>
-                <h1 className="truncate text-lg font-semibold tracking-[-0.02em] text-hm-text">{currentTitle}</h1>
+                <h1 className="truncate text-lg font-semibold tracking-[-0.02em] text-hm-text">
+                  {currentTitle}
+                </h1>
               </div>
             </div>
-            <div className="hidden items-center gap-2 md:flex" aria-hidden="true" />
           </div>
 
           {mobileNavOpen && (
             <nav className="border-t border-hm-border bg-hm-surface px-3 py-3 lg:hidden">
               <div className="grid gap-2 sm:grid-cols-3">
                 {NAV_ITEMS.map((item) => (
-                  <SlimNavItem key={item.path} item={item} onNavigate={() => setMobileNavOpen(false)} />
+                  <SlimNavItem
+                    key={item.path}
+                    item={item}
+                    active={activeSection === item.path}
+                    compact={false}
+                    onNavigate={() => setMobileNavOpen(false)}
+                  />
                 ))}
               </div>
             </nav>
@@ -87,16 +185,14 @@ export function HufManagerSlimShell() {
         </header>
 
         <main className="w-full px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-10">
-          <div className="mx-auto w-full max-w-[1440px]">
-            <Outlet />
-          </div>
+          <div className="mx-auto w-full max-w-[1440px]"><Outlet /></div>
         </main>
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-bar border-t border-hm-border bg-hm-surface md:hidden">
         <div className="grid grid-cols-6 gap-1 px-2 pb-[env(safe-area-inset-bottom)] pt-2">
           {NAV_ITEMS.map((item) => {
-            const active = location.pathname === item.path;
+            const active = activeSection === item.path;
             const Icon = item.icon;
             return (
               <NavLink
@@ -104,7 +200,9 @@ export function HufManagerSlimShell() {
                 to={item.path}
                 end={item.path === "/home"}
                 className={`flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold leading-none transition ${
-                  active ? "bg-[var(--hm-orange)] text-white" : "text-hm-muted hover:bg-orange-50 hover:text-[var(--hm-orange)] dark:hover:bg-white/5"
+                  active
+                    ? "bg-[var(--hm-orange)] text-white"
+                    : "text-hm-muted hover:bg-orange-50 hover:text-[var(--hm-orange)] dark:hover:bg-white/5"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -122,9 +220,13 @@ function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <div className="leading-none">
       {compact ? (
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--hm-orange)] text-base font-bold text-white">HM</div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--hm-orange)] text-base font-bold text-white shadow-[0_8px_18px_rgba(255,106,0,0.2)]">
+          HM
+        </div>
       ) : (
-        <div className="text-[1.35rem] font-bold tracking-[-0.04em] text-hm-text">Huf<span className="text-[var(--hm-orange)]">Manager</span></div>
+        <div className="text-[1.35rem] font-bold tracking-[-0.04em] text-hm-text">
+          Huf<span className="text-[var(--hm-orange)]">Manager</span>
+        </div>
       )}
     </div>
   );
@@ -132,28 +234,32 @@ function Brand({ compact = false }: { compact?: boolean }) {
 
 function SlimNavItem({
   item,
+  active,
+  compact,
   onNavigate,
 }: {
   item: (typeof NAV_ITEMS)[number];
+  active: boolean;
+  compact: boolean;
   onNavigate: () => void;
 }) {
   const Icon = item.icon;
-
   return (
     <NavLink
       to={item.path}
       end={item.path === "/home"}
       onClick={onNavigate}
-      className={({ isActive }) =>
-        `flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${
-          isActive
-            ? "bg-[var(--hm-orange)] text-white shadow-[0_8px_18px_rgba(255,106,0,0.22)]"
-            : "text-hm-text hover:bg-orange-50 hover:text-[var(--hm-orange)] dark:hover:bg-white/5"
-        }`
-      }
+      title={compact ? item.label : undefined}
+      className={`flex min-h-11 items-center rounded-xl py-2.5 text-sm font-semibold transition ${
+        compact ? "justify-center px-2" : "gap-3 px-3"
+      } ${
+        active
+          ? "bg-[var(--hm-orange)] text-white shadow-[0_8px_18px_rgba(255,106,0,0.22)]"
+          : "text-hm-text hover:bg-orange-50 hover:text-[var(--hm-orange)] dark:hover:bg-white/5"
+      }`}
     >
       <Icon className="h-5 w-5 shrink-0" />
-      <span className="overflow-hidden whitespace-nowrap">{item.label}</span>
+      {!compact && <span className="overflow-hidden whitespace-nowrap">{item.label}</span>}
     </NavLink>
   );
 }
