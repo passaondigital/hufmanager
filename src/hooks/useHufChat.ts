@@ -220,7 +220,7 @@ export function useHufChat({ conversationId, enabled = true }: UseHufChatOptions
       // Upload file
       if (options?.file) {
         const fileExt = options.file.name.split(".").pop();
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        const fileName = `${conversationId}/${user.id}/${Date.now()}.${fileExt}`;
         const { error } = await supabase.storage.from("chat-images").upload(fileName, options.file);
         if (error) throw new Error("Datei konnte nicht hochgeladen werden");
         imageUrl = fileName;
@@ -228,7 +228,7 @@ export function useHufChat({ conversationId, enabled = true }: UseHufChatOptions
 
       // Upload voice
       if (options?.voiceBlob) {
-        const fileName = `voices/${conversationId}/${Date.now()}.webm`;
+        const fileName = `${conversationId}/${user.id}/voice_${Date.now()}.webm`;
         const { error } = await supabase.storage.from("chat-images").upload(fileName, options.voiceBlob);
         if (error) throw new Error("Sprachnachricht konnte nicht hochgeladen werden");
         voiceUrl = fileName;

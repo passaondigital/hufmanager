@@ -147,7 +147,7 @@ export function ClientExpertenChat() {
 
     let fileUrl: string | null = null;
     if (selectedImage) {
-      const fileName = `${user.id}/${Date.now()}.${selectedImage.name.split('.').pop()}`;
+      const fileName = `${conversationId}/${user.id}/${Date.now()}.${selectedImage.name.split('.').pop()}`;
       const { error } = await supabase.storage.from('chat-images').upload(fileName, selectedImage);
       if (error) { setSending(false); return; }
       fileUrl = fileName;

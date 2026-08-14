@@ -16,12 +16,11 @@ Vollstaendige Evidenzhistorie siehe SECURITY.md.
   - Evidenz: 8/8 Acceptance Tests PASS (T1-T8) — Seller SELECT, Buyer SELECT, Unrelated DENY, Malformed DENY, Nonexistent DENY, Seller INSERT, Unrelated INSERT DENY, Malformed INSERT DENY
   - Teardown: Testdaten vollstaendig bereinigt, 0 verwaiste Objekte verifiziert
 
-- [ ] **STORAGE-008** — Chat Images Broad Upload / Path Model
-  - Status: OPEN P1
-  - Naechste Aktion: Frontend-Aenderung (Pfadmodell) + Policy-Haertung
-  - Evidenz: 2026-08-14 (identifiziert) — Pfadmodell erfordert Frontend-Aenderung
-  - Schliesskriterium: Upload nur in eigene Chat-Pfade moeglich, Production-Verifikation PASS
-  - Retest-Trigger: Frontend + Policy Aenderung
+- [x] **STORAGE-008** — Chat Images Broad Upload / Path Model — **CLOSED 2026-08-14**
+  - Status: CLOSED + CURRENT EVIDENCE
+  - Migration: 20260814182100_p1_storage_chat_images_hardening.sql (Production-live)
+  - Evidenz: 11/11 Acceptance Tests PASS — Participant uploads/reads, Unrelated denies, Voice tests, Frontend transition verified
+  - Teardown: Testdaten vollstaendig bereinigt
 
 - [ ] **STORAGE-009** — Completion Reports Cross-Provider
   - Status: OPEN P1

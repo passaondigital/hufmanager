@@ -34,7 +34,7 @@ Ein Agent darf niemals `cat .env*` ausführen oder Secrets via `grep` im Klartex
 | STORAGE-005 | Expired Grant Read Bypass | CLOSED + CURRENT EVIDENCE | — | 2026-08-14 | 20260814163800_p1_storage_expired_grant_read_fix.sql — has_active_access_grant() | access_grants / horse-documents / Storage RLS Aenderung |
 | STORAGE-006 | Legal Documents Cross-Provider | CLOSED + CURRENT EVIDENCE | — | 2026-08-14 | 20260814160400_p1_storage_policy_hardening_phase1.sql — foldername(name)[1] = auth.uid() | legal-documents Policy Aenderung |
 | STORAGE-007 | Transfer Documents Broad Authenticated Access | CLOSED + CURRENT EVIDENCE | — | 2026-08-14 | 20260814172700_p1_storage_transfer_documents_hardening.sql — Transfer-Parties-Policies mit horse_transfers-Verknuepfung, 8/8 Acceptance Tests PASS (T1-T8) | horse-documents / horse_transfers Policy Aenderung |
-| STORAGE-008 | Chat Images Broad Upload / Path Model | OPEN | P1 | 2026-08-14 (identifiziert) | Erfordert Frontend-Aenderung (Pfadmodell) | Frontend + Policy Aenderung |
+| STORAGE-008 | Chat Images Broad Upload / Path Model | CLOSED + CURRENT EVIDENCE | — | 2026-08-14 | 20260814182100_p1_storage_chat_images_hardening.sql — Neues Pfadmodell <conversation_id>/<user_id>/... und sichere policies für SELECT/INSERT/UPDATE/DELETE | Frontend + Policy Aenderung |
 | STORAGE-009 | Completion Reports Cross-Provider | OPEN | P1 | 2026-08-14 (identifiziert) | Provider-Scoping fehlt | Policy Aenderung |
 | STORAGE-010 | PDFs Cross-Tenant Read | OPEN | P2 | 2026-08-14 (identifiziert) | Tenant-Isolation fehlt | Policy Aenderung |
 | STORAGE-011 | Feedback Screenshots Public Read | OPEN | P2 | 2026-08-14 (identifiziert) | Public SELECT Policy | Policy Aenderung |
@@ -94,16 +94,16 @@ Ein Agent darf niemals `cat .env*` ausführen oder Secrets via `grep` im Klartex
 
 | Kategorie | Anzahl |
 |---|---|
-| CLOSED + CURRENT EVIDENCE | 9 |
+| CLOSED + CURRENT EVIDENCE | 10 |
 | HISTORICAL EVIDENCE / RETEST | 13 |
-| OPEN P1 | 3 |
+| OPEN P1 | 2 |
 | OPEN P2 | 6 |
 | OPEN P2 / REVIEW | 1 |
 | OPEN P3 | 1 |
 | REVIEW P2 | 2 |
 | P0 | 0 |
 
-Naechste Aktion: STORAGE-008 (Chat Images) oder FUNC-002 (SECURITY DEFINER Klassifizierung) — beide P1.
+Naechste Aktion: STORAGE-009 (Completion Reports) oder FUNC-002 (SECURITY DEFINER Klassifizierung) — beide P1.
 
 ---
 
@@ -120,3 +120,4 @@ Naechste Aktion: STORAGE-008 (Chat Images) oder FUNC-002 (SECURITY DEFINER Klass
 | 2026-08-14 | AUTH-004 Production Retest | Live SQL Test auf vnschgjxkzzwzefqlrji |
 | 2026-08-14 | FUNC-001 Production Reverification | Live grants + function body inspection auf vnschgjxkzzwzefqlrji |
 | 2026-08-14 | STORAGE-007 Transfer Documents Hardening | 20260814172700_p1_storage_transfer_documents_hardening.sql — 8/8 Acceptance Tests PASS |
+| 2026-08-14 | STORAGE-008 Chat Images Hardening | 20260814182100_p1_storage_chat_images_hardening.sql — 11/11 Acceptance Tests PASS |
