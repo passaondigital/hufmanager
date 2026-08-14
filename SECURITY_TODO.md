@@ -224,3 +224,7 @@ D) Git-Evidenz/Migrationsreferenz wo zutreffend
 
 Eine Sicherheitsaufgabe ist NICHT abgeschlossen, wenn eines davon veraltet ist.
 Kein Agent darf behaupten: "TODO war nicht Teil dieser Aufgabe."
+
+## Verbindliche Agenten-Secret-Handling-Regel
+
+Ein Agent darf niemals `cat .env*` ausführen oder Secrets via `grep` im Klartext ausgeben. Zur Überprüfung von Umgebungsvariablen dürfen ausschließlich die Existenz (YES/NO) oder die Schlüsselnamen (Keys) inventarisiert werden. Jede versehentliche Offenlegung von Secrets erfordert eine sofortige Rotation des betroffenen Keys und eine Registrierung unter SEC-003.

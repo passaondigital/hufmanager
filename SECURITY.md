@@ -17,6 +17,10 @@ D) Git-Evidenz/Migrationsreferenz wo zutreffend
 
 Eine Sicherheitsaufgabe ist NICHT abgeschlossen, wenn eines davon veraltet ist.
 
+## Verbindliche Agenten-Secret-Handling-Regel
+
+Ein Agent darf niemals `cat .env*` ausführen oder Secrets via `grep` im Klartext ausgeben. Zur Überprüfung von Umgebungsvariablen dürfen ausschließlich die Existenz (YES/NO) oder die Schlüsselnamen (Keys) inventarisiert werden. Jede versehentliche Offenlegung von Secrets erfordert eine sofortige Rotation des betroffenen Keys und eine Registrierung unter SEC-003.
+
 ---
 
 ## Storage Security
@@ -80,6 +84,7 @@ Eine Sicherheitsaufgabe ist NICHT abgeschlossen, wenn eines davon veraltet ist.
 |---|---|---|---|---|---|---|
 | SEC-001 | CSP Headers | OPEN | P2 | 2026-03-16 | Deep Dive Audit: keine CSP Headers konfiguriert | Frontend Deployment |
 | SEC-002 | XSS Prevention | HISTORICAL EVIDENCE / RETEST | P2 | 2026-03-16 | Deep Dive Audit: 49/50 DOMPurify, 1x statisch | Frontend Aenderung |
+| SEC-003 | Agent Secret Handling / ENV Exposure | CLOSED + CURRENT EVIDENCE | — | 2026-08-14 | Audit von .env.production.local: Enthält nur public VITE_SUPABASE_PUBLISHABLE_KEY und VITE_SUPABASE_URL. Keine echten Secrets exponiert. Regel etabliert. | Agenten-Systemaenderung |
 | LIFECYCLE-001 | Soft-Delete / DSGVO-Export | HISTORICAL EVIDENCE / RETEST | P2 | 2026-03-16 | Audit: deleted_at + data-export Edge Function | Loeschkonzept Aenderung |
 | INFRA-001 | Infrastruktur-Audit (VPS/Backup/Secrets/Deps) | OPEN | P2 | nie | Kein dediziertes Audit vorhanden | Erstmalige Durchfuehrung erforderlich |
 
@@ -89,7 +94,7 @@ Eine Sicherheitsaufgabe ist NICHT abgeschlossen, wenn eines davon veraltet ist.
 
 | Kategorie | Anzahl |
 |---|---|
-| CLOSED + CURRENT EVIDENCE | 7 |
+| CLOSED + CURRENT EVIDENCE | 8 |
 | HISTORICAL EVIDENCE / RETEST | 13 |
 | OPEN P1 | 4 |
 | OPEN P2 | 6 |
