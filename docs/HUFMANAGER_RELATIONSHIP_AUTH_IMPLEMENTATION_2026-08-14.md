@@ -6,6 +6,40 @@
 
 > This file is a HufManager implementation note, not a second independent HUFI architecture source-of-truth.
 
+## Product rule: horse first
+
+The horse is the first fachliche/product layer across HufManager and the wider HUFI ecosystem.
+
+Technical IDs exist for identity, security and deterministic linking, but the UI and user journey should primarily communicate the concrete horse, its record, the people around it, relationship state and allowed actions.
+
+Every relevant flow should be reviewable as:
+
+```text
+Horse
+→ people/business involved
+→ relationship
+→ relationship status
+→ permission
+→ business process
+→ user-facing explanation
+```
+
+This rule applies across client, provider and partner surfaces, including:
+
+- horse record
+- connect/search/invites
+- appointments/tours
+- offers and service requests
+- service orders/treatments
+- invoices/payments
+- documents/media/findings
+- chat/notifications
+- permissions/privacy
+- history/audit
+- Hufi/AI retrieval and actions
+
+Do not optimize only the `#ID` layer and forget the business relationship around the horse.
+
 ## Canonical identity model
 
 - `#KID` = horse owner / client
@@ -74,6 +108,20 @@ Operational cross-user actions require an active relationship.
 - `inactive` / `revoked` / `deactivated` → deny
 - unknown status → deny
 
+## UX / explanation rule
+
+At the point where a user connects, shares, books, accepts, rejects, revokes, pays or communicates, the UI should explain the horse-specific consequence in simple language.
+
+Examples:
+
+- `Du gibst Lisa Zugriff auf Hopes Behandlungsdaten.`
+- `Max darf Termine für Hope sehen und verwalten.`
+- `Diese Rechnung gehört zur Behandlung von Hope.`
+- `Die Verbindung zu diesem Pferdeprofi ist noch nicht bestätigt.`
+- `Der Zugriff wurde deaktiviert; neue Daten werden nicht mehr geteilt.`
+
+Public/marketing pages should express the same principle without architecture terminology: one horse record, all relevant people around the horse, owner-controlled sharing.
+
 ## Appointment notifications
 
 Two-way appointment status functionality is being implemented:
@@ -106,6 +154,34 @@ Authenticated sender
 For `#PID`, until provider grants become horse-scoped, use the verified horse-owner/appointment chain plus a valid active, unexpired `access_grants` relationship as a transitional rule.
 
 For `#PRID`, require valid `horse_partner_access` for the same `appointment.horse_id/#EQID` where the current schema supports it.
+
+## Cross-cutting deep-dive scope
+
+Relationship/security reviews must follow the business chain and not stop at access tables.
+
+For every relevant client/provider/partner flow, inspect how the same horse relationship propagates through:
+
+```text
+Horse
+→ relationship
+→ offer/request
+→ order/treatment
+→ appointment/tour
+→ documentation
+→ invoice/payment
+→ chat/notification
+→ history/audit
+```
+
+Verify that horse identity, ownership, relationship state and permissions remain consistent across each transition.
+
+## Current implementation focus
+
+1. Keep the HufManager client area as the primary active UX/security cleanup target.
+2. Do not artificially reduce useful client capability; organize and explain it horse-first.
+3. In parallel, perform a smaller targeted consistency review of provider and partner areas for the same relationship/status/permission rules.
+4. No big-bang redesign or destructive identity migration.
+5. Every UI fix must remain consistent with server-side authorization and existing horse/business flows.
 
 ## Security findings to keep separate from feature work
 
