@@ -22,12 +22,11 @@ Vollstaendige Evidenzhistorie siehe SECURITY.md.
   - Evidenz: 11/11 Acceptance Tests PASS — Participant uploads/reads, Unrelated denies, Voice tests, Frontend transition verified
   - Teardown: Testdaten vollstaendig bereinigt
 
-- [ ] **STORAGE-009** — Completion Reports Cross-Provider
-  - Status: OPEN P1
-  - Naechste Aktion: Provider-Scoping in Policy einbauen
-  - Evidenz: 2026-08-14 (identifiziert) — Provider-Scoping fehlt
-  - Schliesskriterium: Reports nur fuer eigene Provider-ID lesbar, Production-Verifikation PASS
-  - Retest-Trigger: Policy Aenderung
+- [x] **STORAGE-009** — Completion Reports Cross-Provider — **CLOSED 2026-08-14**
+  - Status: CLOSED + CURRENT EVIDENCE
+  - Migration: 20260814193000_p1_storage_completion_reports_hardening.sql (Production-live)
+  - Evidenz: 5/5 Acceptance Tests PASS — Own-Provider SELECT, Foreign-Provider DENY, Anon DENY, INSERT/UPDATE verified, Production-Verifikation PASS
+  - Teardown: Testdaten vollstaendig bereinigt
 
 - [ ] **FUNC-002** — SECURITY DEFINER Vollstaendige Klassifizierung
   - Status: OPEN P1
