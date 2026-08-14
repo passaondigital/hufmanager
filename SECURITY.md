@@ -35,6 +35,7 @@ Ein Agent darf niemals `cat .env*` ausführen oder Secrets via `grep` im Klartex
 | STORAGE-006 | Legal Documents Cross-Provider | CLOSED + CURRENT EVIDENCE | — | 2026-08-14 | 20260814160400_p1_storage_policy_hardening_phase1.sql — foldername(name)[1] = auth.uid() | legal-documents Policy Aenderung |
 | STORAGE-007 | Transfer Documents Broad Authenticated Access | CLOSED + CURRENT EVIDENCE | — | 2026-08-14 | 20260814172700_p1_storage_transfer_documents_hardening.sql — Transfer-Parties-Policies mit horse_transfers-Verknuepfung, 8/8 Acceptance Tests PASS (T1-T8) | horse-documents / horse_transfers Policy Aenderung |
 | STORAGE-008 | Chat Images Broad Upload / Path Model | CLOSED + CURRENT EVIDENCE | — | 2026-08-14 | 20260814182100_p1_storage_chat_images_hardening.sql — Neues Pfadmodell <conversation_id>/<user_id>/... und sichere policies für SELECT/INSERT/UPDATE/DELETE | Frontend + Policy Aenderung |
+| STORAGE-009 | Completion Reports Cross-Provider | CLOSED + CURRENT EVIDENCE | — | 2026-08-14 | 20260814190500_p1_storage_completion_reports_hardening.sql + 20260814191300_p1_storage_global_upload_exclude_hardened.sql — Provider-Pfadscoping + globalen Upload-Bypass ausgeschlossen; Production-Live-Retest PASS | completion-reports / globale Storage INSERT Policy Aenderung |
 | STORAGE-010 | PDFs Cross-Tenant Read | OPEN | P2 | 2026-08-14 (identifiziert) | Tenant-Isolation fehlt | Policy Aenderung |
 | STORAGE-011 | Feedback Screenshots Public Read | OPEN | P2 | 2026-08-14 (identifiziert) | Public SELECT Policy | Policy Aenderung |
 | STORAGE-012 | Horse Photos Public Policy | OPEN | P2 | 2026-08-14 (identifiziert) | Public can view horse photos | Policy Aenderung |
@@ -98,7 +99,7 @@ Ein Agent darf niemals `cat .env*` ausführen oder Secrets via `grep` im Klartex
 - HISTORICAL EVIDENCE / RETEST: 13
 - CLOSED + CURRENT EVIDENCE: 11 (Neu: STORAGE-009 Completion Reports Hardening)
 
-Naechste Aktion: STORAGE-009 (Completion Reports) oder FUNC-002 (SECURITY DEFINER Klassifizierung) — beide P1.
+Naechste Aktion: FUNC-002 bleibt als Security-Backlog P1 registriert; kein aktuell belegter Release-P0/P1 aus STORAGE-009.
 
 ---
 
@@ -116,3 +117,4 @@ Naechste Aktion: STORAGE-009 (Completion Reports) oder FUNC-002 (SECURITY DEFINE
 | 2026-08-14 | FUNC-001 Production Reverification | Live grants + function body inspection auf vnschgjxkzzwzefqlrji |
 | 2026-08-14 | STORAGE-007 Transfer Documents Hardening | 20260814172700_p1_storage_transfer_documents_hardening.sql — 8/8 Acceptance Tests PASS |
 | 2026-08-14 | STORAGE-008 Chat Images Hardening | 20260814182100_p1_storage_chat_images_hardening.sql — 11/11 Acceptance Tests PASS |
+| 2026-08-14 | STORAGE-009 Completion Reports Hardening | 20260814190500_p1_storage_completion_reports_hardening.sql + 20260814191300_p1_storage_global_upload_exclude_hardened.sql — Cross-Provider und globaler Upload-Bypass geschlossen; Production-Live-Retest PASS |

@@ -24,8 +24,8 @@ Vollstaendige Evidenzhistorie siehe SECURITY.md.
 
 - [x] **STORAGE-009** — Completion Reports Cross-Provider — **CLOSED 2026-08-14**
   - Status: CLOSED + CURRENT EVIDENCE
-  - Migration: 20260814193000_p1_storage_completion_reports_hardening.sql (Production-live)
-  - Evidenz: 5/5 Acceptance Tests PASS — Own-Provider SELECT, Foreign-Provider DENY, Anon DENY, INSERT/UPDATE verified, Production-Verifikation PASS
+  - Migration: 20260814190500_p1_storage_completion_reports_hardening.sql + 20260814191300_p1_storage_global_upload_exclude_hardened.sql (Production-live)
+  - Evidenz: Acceptance Tests PASS + finaler Production-Live-Retest mit ALLEN aktiven Policies: Own-Provider PASS, Cross-Provider DENY, unrelated authenticated DENY; globaler INSERT-Bypass ausgeschlossen
   - Teardown: Testdaten vollstaendig bereinigt
 
 - [ ] **FUNC-002** — SECURITY DEFINER Vollstaendige Klassifizierung
