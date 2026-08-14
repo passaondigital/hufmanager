@@ -1,10 +1,15 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format, differenceInCalendarDays } from "date-fns";
 import { de } from "date-fns/locale";
-import { Calendar, MapPin, Clock } from "lucide-react";
+import { Calendar, MapPin, Clock, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProfessionConfig } from "@/hooks/useProfessionConfig";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { toast } from "@/hooks/use-toast";
 
 interface NextAppointmentCardProps {
   userId: string;
@@ -13,6 +18,161 @@ interface NextAppointmentCardProps {
   employeeProfileId?: string;
   onNavigate?: () => void;
   onDetails?: () => void;
+}
+
+function ClientDelayAction({ appointmentId }: { appointmentId: string }) {
+  const [open, setOpen] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [selectedMinutes, setSelectedMinutes] = useState<number | null>(10);
+  const [customMinutes, setCustomMinutes] = useState<string>("");
+  const [showCustom, setShowCustom] = useState(false);
+  const [note, setNote] = useState("");
+
+  const handleSendDelay = async () => {
+    let minutes = showCustom ? parseInt(customMinutes, 10) : selectedMinutes;
+    if (!minutes || isNaN(minutes) || minutes < 1 || minutes > 180) {
+      toast({
+        title: "Ungültige Zeit",
+        description: "Bitte wählen Sie eine Verspätung zwischen 1 und 180 Minuten.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("notify-appointment-delay", {
+        body: {
+          appointment_id: appointmentId,
+          delay_minutes: minutes,
+          action_type: "delay",
+          note: note.trim() || undefined,
+        },
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || "Fehler beim Senden");
+      }
+
+      setSent(true);
+      setOpen(false);
+      toast({
+        title: "Verspätung gemeldet",
+        description: `Dein Pferdeprofi wurde über ca. ${minutes} Min. Verspätung informiert.`,
+      });
+
+      setTimeout(() => setSent(false), 30000);
+    } catch (err: any) {
+      console.error("Client delay notification error:", err);
+      toast({
+        title: "Fehler",
+        description: err.message || "Verspätung konnte nicht gesendet werden.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="mt-3">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            size="sm"
+            variant={sent ? "secondary" : "outline"}
+            className="w-full h-8 text-xs font-medium border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 gap-1.5"
+            disabled={sending}
+          >
+            {sending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : sent ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+            ) : (
+              <Clock className="h-3.5 w-3.5" />
+            )}
+            {sent ? "Verspätung gemeldet" : "Ich verspäte mich"}
+          </Button>
+        </PopoverTrigger>
+
+        <PopoverContent className="w-64 p-3 space-y-3" align="center">
+          <div className="space-y-1">
+            <h4 className="text-xs font-semibold text-foreground">Ich verspäte mich</h4>
+            <p className="text-[11px] text-muted-foreground">Pferdeprofi über deine Verspätung informieren.</p>
+          </div>
+
+          {/* Quick options */}
+          <div className="grid grid-cols-4 gap-1">
+            {[10, 20, 30].map((m) => (
+              <Button
+                key={m}
+                type="button"
+                size="sm"
+                variant={!showCustom && selectedMinutes === m ? "default" : "outline"}
+                className="h-7 text-xs font-mono px-1"
+                onClick={() => {
+                  setSelectedMinutes(m);
+                  setShowCustom(false);
+                }}
+              >
+                +{m}m
+              </Button>
+            ))}
+            <Button
+              type="button"
+              size="sm"
+              variant={showCustom ? "default" : "outline"}
+              className="h-7 text-[10px] px-1"
+              onClick={() => setShowCustom(true)}
+            >
+              Andere
+            </Button>
+          </div>
+
+          {/* Custom time input */}
+          {showCustom && (
+            <div className="flex items-center gap-1.5">
+              <Input
+                type="number"
+                min={1}
+                max={180}
+                placeholder="Min. (1-180)"
+                value={customMinutes}
+                onChange={(e) => setCustomMinutes(e.target.value)}
+                className="h-7 text-xs"
+              />
+              <span className="text-xs text-muted-foreground shrink-0">Min.</span>
+            </div>
+          )}
+
+          {/* Short Note */}
+          <div className="space-y-1">
+            <label className="text-[10px] text-muted-foreground font-medium">Kurze Nachricht (optional)</label>
+            <Input
+              type="text"
+              maxLength={200}
+              placeholder="z.B. Stehe im Stau..."
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="h-7 text-xs"
+            />
+          </div>
+
+          {/* Action button */}
+          <Button
+            size="sm"
+            className="w-full h-8 text-xs font-semibold"
+            onClick={handleSendDelay}
+            disabled={sending}
+          >
+            {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+            Jetzt absenden
+          </Button>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
 }
 
 export function NextAppointmentCard({ userId, role, employeeProfileId, onNavigate, onDetails }: NextAppointmentCardProps) {
@@ -106,8 +266,13 @@ export function NextAppointmentCard({ userId, role, employeeProfileId, onNavigat
         </span>
       </div>
 
+      {/* Action for client: Ich verspäte mich */}
+      {role === "client" && (
+        <ClientDelayAction appointmentId={appointment.id} />
+      )}
+
       {/* Action buttons for provider */}
-      {(onNavigate || onDetails) && (
+      {role !== "client" && (onNavigate || onDetails) && (
         <div className="flex gap-2 mt-3">
           {onNavigate && (
             <button onClick={onNavigate} className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors">

@@ -33,7 +33,6 @@ function getClientNavigationConfig(mode: ClientModeType, isVerified: boolean): N
           { label: "Buchen", iconName: "Calendar", path: "/client-booking" },
           { label: "Aufträge", iconName: "ClipboardList", path: "/client-orders" },
           { label: "Rechnungen", iconName: "Receipt", path: "/client-invoices" },
-          { label: "Mein BHS Abo", iconName: "Repeat2", path: "/client-bhs-abo" },
         ],
       },
       {

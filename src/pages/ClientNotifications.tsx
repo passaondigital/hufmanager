@@ -49,16 +49,7 @@ export default function ClientNotifications() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border/50 px-4 py-4">
-        <div className="flex items-center gap-2">
-          <Bell className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-bold">Benachrichtigungen</h1>
-          <HelpTip id="client.notifications" />
-        </div>
-      </div>
-
-      <div className="px-4 py-4 space-y-4 max-w-lg mx-auto">
+      <div className="px-4 py-4 space-y-4 max-w-2xl mx-auto">
         {/* Push toggle */}
         <Card>
           <CardHeader className="pb-2">

@@ -108,7 +108,7 @@ export default function PartnerPublicProfile() {
       return;
     }
     setSending(true);
-    const subject = `Kontaktanfrage über Hufi von ${contactForm.name}`;
+    const subject = `Kontaktanfrage über HufManager von ${contactForm.name}`;
     const body = `${contactForm.message}\n\n— ${contactForm.name} (${contactForm.email})`;
     window.location.href = `mailto:${data.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     setSent(true);
@@ -147,10 +147,10 @@ export default function PartnerPublicProfile() {
 
   // SEO
   if (typeof document !== "undefined") {
-    document.title = `${data.full_name} — ${typeConfig.label} | Hufi`;
+    document.title = `${data.full_name} — ${typeConfig.label} | HufManager`;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) {
-      metaDesc.setAttribute("content", `${data.full_name} — ${typeConfig.label}. ${data.bio?.substring(0, 120) || "Fachpartner auf Hufi."}`);
+      metaDesc.setAttribute("content", `${data.full_name} — ${typeConfig.label}. ${data.bio?.substring(0, 120) || "Fachpartner auf HufManager."}`);
     }
   }
 
@@ -408,10 +408,10 @@ export default function PartnerPublicProfile() {
         <div className="max-w-3xl mx-auto px-4 text-center space-y-2">
           <p className="text-xs text-muted-foreground">
             #{data.readable_id} · Profil auf{" "}
-            <a href="https://hufiapp.de" className="text-primary hover:underline">Hufi</a>
+            <a href="https://app.hufmanager.de" className="text-primary hover:underline">HufManager</a>
           </p>
           <p className="text-xs text-muted-foreground/60">
-            © {new Date().getFullYear()} Hufi · DSGVO-konform
+            © {new Date().getFullYear()} HufManager · DSGVO-konform
           </p>
         </div>
       </footer>

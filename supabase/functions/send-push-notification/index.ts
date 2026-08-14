@@ -340,6 +340,7 @@ serve(async (req) => {
 
     const token = authHeader.replace('Bearer ', '');
     const isServiceRole = token === supabaseServiceKey;
+    let callerUserId: string | null = null;
 
     if (!isServiceRole) {
       const authClient = createClient(supabaseUrl, supabaseAnonKey, {
@@ -352,6 +353,7 @@ serve(async (req) => {
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+      callerUserId = userData.user.id;
     }
     // --- End authentication check ---
 
@@ -374,6 +376,16 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'user_id and title are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Security hardening: Ordinary authenticated users can only send push notifications to themselves.
+    // Cross-user push notifications MUST go through service-role authorized endpoints (e.g. notify-appointment-delay).
+    if (!isServiceRole && callerUserId && user_id !== callerUserId) {
+      console.warn(`Denied arbitrary push attempt from user ${callerUserId} targeting user ${user_id}`);
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Ordinary users can only send push notifications to themselves.' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

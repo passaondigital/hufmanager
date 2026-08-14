@@ -410,7 +410,7 @@ const signIn = async (email: string, password: string) => {
 
             await supabase.auth.signOut();
             return {
-              error: new Error(`PROVIDER_NO_PRO:${providerProfile.email || ""}`),
+              error: new Error(`PROVIDER_NO_PRO:${providerProfile.id || "unknown"}`),
             };
           }
         }

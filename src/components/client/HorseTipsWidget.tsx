@@ -21,18 +21,19 @@ export function HorseTipsWidget() {
   const tip = tips[currentIndex];
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-background to-accent/10 overflow-hidden">
+    <Card className="border border-border bg-card shadow-none rounded-xl overflow-hidden">
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Lightbulb className="h-4 w-4 text-primary" />
-            <span className="font-semibold text-sm text-foreground">Tipps für dein Pferd 🐴</span>
+            <span className="font-semibold text-sm text-foreground">Pferde-Tipp</span>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted/50"
             onClick={() => setDismissed(weekKey)}
+            aria-label="Tipp schließen"
           >
             <X className="h-3.5 w-3.5" />
           </Button>
@@ -47,36 +48,38 @@ export function HorseTipsWidget() {
             transition={{ duration: 0.2 }}
             className="space-y-2"
           >
-            <Badge variant="secondary" className="text-[10px]">
+            <Badge variant="secondary" className="text-[10px] font-medium bg-muted text-muted-foreground border-0">
               {tip.emoji} {tip.categoryLabel}
             </Badge>
-            <p className="text-sm text-foreground leading-relaxed">{tip.text}</p>
+            <p className="text-sm text-foreground/90 leading-relaxed">{tip.text}</p>
           </motion.div>
         </AnimatePresence>
 
         {tips.length > 1 && (
-          <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/50">
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 px-2"
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50"
               onClick={() => setCurrentIndex((i) => (i - 1 + tips.length) % tips.length)}
+              aria-label="Vorheriger Tipp"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5 items-center">
               {tips.map((_, i) => (
                 <div
                   key={i}
-                  className={`h-1.5 w-1.5 rounded-full transition-colors ${i === currentIndex ? "bg-primary" : "bg-muted-foreground/30"}`}
+                  className={`h-1.5 w-1.5 rounded-full transition-colors ${i === currentIndex ? "bg-primary" : "bg-muted-foreground/20"}`}
                 />
               ))}
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 px-2"
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/50"
               onClick={() => setCurrentIndex((i) => (i + 1) % tips.length)}
+              aria-label="Nächster Tipp"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
