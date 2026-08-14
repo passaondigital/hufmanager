@@ -10,12 +10,11 @@ Vollstaendige Evidenzhistorie siehe SECURITY.md.
 
 ## P1
 
-- [ ] **STORAGE-007** — Transfer Documents Broad Authenticated Access
-  - Status: OPEN P1
-  - Naechste Aktion: Redesign Transfer-Parties-Policies mit horse_transfers-Verknuepfung
-  - Evidenz: 2026-08-14 (identifiziert) — Transfer parties policies erlauben jeden authentifizierten Nutzer auf transfers/*
-  - Schliesskriterium: Policy erlaubt nur Transfer-Beteiligte, Production-Verifikation PASS
-  - Retest-Trigger: Policy Aenderung an transfer-parties Bucket
+- [x] **STORAGE-007** — Transfer Documents Broad Authenticated Access — **CLOSED 2026-08-14**
+  - Status: CLOSED + CURRENT EVIDENCE
+  - Migration: 20260814172700_p1_storage_transfer_documents_hardening.sql (Production-live)
+  - Evidenz: 8/8 Acceptance Tests PASS (T1-T8) — Seller SELECT, Buyer SELECT, Unrelated DENY, Malformed DENY, Nonexistent DENY, Seller INSERT, Unrelated INSERT DENY, Malformed INSERT DENY
+  - Teardown: Testdaten vollstaendig bereinigt, 0 verwaiste Objekte verifiziert
 
 - [ ] **STORAGE-008** — Chat Images Broad Upload / Path Model
   - Status: OPEN P1
