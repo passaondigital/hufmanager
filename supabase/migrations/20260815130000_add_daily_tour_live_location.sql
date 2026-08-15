@@ -12,6 +12,20 @@ ALTER TABLE public.daily_tours
   ADD COLUMN IF NOT EXISTS delay_reason TEXT,
   ADD COLUMN IF NOT EXISTS delay_reported_at TIMESTAMPTZ;
 
+-- Older DayCockpit versions used tour_active_since / tour_ended_at without
+-- consistently updating daily_tours.status. Normalize those rows once so the
+-- consolidated Slim tour has a single status truth after this migration.
+UPDATE public.daily_tours
+SET status = 'active', updated_at = now()
+WHERE tour_active_since IS NOT NULL
+  AND tour_ended_at IS NULL
+  AND status IS DISTINCT FROM 'active';
+
+UPDATE public.daily_tours
+SET status = 'completed', updated_at = now()
+WHERE tour_ended_at IS NOT NULL
+  AND status IS DISTINCT FROM 'completed';
+
 COMMENT ON COLUMN public.daily_tours.live_lat IS 'Ephemeral provider latitude while a tour is active; cleared after tour end.';
 COMMENT ON COLUMN public.daily_tours.live_lng IS 'Ephemeral provider longitude while a tour is active; cleared after tour end.';
 COMMENT ON COLUMN public.daily_tours.live_accuracy IS 'Browser geolocation accuracy in meters for the ephemeral live position.';
