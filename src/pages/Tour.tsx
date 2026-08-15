@@ -2,12 +2,18 @@ import { useLocation } from "react-router-dom";
 import { DayCockpit } from "@/components/day-cockpit";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SlimTourScreen } from "@/components/slim/SlimTourScreen";
+import { TourQuickGuide } from "@/components/slim/TourQuickGuide";
 
 const TourPage = () => {
   const location = useLocation();
 
   if (location.pathname === "/home/tour") {
-    return <SlimTourScreen />;
+    return (
+      <>
+        <TourQuickGuide />
+        <SlimTourScreen />
+      </>
+    );
   }
 
   return (
