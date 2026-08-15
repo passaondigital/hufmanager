@@ -26,6 +26,7 @@ import { geocodeAppointmentAndSave } from "@/lib/geocodeAppointment";
 import { resolveProviderDisplayName, sendTypedPush } from "@/lib/pushNotificationService";
 
 const FINISHED_STATUSES = new Set(["completed", "no_show", "cancelled"]);
+type AddPlacement = "optimize" | "next" | "end";
 
 type TourEditAppointment = {
   id: string;
@@ -61,6 +62,8 @@ export function TourLiveEditControl() {
   const queryClient = useQueryClient();
   const today = format(new Date(), "yyyy-MM-dd");
   const [addOpen, setAddOpen] = useState(false);
+  const [addPlacement, setAddPlacement] = useState<AddPlacement>("optimize");
+  const [addSnapshotIds, setAddSnapshotIds] = useState<string[]>([]);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removeId, setRemoveId] = useState("");
 
@@ -108,8 +111,8 @@ export function TourLiveEditControl() {
     [appointments],
   );
 
-  const refreshTourAfterEdit = useCallback(async () => {
-    if (!user?.id) return;
+  const refreshTourAfterEdit = useCallback(async (options?: { previousIds?: string[]; placement?: AddPlacement }) => {
+    if (!user?.id) return { addedCount: 0 };
 
     const { data: currentAppointments, error } = await supabase
       .from("appointments")
@@ -123,18 +126,10 @@ export function TourLiveEditControl() {
     if (error) throw error;
 
     const rows = currentAppointments ?? [];
-    let nextOrder = rows.reduce((max, row) => Math.max(max, Number(row.tour_order || 0)), 0) + 1;
-    const withoutOrder = rows.filter((row) => row.tour_order == null && !FINISHED_STATUSES.has(row.status || ""));
-
-    for (const row of withoutOrder) {
-      const { error: orderError } = await supabase
-        .from("appointments")
-        .update({ tour_order: nextOrder })
-        .eq("id", row.id)
-        .eq("provider_id", user.id);
-      if (orderError) throw orderError;
-      nextOrder += 1;
-    }
+    const previousIds = new Set(options?.previousIds ?? []);
+    const newRows = options?.previousIds
+      ? rows.filter((row) => !previousIds.has(row.id) && !FINISHED_STATUSES.has(row.status || ""))
+      : [];
 
     const geocodeCandidates = rows.filter(
       (row) => !FINISHED_STATUSES.has(row.status || "") && (row.appointment_lat == null || row.appointment_lng == null),
@@ -150,23 +145,76 @@ export function TourLiveEditControl() {
       ),
     );
 
+    if (newRows.length) {
+      const newIds = new Set(newRows.map((row) => row.id));
+      const finishedRows = rows.filter((row) => FINISHED_STATUSES.has(row.status || ""));
+      const existingOpenRows = rows.filter((row) => !FINISHED_STATUSES.has(row.status || "") && !newIds.has(row.id));
+      const placement = options?.placement ?? "end";
+      const orderedRows = placement === "next"
+        ? [...finishedRows, ...newRows, ...existingOpenRows]
+        : [...finishedRows, ...existingOpenRows, ...newRows];
+
+      const orderResults = await Promise.all(
+        orderedRows.map((row, index) =>
+          supabase
+            .from("appointments")
+            .update({ tour_order: index + 1 })
+            .eq("id", row.id)
+            .eq("provider_id", user.id),
+        ),
+      );
+      const orderFailure = orderResults.find((result) => result.error);
+      if (orderFailure?.error) throw orderFailure.error;
+    } else {
+      let nextOrder = rows.reduce((max, row) => Math.max(max, Number(row.tour_order || 0)), 0) + 1;
+      const withoutOrder = rows.filter((row) => row.tour_order == null && !FINISHED_STATUSES.has(row.status || ""));
+      for (const row of withoutOrder) {
+        const { error: orderError } = await supabase
+          .from("appointments")
+          .update({ tour_order: nextOrder })
+          .eq("id", row.id)
+          .eq("provider_id", user.id);
+        if (orderError) throw orderError;
+        nextOrder += 1;
+      }
+    }
+
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["tour-live-edit", user.id, today] }),
       queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user.id, today] }),
       queryClient.invalidateQueries({ queryKey: ["tour-arrival-control", user.id, today] }),
       queryClient.invalidateQueries({ queryKey: ["client-tour-status"] }),
     ]);
+
+    return { addedCount: newRows.length };
   }, [queryClient, today, user?.id]);
+
+  const openAddDialog = () => {
+    setAddSnapshotIds(appointments.map((appointment) => appointment.id));
+    setAddOpen(true);
+  };
 
   const closeAddDialog = useCallback(async () => {
     setAddOpen(false);
     try {
-      await refreshTourAfterEdit();
+      const result = await refreshTourAfterEdit({ previousIds: addSnapshotIds, placement: addPlacement });
+      if (result.addedCount > 0) {
+        if (addPlacement === "optimize") {
+          window.dispatchEvent(new CustomEvent("hufmanager:tour-optimize-requested"));
+          toast.success("Stopp hinzugefügt · Route wird neu optimiert");
+        } else if (addPlacement === "next") {
+          toast.success("Stopp hinzugefügt · ist jetzt als Nächstes dran");
+        } else {
+          toast.success("Stopp hinzugefügt · ans Tourende gesetzt");
+        }
+      }
     } catch (error) {
       console.error("Tour refresh after appointment edit failed", error);
       toast.error("Tour konnte nach der Änderung nicht vollständig aktualisiert werden");
+    } finally {
+      setAddSnapshotIds([]);
     }
-  }, [refreshTourAfterEdit]);
+  }, [addPlacement, addSnapshotIds, refreshTourAfterEdit]);
 
   const removeStop = useMutation({
     mutationFn: async (appointmentId: string) => {
@@ -225,15 +273,25 @@ export function TourLiveEditControl() {
           </span>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[var(--hm-text-primary)]">Tour live ändern</p>
-            <p className="text-xs text-[var(--hm-text-secondary)]">Stopps ergänzen oder entfernen. Verschieben kannst du weiterhin direkt in der Reihenfolge.</p>
+            <p className="text-xs text-[var(--hm-text-secondary)]">Neue Stopps flexibel einsortieren, entfernen oder per Drag-&-Drop verschieben.</p>
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Button type="button" variant="outline" onClick={() => setRemoveOpen(true)} disabled={!openAppointments.length}>
             <UserMinus className="h-4 w-4" />
             Stopp entfernen
           </Button>
-          <Button type="button" onClick={() => setAddOpen(true)}>
+          <Select value={addPlacement} onValueChange={(value) => setAddPlacement(value as AddPlacement)}>
+            <SelectTrigger className="w-[11.5rem]" aria-label="Neuen Stopp einsortieren">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="optimize">Automatisch planen</SelectItem>
+              <SelectItem value="next">Als Nächstes</SelectItem>
+              <SelectItem value="end">Ans Ende</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button type="button" onClick={openAddDialog}>
             <Plus className="h-4 w-4" />
             Stopp hinzufügen
           </Button>
