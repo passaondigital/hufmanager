@@ -7,15 +7,47 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  Plus, Edit, Clock, Euro, Info, Link2, Trash2, Loader2, DollarSign,
-  ShoppingBag, LayoutGrid, ChevronDown, Lightbulb, CheckCircle2, AlertCircle,
-  BookOpen, Tag, Layers, GripVertical, Eye, EyeOff
+  Plus,
+  Edit,
+  Clock,
+  Euro,
+  Link2,
+  Trash2,
+  Loader2,
+  DollarSign,
+  ShoppingBag,
+  LayoutGrid,
+  ChevronDown,
+  CheckCircle2,
+  AlertCircle,
+  Tag,
+  Eye,
+  EyeOff,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,8 +56,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ServicePaymentModal } from "@/components/services/ServicePaymentModal";
 import { PRICE_GROUPS } from "@/lib/priceGroups";
+import { HelpTip } from "@/components/ui/HelpTip";
 
-// ─── Types ─────────────────────────────────────────────────────────
 type BillingType = "standard" | "flat_rate" | "series";
 type BookingAction = "direct_book" | "request_only";
 
@@ -58,19 +90,16 @@ interface PriceOverride {
   price: number;
 }
 
-// ─── Constants ─────────────────────────────────────────────────────
-const categoryOptions = ["Standard", "Beschlag", "Spezial", "Zubehör", "Beratung", "Diagnostik", "Therapie", "Paket"];
-
-const billingTypeLabels: Record<BillingType, string> = {
-  standard: "Pro Termin",
-  flat_rate: "Pauschal / Abo",
-  series: "Serienpaket",
-};
-
-const bookingActionLabels: Record<BookingAction, string> = {
-  direct_book: "Direkt buchbar",
-  request_only: "Nur auf Anfrage",
-};
+const categoryOptions = [
+  "Standard",
+  "Beschlag",
+  "Spezial",
+  "Zubehör",
+  "Beratung",
+  "Diagnostik",
+  "Therapie",
+  "Paket",
+];
 
 const categoryColors: Record<string, string> = {
   Standard: "bg-accent/10 text-accent",
@@ -83,46 +112,35 @@ const categoryColors: Record<string, string> = {
   Paket: "bg-rose-500/10 text-rose-600",
 };
 
-// ─── Mini Guide Component ──────────────────────────────────────────
-function MiniGuide({ title, children }: { title: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex items-center gap-2 text-xs text-primary hover:text-primary/80 transition-colors cursor-pointer group">
-        <Lightbulb className="h-3.5 w-3.5" />
-        <span className="group-hover:underline">{title}</span>
-        <ChevronDown className={cn("h-3 w-3 transition-transform", open && "rotate-180")} />
-      </CollapsibleTrigger>
-      <CollapsibleContent className="mt-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg border border-border/50 space-y-1">
-        {children}
-      </CollapsibleContent>
-    </Collapsible>
-  );
-}
-
-// ─── Main Component ────────────────────────────────────────────────
-export default function MeinAngebot({ readOnly = false, variant = "provider" }: { readOnly?: boolean; variant?: "provider" | "partner" }) {
+export default function MeinAngebot({
+  readOnly = false,
+  variant = "provider",
+}: {
+  readOnly?: boolean;
+  variant?: "provider" | "partner";
+}) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("leistungen");
+  const [advancedPricingOpen, setAdvancedPricingOpen] = useState(false);
+  const [advancedTab, setAdvancedTab] = useState("preisgruppen");
 
-  // ─── Service State ─────────────────────────────────────────────
   const [serviceDialogOpen, setServiceDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [paymentModalService, setPaymentModalService] = useState<Service | null>(null);
   const [serviceForm, setServiceForm] = useState({
-    name: "", description: "", category: "Standard",
-    base_price: 0, duration: 60,
+    name: "",
+    description: "",
+    category: "Standard",
+    base_price: 0,
+    duration: 60,
     billing_type: "standard" as BillingType,
     booking_action: "direct_book" as BookingAction,
   });
 
-  // ─── Price Group State ─────────────────────────────────────────
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupDesc, setNewGroupDesc] = useState("");
 
-  // ─── Data Queries ──────────────────────────────────────────────
   const tableName = variant === "partner" ? "partner_services" : "services";
   const idColumn = variant === "partner" ? "partner_id" : "provider_id";
 
@@ -131,21 +149,23 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
     queryFn: async () => {
       if (!user) throw new Error("Nicht angemeldet");
       const { data, error } = await supabase
-        .from(tableName as any).select("*")
+        .from(tableName as any)
+        .select("*")
         .eq(idColumn, user.id)
         .order("sort_order", { ascending: true, nullsFirst: false })
         .order(variant === "partner" ? "name" : "created_at");
       if (error) throw error;
-      // Normalize partner_services to match Service interface
+
       if (variant === "partner") {
-        return (data as any[]).map((s: any) => ({
-          ...s,
-          base_price: s.base_price || 0,
+        return (data as any[]).map((service: any) => ({
+          ...service,
+          base_price: service.base_price || 0,
           billing_type: "standard" as BillingType,
           booking_action: "direct_book" as BookingAction,
-          category: s.category || "Standard",
+          category: service.category || "Standard",
         })) as Service[];
       }
+
       return data as unknown as Service[];
     },
     enabled: !!user,
@@ -156,7 +176,8 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
-        .from("price_groups").select("*")
+        .from("price_groups")
+        .select("*")
         .eq("provider_id", user.id);
       if (error) throw error;
       return (data as PriceGroup[]) || [];
@@ -169,7 +190,8 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
     queryFn: async () => {
       if (!user) return [];
       const { data, error } = await supabase
-        .from("service_price_overrides").select("service_id, price_group, price")
+        .from("service_price_overrides")
+        .select("service_id, price_group, price")
         .eq("provider_id", user.id);
       if (error) throw error;
       return (data as PriceOverride[]) || [];
@@ -177,12 +199,19 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
     enabled: !!user,
   });
 
-  // ─── Service Mutations ────────────────────────────────────────
   const createService = useMutation({
     mutationFn: async (data: typeof serviceForm) => {
       if (!user) throw new Error("Nicht angemeldet");
       const payload = variant === "partner"
-        ? { name: data.name, description: data.description || null, base_price: data.base_price || null, duration: data.duration || null, category: data.category || null, is_active: true, partner_id: user.id }
+        ? {
+            name: data.name,
+            description: data.description || null,
+            base_price: data.base_price || null,
+            duration: data.duration || null,
+            category: data.category || null,
+            is_active: true,
+            partner_id: user.id,
+          }
         : { ...data, is_active: true, provider_id: user.id };
       const { error } = await supabase.from(tableName as any).insert(payload as any);
       if (error) throw error;
@@ -198,7 +227,14 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
   const updateService = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Service> }) => {
       const updateData = variant === "partner"
-        ? { name: data.name, description: data.description, base_price: data.base_price, duration: data.duration, category: data.category, is_active: data.is_active }
+        ? {
+            name: data.name,
+            description: data.description,
+            base_price: data.base_price,
+            duration: data.duration,
+            category: data.category,
+            is_active: data.is_active,
+          }
         : data;
       const { error } = await supabase.from(tableName as any).update(updateData as any).eq("id", id);
       if (error) throw error;
@@ -230,21 +266,28 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [tableName] }),
   });
 
-  // ─── Price Group Mutations ────────────────────────────────────
   const createGroup = useMutation({
     mutationFn: async () => {
       if (!user || !newGroupName) return;
       const { error } = await supabase.from("price_groups").insert({
-        provider_id: user.id, name: newGroupName, description: newGroupDesc || null,
+        provider_id: user.id,
+        name: newGroupName,
+        description: newGroupDesc || null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["price-groups"] });
       toast({ title: "Preisgruppe erstellt ✓" });
-      setNewGroupName(""); setNewGroupDesc(""); setGroupDialogOpen(false);
+      setNewGroupName("");
+      setNewGroupDesc("");
+      setGroupDialogOpen(false);
     },
-    onError: (e: any) => toast({ title: "Fehler", description: e.message, variant: "destructive" }),
+    onError: (error: any) => toast({
+      title: "Fehler",
+      description: error.message,
+      variant: "destructive",
+    }),
   });
 
   const deleteGroup = useMutation({
@@ -258,23 +301,31 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
     },
   });
 
-  // ─── Price Override Mutation ───────────────────────────────────
   const updateOverride = async (serviceId: string, priceGroup: string, newPrice: number) => {
     if (!user) return;
     try {
       const { data: existing } = await supabase
-        .from("service_price_overrides").select("id")
-        .eq("service_id", serviceId).eq("price_group", priceGroup).maybeSingle();
+        .from("service_price_overrides")
+        .select("id")
+        .eq("service_id", serviceId)
+        .eq("price_group", priceGroup)
+        .maybeSingle();
 
       if (existing) {
-        await supabase.from("service_price_overrides")
-          .update({ price: newPrice }).eq("service_id", serviceId).eq("price_group", priceGroup);
+        await supabase
+          .from("service_price_overrides")
+          .update({ price: newPrice })
+          .eq("service_id", serviceId)
+          .eq("price_group", priceGroup);
       } else {
         await supabase.from("service_price_overrides").insert({
-          service_id: serviceId, provider_id: user.id,
-          price_group: priceGroup, price: newPrice,
+          service_id: serviceId,
+          provider_id: user.id,
+          price_group: priceGroup,
+          price: newPrice,
         });
       }
+
       queryClient.invalidateQueries({ queryKey: ["price-overrides-all"] });
       toast({ title: "Preis gespeichert ✓" });
     } catch {
@@ -282,25 +333,38 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
     }
   };
 
-  // ─── Helpers ──────────────────────────────────────────────────
   const openServiceCreate = () => {
     setEditingService(null);
-    setServiceForm({ name: "", description: "", category: "Standard", base_price: 0, duration: 60, billing_type: "standard", booking_action: "direct_book" });
-    setServiceDialogOpen(true);
-  };
-
-  const openServiceEdit = (s: Service) => {
-    setEditingService(s);
     setServiceForm({
-      name: s.name, description: s.description || "", category: s.category,
-      base_price: s.base_price, duration: s.duration || 60,
-      billing_type: s.billing_type || "standard",
-      booking_action: s.booking_action || "direct_book",
+      name: "",
+      description: "",
+      category: "Standard",
+      base_price: 0,
+      duration: 60,
+      billing_type: "standard",
+      booking_action: "direct_book",
     });
     setServiceDialogOpen(true);
   };
 
-  const closeServiceDialog = () => { setServiceDialogOpen(false); setEditingService(null); };
+  const openServiceEdit = (service: Service) => {
+    setEditingService(service);
+    setServiceForm({
+      name: service.name,
+      description: service.description || "",
+      category: service.category,
+      base_price: service.base_price,
+      duration: service.duration || 60,
+      billing_type: service.billing_type || "standard",
+      booking_action: service.booking_action || "direct_book",
+    });
+    setServiceDialogOpen(true);
+  };
+
+  const closeServiceDialog = () => {
+    setServiceDialogOpen(false);
+    setEditingService(null);
+  };
 
   const handleServiceSubmit = () => {
     if (!serviceForm.name) {
@@ -314,130 +378,112 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
     }
   };
 
-  const activeServices = services.filter(s => s.is_active);
-  const inactiveServices = services.filter(s => !s.is_active);
+  const activeServices = services.filter((service) => service.is_active);
+  const inactiveServices = services.filter((service) => !service.is_active);
 
-  // ─── All price group columns (standard + custom) ──────────────
   const allPriceColumns = [
     ...PRICE_GROUPS,
-    ...groups.map(g => ({ value: g.name.toLowerCase().replace(/\s/g, "_"), label: g.name, shortLabel: g.name.slice(0, 3).toUpperCase() })),
-  ];
-
-  // ─── Stats ────────────────────────────────────────────────────
-  const stats = [
-    { label: "Leistungen", value: services.length, icon: ShoppingBag },
-    { label: "Aktiv", value: activeServices.length, icon: CheckCircle2 },
-    { label: "Preisgruppen", value: PRICE_GROUPS.length + groups.length, icon: Tag },
-    { label: "Preisregeln", value: overrides.length, icon: Layers },
+    ...groups.map((group) => ({
+      value: group.name.toLowerCase().replace(/\s/g, "_"),
+      label: group.name,
+      shortLabel: group.name.slice(0, 3).toUpperCase(),
+    })),
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <ShoppingBag className="h-6 w-6 text-primary" />
-            Mein Angebot
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Leistungen, Preisgruppen & Preismatrix – alles an einem Ort
+    <div className="space-y-5 animate-fade-in sm:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="h-6 w-6 shrink-0 text-primary" />
+            <h1 className="text-2xl font-bold text-foreground">Leistungen & Angebote</h1>
+            <HelpTip
+              title="Leistungen & Angebote"
+              description="Hier pflegst du zuerst deine normalen Leistungen mit Preis und Dauer. Preisgruppen und individuelle Gruppenpreise sind erweiterte Optionen."
+            />
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+            Was bietest du an, wie lange dauert es und was kostet es?
           </p>
         </div>
-        {readOnly && (
-          <Badge variant="secondary" className="gap-1">
-            <Eye className="h-3 w-3" /> Nur Ansicht
-          </Badge>
-        )}
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {stats.map(s => (
-          <Card key={s.label} className="p-3">
-            <div className="flex items-center gap-2">
-              <s.icon className="h-4 w-4 text-primary" />
-              <span className="text-2xl font-bold text-foreground">{s.value}</span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-          </Card>
-        ))}
-      </div>
-
-      {/* Mini Guide */}
-      <MiniGuide title="Wie funktioniert 'Mein Angebot'?">
-        <p><strong>1. Leistungen</strong> – Lege alle Dienstleistungen an, die du anbietest (z.B. Barhufbearbeitung, Erstberatung). Jede bekommt einen Basispreis.</p>
-        <p><strong>2. Preisgruppen</strong> – Erstelle Kundengruppen (z.B. VIP, Großstall) für unterschiedliche Preise. Kunden werden dann einer Gruppe zugeordnet.</p>
-        <p><strong>3. Preismatrix</strong> – Die Übersicht: Welche Leistung kostet wieviel für welche Kundengruppe? Klick auf ein Feld, um den Preis anzupassen.</p>
-        <p className="text-primary font-medium mt-1">→ Bei Terminbuchung wird automatisch der richtige Preis angewendet!</p>
-      </MiniGuide>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="leistungen" className="gap-1.5 text-xs sm:text-sm">
-            <ShoppingBag className="h-4 w-4" />
-            <span className="hidden sm:inline">Leistungen</span>
-            <span className="sm:hidden">Services</span>
-            <Badge variant="secondary" className="ml-1 text-[10px] h-5 px-1.5">{services.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="preisgruppen" className="gap-1.5 text-xs sm:text-sm">
-            <Tag className="h-4 w-4" />
-            <span className="hidden sm:inline">Preisgruppen</span>
-            <span className="sm:hidden">Gruppen</span>
-          </TabsTrigger>
-          <TabsTrigger value="preismatrix" className="gap-1.5 text-xs sm:text-sm">
-            <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Preismatrix</span>
-            <span className="sm:hidden">Matrix</span>
-          </TabsTrigger>
-        </TabsList>
-
-        {/* ═══════════ TAB 1: LEISTUNGEN ═══════════ */}
-        <TabsContent value="leistungen" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <MiniGuide title="Tipps: Leistungen anlegen">
-              <p>• Verwende klare Namen die auch der Kunde versteht</p>
-              <p>• Kategorien helfen dir bei der Filterung auf der Rechnung</p>
-              <p>• "Nur Anfrage" = Kunde muss erst anfragen statt direkt zu buchen</p>
-              <p>• "Pauschal/Abo" = Termin wird bei 0€ gebucht, da extern bezahlt</p>
-            </MiniGuide>
-            {!readOnly && (
-              <Button onClick={openServiceCreate} className="gap-2">
-                <Plus className="h-4 w-4" /> Neue Leistung
-              </Button>
-            )}
-          </div>
-
-          {servicesLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : services.length === 0 ? (
-            <Card className="border-dashed border-2">
-              <CardContent className="p-8 text-center">
-                <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="font-medium text-foreground">Noch keine Leistungen</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Erstelle deine erste Leistung – z.B. "Barhufbearbeitung" mit Preis und Dauer.
-                </p>
-                {!readOnly && (
-                  <Button onClick={openServiceCreate} className="mt-4 gap-2">
-                    <Plus className="h-4 w-4" /> Erste Leistung anlegen
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
+        <div className="flex items-center gap-2">
+          {readOnly ? (
+            <Badge variant="secondary" className="gap-1">
+              <Eye className="h-3 w-3" /> Nur Ansicht
+            </Badge>
           ) : (
-            <div className="space-y-6">
-              {/* Active Services */}
-              {activeServices.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3 text-emerald-500" /> Aktive Leistungen ({activeServices.length})
-                  </p>
+            <Button onClick={openServiceCreate} className="w-full gap-2 sm:w-auto">
+              <Plus className="h-4 w-4" /> Neue Leistung
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <section className="space-y-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-base font-semibold text-foreground">Deine Leistungen</h2>
+              <Badge variant="secondary">{activeServices.length} aktiv</Badge>
+              {inactiveServices.length > 0 && (
+                <span className="text-xs text-muted-foreground">{inactiveServices.length} inaktiv</span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Diese Leistungen stehen dir bei Termin und Abrechnung zur Verfügung.
+            </p>
+          </div>
+        </div>
+
+        {servicesLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        ) : services.length === 0 ? (
+          <Card className="border-2 border-dashed">
+            <CardContent className="p-8 text-center">
+              <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <p className="font-medium text-foreground">Noch keine Leistungen</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Starte mit deiner häufigsten Leistung – Name, Preis und Dauer reichen zuerst aus.
+              </p>
+              {!readOnly && (
+                <Button onClick={openServiceCreate} className="mt-4 gap-2">
+                  <Plus className="h-4 w-4" /> Erste Leistung anlegen
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-5">
+            {activeServices.length > 0 && (
+              <div className="grid gap-3 md:grid-cols-2">
+                {activeServices.map((service) => (
+                  <ServiceCard
+                    key={service.id}
+                    service={service}
+                    readOnly={readOnly}
+                    onEdit={() => openServiceEdit(service)}
+                    onToggle={(active) => toggleActive.mutate({ id: service.id, is_active: active })}
+                    onDelete={() => deleteService.mutate(service.id)}
+                    onPaymentLink={() => setPaymentModalService(service)}
+                    overrideCount={overrides.filter((override) => override.service_id === service.id).length}
+                  />
+                ))}
+              </div>
+            )}
+
+            {inactiveServices.length > 0 && (
+              <Collapsible>
+                <CollapsibleTrigger className="flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+                  <EyeOff className="h-4 w-4" />
+                  Inaktive Leistungen ({inactiveServices.length})
+                  <ChevronDown className="h-4 w-4" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2">
                   <div className="grid gap-3 md:grid-cols-2">
-                    {activeServices.map((service) => (
+                    {inactiveServices.map((service) => (
                       <ServiceCard
                         key={service.id}
                         service={service}
@@ -446,256 +492,329 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
                         onToggle={(active) => toggleActive.mutate({ id: service.id, is_active: active })}
                         onDelete={() => deleteService.mutate(service.id)}
                         onPaymentLink={() => setPaymentModalService(service)}
-                        overrideCount={overrides.filter(o => o.service_id === service.id).length}
+                        overrideCount={overrides.filter((override) => override.service_id === service.id).length}
                       />
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Inactive Services */}
-              {inactiveServices.length > 0 && (
-                <Collapsible>
-                  <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground cursor-pointer">
-                    <EyeOff className="h-3 w-3" />
-                    Inaktive Leistungen ({inactiveServices.length})
-                    <ChevronDown className="h-3 w-3" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-2">
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {inactiveServices.map((service) => (
-                        <ServiceCard
-                          key={service.id}
-                          service={service}
-                          readOnly={readOnly}
-                          onEdit={() => openServiceEdit(service)}
-                          onToggle={(active) => toggleActive.mutate({ id: service.id, is_active: active })}
-                          onDelete={() => deleteService.mutate(service.id)}
-                          onPaymentLink={() => setPaymentModalService(service)}
-                          overrideCount={overrides.filter(o => o.service_id === service.id).length}
-                        />
-                      ))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* ═══════════ TAB 2: PREISGRUPPEN ═══════════ */}
-        <TabsContent value="preisgruppen" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <MiniGuide title="Wozu Preisgruppen?">
-              <p>• Verschiedene Kunden = verschiedene Preise (z.B. Großstall-Rabatt)</p>
-              <p>• Standard-Gruppen (VIP, Großstall, Individuell) sind vordefiniert</p>
-              <p>• Du kannst eigene Gruppen erstellen (z.B. "Vereinskunden")</p>
-              <p>• Kunden werden in der Kundenakte einer Gruppe zugeordnet</p>
-              <p className="text-primary font-medium">→ In der Preismatrix legst du dann die Preise pro Gruppe fest</p>
-            </MiniGuide>
-            {!readOnly && (
-              <Button onClick={() => setGroupDialogOpen(true)} className="gap-2">
-                <Plus className="h-4 w-4" /> Neue Gruppe
-              </Button>
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </div>
+        )}
+      </section>
 
-          {/* Standard Groups */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Tag className="h-4 w-4 text-primary" />
-                Standard-Preisgruppen
-              </CardTitle>
-              <CardDescription>Diese Gruppen sind immer verfügbar und können nicht gelöscht werden</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {PRICE_GROUPS.map(pg => (
-                  <div key={pg.value} className="flex items-center justify-between p-3 border rounded-lg bg-muted/30">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="font-mono text-xs">{pg.shortLabel}</Badge>
-                      <span className="font-medium text-sm">{pg.label}</span>
-                    </div>
-                    <Badge variant="outline" className="text-[10px]">System</Badge>
+      <Collapsible open={advancedPricingOpen} onOpenChange={setAdvancedPricingOpen}>
+        <div className="rounded-xl border border-border bg-muted/20">
+          <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 p-4 text-left sm:p-5">
+            <span className="flex min-w-0 items-start gap-3">
+              <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <SlidersHorizontal className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold text-foreground">Erweiterte Preisoptionen</span>
+                  <Badge variant="outline" className="text-[10px]">Optional</Badge>
+                </span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                  Preisgruppen und unterschiedliche Preise pro Kundengruppe – nur öffnen, wenn du sie wirklich brauchst.
+                </span>
+              </span>
+            </span>
+            <ChevronDown
+              className={cn(
+                "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
+                advancedPricingOpen && "rotate-180",
+              )}
+            />
+          </CollapsibleTrigger>
+
+          <CollapsibleContent className="border-t border-border p-3 sm:p-5">
+            <Tabs value={advancedTab} onValueChange={setAdvancedTab} className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2 sm:w-auto sm:min-w-[360px]">
+                <TabsTrigger value="preisgruppen" className="gap-1.5">
+                  <Tag className="h-4 w-4" /> Preisgruppen
+                </TabsTrigger>
+                <TabsTrigger value="preismatrix" className="gap-1.5">
+                  <LayoutGrid className="h-4 w-4" /> Preismatrix
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="preisgruppen" className="space-y-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-foreground">Preisgruppen</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Nutze Gruppen nur, wenn bestimmte Kunden dauerhaft andere Preise erhalten.
+                    </p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Custom Groups */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-primary" />
-                Eigene Preisgruppen
-              </CardTitle>
-              <CardDescription>Erstelle individuelle Gruppen für deine Kunden</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {groupsLoading ? (
-                <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin" /></div>
-              ) : groups.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Tag className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Noch keine eigenen Gruppen</p>
-                  <p className="text-xs mt-1">Die Standard-Gruppen reichen für die meisten Fälle aus.</p>
+                  {!readOnly && (
+                    <Button onClick={() => setGroupDialogOpen(true)} variant="outline" className="gap-2">
+                      <Plus className="h-4 w-4" /> Neue Gruppe
+                    </Button>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-2">
-                  {groups.map(g => (
-                    <div key={g.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                      <div>
-                        <p className="font-medium text-sm">{g.name}</p>
-                        {g.label && <p className="text-xs text-muted-foreground">{g.label}</p>}
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Tag className="h-4 w-4 text-primary" />
+                      Standard-Preisgruppen
+                    </CardTitle>
+                    <CardDescription>
+                      Diese Gruppen sind immer verfügbar und können nicht gelöscht werden.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {PRICE_GROUPS.map((priceGroup) => (
+                        <div
+                          key={priceGroup.value}
+                          className="flex items-center justify-between rounded-lg border bg-muted/30 p-3"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="font-mono text-xs">
+                              {priceGroup.shortLabel}
+                            </Badge>
+                            <span className="text-sm font-medium">{priceGroup.label}</span>
+                          </div>
+                          <Badge variant="outline" className="text-[10px]">System</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <DollarSign className="h-4 w-4 text-primary" />
+                      Eigene Preisgruppen
+                    </CardTitle>
+                    <CardDescription>Zusätzliche Gruppen für spezielle Kundenmodelle.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {groupsLoading ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin" />
                       </div>
-                      {!readOnly && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
-                          onClick={() => deleteGroup.mutate(g.id)}>
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ═══════════ TAB 3: PREISMATRIX ═══════════ */}
-        <TabsContent value="preismatrix" className="space-y-4">
-          <MiniGuide title="So funktioniert die Preismatrix">
-            <p>• Jede Zeile = eine Leistung, jede Spalte = eine Preisgruppe</p>
-            <p>• <strong>Klick auf ein Feld</strong> um den Preis für diese Kombination zu setzen</p>
-            <p>• Leere Felder = es gilt der Basispreis (Standard)</p>
-            <p>• Orange markierte Preise = angepasster Gruppenpreis</p>
-            <p className="text-primary font-medium">→ Bei Terminbuchung erkennt das System die Kundengruppe und wählt den richtigen Preis!</p>
-          </MiniGuide>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <LayoutGrid className="h-4 w-4 text-primary" />
-                Preismatrix
-              </CardTitle>
-              <CardDescription>
-                {activeServices.length} aktive Leistungen × {allPriceColumns.length} Preisgruppen
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {activeServices.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Erstelle zuerst Leistungen im Tab "Leistungen"</p>
-                  <Button variant="link" onClick={() => setActiveTab("leistungen")} className="mt-2">
-                    → Zum Leistungs-Tab
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto -mx-6">
-                  <div className="min-w-[600px] px-6">
-                    <Table className="text-xs">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="min-w-[140px]">Leistung</TableHead>
-                          <TableHead className="text-right min-w-[80px]">Basis €</TableHead>
-                          {allPriceColumns.filter(c => c.value !== "standard").map(col => (
-                            <TableHead key={col.value} className="text-center min-w-[90px]">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Badge variant="outline" className="text-[10px]">{col.shortLabel}</Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>{col.label}</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {activeServices.map(service => (
-                          <TableRow key={service.id}>
-                            <TableCell className="font-medium">{service.name}</TableCell>
-                            <TableCell className="text-right font-mono">{service.base_price.toFixed(2)}</TableCell>
-                            {allPriceColumns.filter(c => c.value !== "standard").map(col => {
-                              const override = overrides.find(
-                                o => o.service_id === service.id && o.price_group === col.value
-                              );
-                              return (
-                                <TableCell key={col.value} className="text-center">
-                                  {readOnly ? (
-                                    <span className={cn("text-xs font-mono", override ? "text-primary font-bold" : "text-muted-foreground")}>
-                                      {override ? `${override.price.toFixed(2)}` : "–"}
-                                    </span>
-                                  ) : (
-                                    <PriceCell
-                                      currentPrice={override?.price}
-                                      basePrice={service.base_price}
-                                      onSave={(price) => updateOverride(service.id, col.value, price)}
-                                    />
-                                  )}
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
+                    ) : groups.length === 0 ? (
+                      <div className="py-6 text-center text-muted-foreground">
+                        <Tag className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                        <p className="text-sm">Keine eigenen Gruppen angelegt</p>
+                        <p className="mt-1 text-xs">Für den normalen Start brauchst du hier nichts zu ändern.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {groups.map((group) => (
+                          <div
+                            key={group.id}
+                            className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/30"
+                          >
+                            <div>
+                              <p className="text-sm font-medium">{group.name}</p>
+                              {group.label && (
+                                <p className="text-xs text-muted-foreground">{group.label}</p>
+                              )}
+                            </div>
+                            {!readOnly && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => deleteGroup.mutate(group.id)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
                         ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-      {/* ═══════════ SERVICE DIALOG ═══════════ */}
+              <TabsContent value="preismatrix" className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Preismatrix</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Leere Felder nutzen automatisch den Basispreis. Nur abweichende Gruppenpreise musst du eintragen.
+                  </p>
+                </div>
+
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <LayoutGrid className="h-4 w-4 text-primary" />
+                      Preise pro Kundengruppe
+                    </CardTitle>
+                    <CardDescription>
+                      {activeServices.length} aktive Leistungen × {allPriceColumns.length} Preisgruppen
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {activeServices.length === 0 ? (
+                      <div className="py-8 text-center text-muted-foreground">
+                        <AlertCircle className="mx-auto mb-2 h-8 w-8 opacity-50" />
+                        <p className="text-sm">Lege zuerst oben mindestens eine aktive Leistung an.</p>
+                      </div>
+                    ) : (
+                      <div className="-mx-6 overflow-x-auto">
+                        <div className="min-w-[600px] px-6">
+                          <Table className="text-xs">
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="min-w-[140px]">Leistung</TableHead>
+                                <TableHead className="min-w-[80px] text-right">Basis €</TableHead>
+                                {allPriceColumns.filter((column) => column.value !== "standard").map((column) => (
+                                  <TableHead key={column.value} className="min-w-[90px] text-center">
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Badge variant="outline" className="text-[10px]">
+                                            {column.shortLabel}
+                                          </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{column.label}</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </TableHead>
+                                ))}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {activeServices.map((service) => (
+                                <TableRow key={service.id}>
+                                  <TableCell className="font-medium">{service.name}</TableCell>
+                                  <TableCell className="text-right font-mono">
+                                    {service.base_price.toFixed(2)}
+                                  </TableCell>
+                                  {allPriceColumns.filter((column) => column.value !== "standard").map((column) => {
+                                    const override = overrides.find(
+                                      (item) => item.service_id === service.id && item.price_group === column.value,
+                                    );
+                                    return (
+                                      <TableCell key={column.value} className="text-center">
+                                        {readOnly ? (
+                                          <span className={cn(
+                                            "text-xs font-mono",
+                                            override ? "font-bold text-primary" : "text-muted-foreground",
+                                          )}>
+                                            {override ? override.price.toFixed(2) : "–"}
+                                          </span>
+                                        ) : (
+                                          <PriceCell
+                                            currentPrice={override?.price}
+                                            basePrice={service.base_price}
+                                            onSave={(price) => updateOverride(service.id, column.value, price)}
+                                          />
+                                        )}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+
       {!readOnly && (
         <Dialog open={serviceDialogOpen} onOpenChange={setServiceDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>{editingService ? "Leistung bearbeiten" : "Neue Leistung"}</DialogTitle>
               <DialogDescription>
-                {editingService ? "Ändere die Details deiner Leistung" : "Definiere eine neue Dienstleistung mit Preis und Einstellungen"}
+                Name, Preis und Dauer reichen für den normalen Start. Weitere Einstellungen kannst du bei Bedarf ergänzen.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto">
+            <div className="max-h-[65vh] space-y-4 overflow-y-auto py-2">
               <div className="space-y-2">
                 <Label>Name *</Label>
-                <Input value={serviceForm.name} onChange={e => setServiceForm(f => ({ ...f, name: e.target.value }))} placeholder="z.B. Barhufbearbeitung" />
+                <Input
+                  className="min-h-11"
+                  value={serviceForm.name}
+                  onChange={(event) => setServiceForm((form) => ({ ...form, name: event.target.value }))}
+                  placeholder="z.B. Barhufbearbeitung"
+                />
               </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Basispreis (€)</Label>
+                  <Input
+                    className="min-h-11"
+                    type="number"
+                    step="0.01"
+                    value={serviceForm.base_price}
+                    onChange={(event) => setServiceForm((form) => ({
+                      ...form,
+                      base_price: Number(event.target.value),
+                    }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Dauer (Min.)</Label>
+                  <Input
+                    className="min-h-11"
+                    type="number"
+                    value={serviceForm.duration}
+                    onChange={(event) => setServiceForm((form) => ({
+                      ...form,
+                      duration: Number(event.target.value),
+                    }))}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label>Beschreibung</Label>
-                <Textarea value={serviceForm.description} onChange={e => setServiceForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Kurze Beschreibung für Kunden" />
+                <Textarea
+                  value={serviceForm.description}
+                  onChange={(event) => setServiceForm((form) => ({
+                    ...form,
+                    description: event.target.value,
+                  }))}
+                  rows={2}
+                  placeholder="Kurze Beschreibung für Kunden"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Kategorie</Label>
-                  <Select value={serviceForm.category} onValueChange={v => setServiceForm(f => ({ ...f, category: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={serviceForm.category}
+                    onValueChange={(value) => setServiceForm((form) => ({ ...form, category: value }))}
+                  >
+                    <SelectTrigger className="min-h-11"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {categoryOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                      {categoryOptions.map((category) => (
+                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Basispreis (€)</Label>
-                  <Input type="number" step="0.01" value={serviceForm.base_price} onChange={e => setServiceForm(f => ({ ...f, base_price: Number(e.target.value) }))} />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Dauer (Min.)</Label>
-                  <Input type="number" value={serviceForm.duration} onChange={e => setServiceForm(f => ({ ...f, duration: Number(e.target.value) }))} />
-                </div>
+
                 <div className="space-y-2">
                   <Label>Abrechnungsart</Label>
-                  <Select value={serviceForm.billing_type} onValueChange={(v: BillingType) => setServiceForm(f => ({ ...f, billing_type: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select
+                    value={serviceForm.billing_type}
+                    onValueChange={(value: BillingType) => setServiceForm((form) => ({
+                      ...form,
+                      billing_type: value,
+                    }))}
+                  >
+                    <SelectTrigger className="min-h-11"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="standard">Pro Termin</SelectItem>
                       <SelectItem value="flat_rate">Pauschal / Abo / Extern</SelectItem>
@@ -704,10 +823,17 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
                   </Select>
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label>Buchungsoption</Label>
-                <Select value={serviceForm.booking_action} onValueChange={(v: BookingAction) => setServiceForm(f => ({ ...f, booking_action: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={serviceForm.booking_action}
+                  onValueChange={(value: BookingAction) => setServiceForm((form) => ({
+                    ...form,
+                    booking_action: value,
+                  }))}
+                >
+                  <SelectTrigger className="min-h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="direct_book">Direkt buchbar (Kunde wählt Termin)</SelectItem>
                     <SelectItem value="request_only">Nur auf Anfrage (Kunde schickt Anfrage)</SelectItem>
@@ -716,50 +842,79 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
               </div>
 
               {serviceForm.billing_type === "flat_rate" && (
-                <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg border">
-                  💡 Termine mit diesem Service werden bei 0€ gebucht und als "intern bezahlt" markiert.
+                <div className="rounded-lg border bg-muted/50 p-3 text-xs text-muted-foreground">
+                  Termine mit diesem Service werden bei 0 € gebucht und als intern bezahlt markiert.
                 </div>
               )}
               {serviceForm.billing_type === "series" && (
-                <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg border">
-                  💡 Bei Terminen kannst du "Termin X von Y" angeben. Dies erscheint auf der Rechnung.
+                <div className="rounded-lg border bg-muted/50 p-3 text-xs text-muted-foreground">
+                  Bei Terminen kannst du „Termin X von Y“ angeben. Dies erscheint auf der Rechnung.
                 </div>
               )}
             </div>
 
-            <DialogFooter>
-              <Button variant="outline" onClick={closeServiceDialog}>Abbrechen</Button>
-              <Button onClick={handleServiceSubmit} disabled={createService.isPending || updateService.isPending}>
-                {(createService.isPending || updateService.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {editingService ? "Speichern" : "Erstellen"}
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={closeServiceDialog} className="w-full sm:w-auto">
+                Abbrechen
+              </Button>
+              <Button
+                onClick={handleServiceSubmit}
+                disabled={createService.isPending || updateService.isPending}
+                className="w-full sm:w-auto"
+              >
+                {(createService.isPending || updateService.isPending) && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {editingService ? "Speichern" : "Leistung erstellen"}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* Group Dialog */}
       {!readOnly && (
         <Dialog open={groupDialogOpen} onOpenChange={setGroupDialogOpen}>
-          <DialogContent>
+          <DialogContent className="w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Neue Preisgruppe</DialogTitle>
-              <DialogDescription>Erstelle eine eigene Kundengruppe mit individuellem Pricing</DialogDescription>
+              <DialogDescription>
+                Nur nötig, wenn eine Kundengruppe dauerhaft einen eigenen Preis erhalten soll.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Name *</Label>
-                <Input placeholder="z.B. Vereinskunden" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} />
+                <Input
+                  className="min-h-11"
+                  placeholder="z.B. Vereinskunden"
+                  value={newGroupName}
+                  onChange={(event) => setNewGroupName(event.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Beschreibung</Label>
-                <Input placeholder="z.B. 10% Rabatt für Reitverein-Mitglieder" value={newGroupDesc} onChange={e => setNewGroupDesc(e.target.value)} />
+                <Input
+                  className="min-h-11"
+                  placeholder="z.B. Sonderpreis für Reitverein-Mitglieder"
+                  value={newGroupDesc}
+                  onChange={(event) => setNewGroupDesc(event.target.value)}
+                />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setGroupDialogOpen(false)}>Abbrechen</Button>
-              <Button onClick={() => createGroup.mutate()} disabled={!newGroupName || createGroup.isPending}>
-                {createGroup.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setGroupDialogOpen(false)}
+                className="w-full sm:w-auto"
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={() => createGroup.mutate()}
+                disabled={!newGroupName || createGroup.isPending}
+                className="w-full sm:w-auto"
+              >
+                {createGroup.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Erstellen
               </Button>
             </DialogFooter>
@@ -767,7 +922,6 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
         </Dialog>
       )}
 
-      {/* Payment Modal */}
       <ServicePaymentModal
         isOpen={!!paymentModalService}
         onClose={() => setPaymentModalService(null)}
@@ -777,8 +931,15 @@ export default function MeinAngebot({ readOnly = false, variant = "provider" }: 
   );
 }
 
-// ─── Service Card Component ────────────────────────────────────────
-function ServiceCard({ service, readOnly, onEdit, onToggle, onDelete, onPaymentLink, overrideCount }: {
+function ServiceCard({
+  service,
+  readOnly,
+  onEdit,
+  onToggle,
+  onDelete,
+  onPaymentLink,
+  overrideCount,
+}: {
   service: Service;
   readOnly: boolean;
   onEdit: () => void;
@@ -788,46 +949,54 @@ function ServiceCard({ service, readOnly, onEdit, onToggle, onDelete, onPaymentL
   overrideCount: number;
 }) {
   return (
-    <Card className={cn("hover:shadow-sm transition-all", !service.is_active && "opacity-50")}>
+    <Card className={cn("transition-all hover:shadow-sm", !service.is_active && "opacity-50")}>
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-semibold text-foreground truncate">{service.name}</p>
-              <Badge className={cn("text-[10px] shrink-0", categoryColors[service.category] || "bg-muted text-muted-foreground")}>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate font-semibold text-foreground">{service.name}</p>
+              <Badge className={cn(
+                "shrink-0 text-[10px]",
+                categoryColors[service.category] || "bg-muted text-muted-foreground",
+              )}>
                 {service.category}
               </Badge>
               {service.billing_type === "flat_rate" && (
-                <Badge className="text-[10px] bg-violet-500/10 text-violet-600 shrink-0">Pauschal</Badge>
+                <Badge className="shrink-0 bg-violet-500/10 text-[10px] text-violet-600">Pauschal</Badge>
               )}
               {service.billing_type === "series" && (
-                <Badge className="text-[10px] bg-blue-500/10 text-blue-600 shrink-0">Paket</Badge>
+                <Badge className="shrink-0 bg-blue-500/10 text-[10px] text-blue-600">Paket</Badge>
               )}
               {service.booking_action === "request_only" && (
-                <Badge variant="outline" className="text-[10px] text-orange-600 border-orange-300 shrink-0">Anfrage</Badge>
+                <Badge variant="outline" className="shrink-0 border-orange-300 text-[10px] text-orange-600">
+                  Anfrage
+                </Badge>
               )}
             </div>
+
             {service.description && (
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{service.description}</p>
+              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{service.description}</p>
             )}
-            <div className="flex items-center gap-4 mt-2">
-              <span className="text-sm font-medium text-foreground flex items-center gap-1">
+
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+              <span className="flex items-center gap-1 text-sm font-medium text-foreground">
                 <Euro className="h-3.5 w-3.5 text-primary" /> {service.base_price.toFixed(2)}
               </span>
               {service.duration && (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" /> {service.duration} Min.
                 </span>
               )}
               {overrideCount > 0 && (
-                <Badge variant="secondary" className="text-[10px] gap-1">
+                <Badge variant="secondary" className="gap-1 text-[10px]">
                   <Tag className="h-2.5 w-2.5" /> {overrideCount} Preisregeln
                 </Badge>
               )}
             </div>
           </div>
+
           {!readOnly && (
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
               <Switch
                 checked={service.is_active ?? false}
                 onCheckedChange={onToggle}
@@ -839,7 +1008,12 @@ function ServiceCard({ service, readOnly, onEdit, onToggle, onDelete, onPaymentL
               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onEdit}>
                 <Edit className="h-3.5 w-3.5" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={onDelete}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-destructive"
+                onClick={onDelete}
+              >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
@@ -850,8 +1024,11 @@ function ServiceCard({ service, readOnly, onEdit, onToggle, onDelete, onPaymentL
   );
 }
 
-// ─── Inline Price Edit Cell ────────────────────────────────────────
-function PriceCell({ currentPrice, basePrice, onSave }: {
+function PriceCell({
+  currentPrice,
+  basePrice,
+  onSave,
+}: {
   currentPrice?: number;
   basePrice: number;
   onSave: (price: number) => void;
@@ -861,7 +1038,7 @@ function PriceCell({ currentPrice, basePrice, onSave }: {
 
   const handleSave = () => {
     const parsed = parseFloat(value);
-    if (!isNaN(parsed) && parsed >= 0) {
+    if (!Number.isNaN(parsed) && parsed >= 0) {
       onSave(parsed);
     }
     setEditing(false);
@@ -873,10 +1050,10 @@ function PriceCell({ currentPrice, basePrice, onSave }: {
         type="number"
         step="0.01"
         value={value}
-        onChange={e => setValue(e.target.value)}
+        onChange={(event) => setValue(event.target.value)}
         onBlur={handleSave}
-        onKeyDown={e => e.key === "Enter" && handleSave()}
-        className="h-7 w-20 text-xs text-center mx-auto"
+        onKeyDown={(event) => event.key === "Enter" && handleSave()}
+        className="mx-auto h-7 w-20 text-center text-xs"
         autoFocus
       />
     );
@@ -884,11 +1061,15 @@ function PriceCell({ currentPrice, basePrice, onSave }: {
 
   return (
     <button
-      onClick={() => { setValue(currentPrice?.toString() || basePrice.toString()); setEditing(true); }}
-      className="text-xs font-mono p-1 hover:bg-muted rounded transition-colors cursor-pointer"
+      type="button"
+      onClick={() => {
+        setValue(currentPrice?.toString() || basePrice.toString());
+        setEditing(true);
+      }}
+      className="cursor-pointer rounded p-1 font-mono text-xs transition-colors hover:bg-muted"
     >
       {currentPrice != null ? (
-        <span className="text-primary font-bold">{currentPrice.toFixed(2)}</span>
+        <span className="font-bold text-primary">{currentPrice.toFixed(2)}</span>
       ) : (
         <span className="text-muted-foreground/50">—</span>
       )}
