@@ -37,7 +37,7 @@ npm ci
 echo "▶ Frontend bauen"
 npm run build
 
-echo "▶ Tour-Tests"
+echo "▶ Tour-Tests inkl. laufender-Stopp-/Replan-Regeln"
 npx vitest run src/components/slim/slimTourUtils.test.ts
 
 echo "▶ Produktionskonfiguration im Bundle prüfen"
