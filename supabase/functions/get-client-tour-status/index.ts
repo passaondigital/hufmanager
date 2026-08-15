@@ -105,7 +105,7 @@ serve(async (req) => {
     const providerId = myAppointment.provider_id;
     const { data: tour, error: tourError } = await supabase
       .from("daily_tours")
-      .select("id, status, tour_active_since, tour_ended_at, live_lat, live_lng, live_accuracy, live_location_at")
+      .select("id, status, tour_active_since, tour_ended_at, live_lat, live_lng, live_accuracy, live_location_at, delay_minutes, delay_reason, delay_reported_at")
       .eq("provider_id", providerId)
       .eq("tour_date", date)
       .maybeSingle();
@@ -145,6 +145,11 @@ serve(async (req) => {
         .maybeSingle(),
       supabase.from("profiles").select("geo_lat, geo_lng").eq("id", user.id).maybeSingle(),
     ]);
+
+    const normalDelay = Math.max(Number(tour.delay_minutes || 0), 0);
+    const emergencyDelay = Math.max(Number(emergency?.estimated_delay_minutes || 0), 0);
+    const effectiveDelayMinutes = Math.max(normalDelay, emergencyDelay);
+    const effectiveDelayReason = emergency?.reason || tour.delay_reason || null;
 
     let estimatedArrivalDate: Date | null = null;
     let etaSource: "live" | "average" | null = null;
@@ -223,9 +228,9 @@ serve(async (req) => {
       }
     }
 
-    if (estimatedArrivalDate && emergency?.estimated_delay_minutes > 0) {
+    if (estimatedArrivalDate && effectiveDelayMinutes > 0) {
       estimatedArrivalDate = new Date(
-        estimatedArrivalDate.getTime() + emergency.estimated_delay_minutes * 60_000,
+        estimatedArrivalDate.getTime() + effectiveDelayMinutes * 60_000,
       );
     }
 
@@ -245,9 +250,9 @@ serve(async (req) => {
         estimatedArrival: formatEta(estimatedArrivalDate),
         etaSource,
         horseName,
-        hasDelay: !!emergency,
-        delayMinutes: emergency?.estimated_delay_minutes || 0,
-        delayMessage: emergency?.reason || null,
+        hasDelay: effectiveDelayMinutes > 0,
+        delayMinutes: effectiveDelayMinutes,
+        delayMessage: effectiveDelayReason,
       },
     });
   } catch (error) {
