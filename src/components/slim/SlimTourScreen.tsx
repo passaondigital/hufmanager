@@ -8,22 +8,24 @@ import { CSS } from "@dnd-kit/utilities";
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import {
+  AlertTriangle,
   ArrowRight,
   CheckCircle2,
   Clock3,
-  Euro,
   Fuel,
   GripVertical,
-  Loader2,
   MapPin,
   Navigation,
   Play,
   Route,
   RotateCcw,
   Square,
+  X,
 } from "lucide-react";
+import { toast } from "sonner";
 import "leaflet/dist/leaflet.css";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
+import { DelayReportSheet } from "@/components/day-cockpit/DelayReportSheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { HelpTip } from "@/components/ui/HelpTip";
@@ -31,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLiveTourEta } from "@/hooks/useLiveTourEta";
 import { calculateRoute } from "@/lib/routeService";
+import { notifyTodayClients, resolveProviderDisplayName } from "@/lib/pushNotificationService";
 import { getCheapestPrice, mapFuelType, useFuelPrices } from "@/hooks/useFuelPrices";
 import { buildGoogleMapsRouteUrl, calculateActualOdometerDistance, calculateSlimTourCosts, getSlimTourStats, hasStopCoordinates, isTourStopFinished } from "./slimTourUtils";
 
@@ -57,14 +60,19 @@ type SlimTourStop = {
   } | null;
 };
 
-type DailyTour = { id: string; status: string | null; total_distance_km: number | null };
+type DailyTour = {
+  id: string;
+  status: string | null;
+  total_distance_km: number | null;
+  delay_minutes: number | null;
+  delay_reason: string | null;
+};
 type TourSettings = { travel_cost_per_km: number | null; travel_cost_flat: number | null; vehicle_consumption_per_100km: number | null; vehicle_fuel_type: string | null };
 type Vehicle = { id: string; name: string | null; price_per_km: number | null; travel_cost_flat: number | null; fuel_type: string | null; average_consumption: number | null };
 type VehicleLog = { id: string; distance_km: number | null; fuel_cost: number | null; start_km?: number | null; end_km?: number | null };
 
 function formatTime(value?: string | null) { return value ? value.slice(0, 5) : "–"; }
 function formatMoney(value?: number | null) { return value == null ? "Noch offen" : new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value); }
-function stopAddress(stop: SlimTourStop) { return [stop.client?.street, stop.client?.zip, stop.client?.city].filter(Boolean).join(", ") || stop.location || "Adresse fehlt"; }
 
 function distanceKm(a: [number, number], b: [number, number]) {
   const radius = 6371;
@@ -81,7 +89,6 @@ function estimateDistance(positions: [number, number][]) {
 
 function getCurrentBrowserPosition(): Promise<[number, number] | null> {
   if (!("geolocation" in navigator)) return Promise.resolve(null);
-
   return new Promise((resolve) => {
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => resolve([coords.latitude, coords.longitude]),
@@ -100,6 +107,7 @@ export function SlimTourScreen() {
   const [startKm, setStartKm] = useState("");
   const [endKm, setEndKm] = useState("");
   const [selectedStop, setSelectedStop] = useState<SlimTourStop | null>(null);
+  const [delaySheetOpen, setDelaySheetOpen] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const tourQuery = useQuery({
@@ -120,7 +128,7 @@ export function SlimTourScreen() {
           .neq("status", "cancelled")
           .order("tour_order", { ascending: true, nullsFirst: false })
           .order("time", { ascending: true }) as any,
-        supabase.from("daily_tours").select("id, status, total_distance_km").eq("provider_id", user.id).eq("tour_date", today).maybeSingle(),
+        supabase.from("daily_tours").select("id, status, total_distance_km, delay_minutes, delay_reason").eq("provider_id", user.id).eq("tour_date", today).maybeSingle(),
         supabase.from("business_settings").select("travel_cost_per_km, travel_cost_flat, vehicle_consumption_per_100km, vehicle_fuel_type").eq("user_id", user.id).maybeSingle(),
         supabase.from("provider_vehicles").select("id, name, price_per_km, travel_cost_flat, fuel_type, average_consumption").eq("provider_id", user.id).eq("is_primary", true).maybeSingle(),
         supabase.from("vehicle_logs").select("id, distance_km, fuel_cost, start_km, end_km").eq("provider_id", user.id).eq("log_date", today).maybeSingle(),
@@ -180,6 +188,7 @@ export function SlimTourScreen() {
   }, [tourQuery.data?.vehicleLog]);
 
   const isActive = tourQuery.data?.dailyTour?.status === "active";
+  const currentDelay = Math.max(Number(tourQuery.data?.dailyTour?.delay_minutes || 0), 0);
   const openStops = useMemo(() => orderedStops.filter((stop) => !isTourStopFinished(stop.status)), [orderedStops]);
   const nextStop = openStops[0] ?? null;
   const routeStops = isActive ? openStops : orderedStops;
@@ -193,8 +202,6 @@ export function SlimTourScreen() {
 
   const routeLine = useMemo<[number, number][]>(() => {
     const coordinates = routeQuery.data?.geometry?.coordinates;
-    // Only render real ORS/VROOM road geometry. If routing is unavailable,
-    // keep the stop markers visible instead of drawing misleading straight lines.
     return coordinates?.length ? coordinates.map(([lng, lat]) => [lat, lng]) : [];
   }, [routeQuery.data?.geometry]);
   const stats = useMemo(() => getSlimTourStats(orderedStops), [orderedStops]);
@@ -262,32 +269,100 @@ export function SlimTourScreen() {
 
       const optimizedGeocoded = currentPosition
         ? result.optimized_order.map((jobId) => geocodedStops[jobId - 1]).filter(Boolean)
-        : [
-            geocodedStops[0],
-            ...result.optimized_order.map((jobId) => geocodedStops[jobId]).filter(Boolean),
-          ];
+        : [geocodedStops[0], ...result.optimized_order.map((jobId) => geocodedStops[jobId]).filter(Boolean)];
       const optimizedIds = new Set(optimizedGeocoded.map((stop) => stop.id));
       const openWithoutRoute = openTourStops.filter((stop) => !optimizedIds.has(stop.id));
-
       return [...finishedStops, ...optimizedGeocoded, ...openWithoutRoute];
     },
-    onSuccess: async (stops) => { setOrderedStops(stops); await persistOrder.mutateAsync(stops); void routeQuery.refetch(); },
+    onSuccess: async (stops) => {
+      setOrderedStops(stops);
+      await persistOrder.mutateAsync(stops);
+      void routeQuery.refetch();
+    },
   });
 
   const startTour = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error("AUTH_REQUIRED");
-      const { error } = await supabase.from("daily_tours").upsert({ provider_id: user.id, tour_date: today, status: "active", tour_active_since: new Date().toISOString(), tour_ended_at: null }, { onConflict: "provider_id,tour_date" });
+      const { error } = await supabase.from("daily_tours").upsert({
+        provider_id: user.id,
+        tour_date: today,
+        status: "active",
+        tour_active_since: new Date().toISOString(),
+        tour_ended_at: null,
+        delay_minutes: 0,
+        delay_reason: null,
+        delay_reported_at: null,
+        live_lat: null,
+        live_lng: null,
+        live_accuracy: null,
+        live_location_at: null,
+      } as any, { onConflict: "provider_id,tour_date" });
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] });
+      if (!user?.id) return;
+      const providerName = await resolveProviderDisplayName(user.id);
+      const sentCount = await notifyTodayClients(user.id, "tour_start", { providerName });
+      toast.success(sentCount > 0 ? `Tour gestartet · ${sentCount} Kunde${sentCount === 1 ? "" : "n"} informiert` : "Tour gestartet");
+    },
+    onError: () => toast.error("Tour konnte nicht gestartet werden"),
+  });
+
+  const reportDelay = useMutation({
+    mutationFn: async (delayMinutes: number) => {
+      if (!user?.id) throw new Error("AUTH_REQUIRED");
+      const { error } = await supabase.from("daily_tours").update({
+        delay_minutes: delayMinutes,
+        delay_reason: "Verzögerung im Tourablauf",
+        delay_reported_at: new Date().toISOString(),
+      } as any).eq("provider_id", user.id).eq("tour_date", today).eq("status", "active");
+      if (error) throw error;
+
+      const providerName = await resolveProviderDisplayName(user.id);
+      return notifyTodayClients(user.id, "delay", { delayMinutes, providerName });
+    },
+    onSuccess: async (sentCount, delayMinutes) => {
+      setDelaySheetOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] });
+      toast.success(`${delayMinutes} Min. Verspätung gespeichert${sentCount > 0 ? ` · ${sentCount} Kunde${sentCount === 1 ? "" : "n"} informiert` : ""}`);
+    },
+    onError: () => toast.error("Verspätung konnte nicht gespeichert werden"),
+  });
+
+  const clearDelay = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error("AUTH_REQUIRED");
+      const { error } = await supabase.from("daily_tours").update({
+        delay_minutes: 0,
+        delay_reason: null,
+        delay_reported_at: new Date().toISOString(),
+      } as any).eq("provider_id", user.id).eq("tour_date", today);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] });
+      toast.success("Verspätung aufgehoben");
+    },
+    onError: () => toast.error("Verspätung konnte nicht aufgehoben werden"),
   });
 
   const stopTour = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error("AUTH_REQUIRED");
       if (actualDistance.status === "invalid") throw new Error("INVALID_ODOMETER");
-      const { error } = await supabase.from("daily_tours").update({ status: "completed", tour_ended_at: new Date().toISOString(), total_distance_km: routeDistance }).eq("provider_id", user.id).eq("tour_date", today);
+      const { error } = await supabase.from("daily_tours").update({
+        status: "completed",
+        tour_ended_at: new Date().toISOString(),
+        total_distance_km: routeDistance,
+        delay_minutes: 0,
+        delay_reason: null,
+        live_lat: null,
+        live_lng: null,
+        live_accuracy: null,
+        live_location_at: null,
+      } as any).eq("provider_id", user.id).eq("tour_date", today);
       if (error) throw error;
 
       if (startKm || endKm) {
@@ -306,7 +381,11 @@ export function SlimTourScreen() {
         if (result.error) throw result.error;
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] });
+      toast.success("Tour beendet");
+    },
+    onError: () => toast.error("Tour konnte nicht beendet werden"),
   });
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -340,12 +419,36 @@ export function SlimTourScreen() {
             </Button>
             <HelpTip title="Route planen" description="HufManager startet bei deinem aktuellen Standort, sortiert die offenen Stopps sinnvoll und berechnet die Strecke. Falls dein Standort nicht verfügbar ist, bleibt der erste offene Stopp der Ausgangspunkt." />
           </div>
+          {isActive && (
+            <Button
+              variant="outline"
+              className={currentDelay > 0 ? "border-amber-500/50 text-amber-700 dark:text-amber-400" : ""}
+              onClick={() => setDelaySheetOpen(true)}
+              disabled={reportDelay.isPending}
+            >
+              <AlertTriangle className="h-4 w-4" />
+              {currentDelay > 0 ? `+${currentDelay} Min.` : "Verspätung"}
+            </Button>
+          )}
+          {isActive && currentDelay > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => clearDelay.mutate()} disabled={clearDelay.isPending} title="Verspätung aufheben">
+              <X className="h-4 w-4" />
+              Aufheben
+            </Button>
+          )}
           <Button onClick={() => isActive ? stopTour.mutate() : startTour.mutate()} disabled={!orderedStops.length || startTour.isPending || stopTour.isPending}>
             {isActive ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             {isActive ? "Tour beenden" : "Tour starten"}
           </Button>
         </div>
       </header>
+
+      {isActive && currentDelay > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span><strong>Aktuelle Verspätung: +{currentDelay} Min.</strong> Offene Kunden sehen diese Verzögerung in ihrem Tourstatus.</span>
+        </div>
+      )}
 
       {!orderedStops.length ? (
         <section className="hm-card flex min-h-72 flex-col items-start justify-center p-6 sm:p-8"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-600"><Route className="h-6 w-6" /></div><h2 className="mt-5 text-xl font-semibold text-[var(--hm-text-primary)]">Heute sind noch keine Termine geplant.</h2><p className="mt-2 text-sm text-[var(--hm-text-secondary)]">Mit dem ersten Termin entsteht automatisch deine Tagesroute.</p><button className="hm-button-primary mt-5" onClick={() => navigate("/kalender?new=true")}>Termin hinzufügen</button></section>
@@ -357,6 +460,7 @@ export function SlimTourScreen() {
               <MapBadge icon={Route} value={routeDistance == null ? "Route offen" : `${routeDistance.toFixed(1)} km`} />
               <MapBadge icon={Clock3} value={routeDuration == null ? "Fahrzeit offen" : `${routeDuration} Min.`} />
               <MapBadge icon={MapPin} value={`${stats.geocodedStops}/${stats.totalStops} mit Geo`} />
+              {currentDelay > 0 && <MapBadge icon={AlertTriangle} value={`+${currentDelay} Min.`} />}
             </div>
             {routeQuery.isError && <div className="absolute bottom-4 left-4 right-4 z-[500] rounded-xl border border-orange-200 bg-white/95 p-3 text-sm text-slate-700 shadow-lg dark:border-orange-900/50 dark:bg-[#1D2128] dark:text-slate-200">Die Straßenroute konnte gerade nicht aktualisiert werden. Die Stopps bleiben sichtbar.</div>}
           </section>
@@ -410,6 +514,13 @@ export function SlimTourScreen() {
           </aside>
         </div>
       )}
+
+      <DelayReportSheet
+        open={delaySheetOpen}
+        onOpenChange={setDelaySheetOpen}
+        onConfirm={(minutes) => reportDelay.mutate(minutes)}
+        isSending={reportDelay.isPending}
+      />
 
       {selectedStop && (
         <AppointmentCompletionDialog
