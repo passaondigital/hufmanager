@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { useState } from "react";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 const NAV_ITEMS = [
   { label: "Heute", path: "/home", icon: CalendarDays },
@@ -48,6 +49,61 @@ const PAGE_TITLES: Record<string, string> = {
   "/support": "Support",
 };
 
+const PAGE_HELP: Record<string, { title: string; description: string }> = {
+  "/home": {
+    title: "Heute",
+    description: "Dein Arbeitstag auf einen Blick. Hier siehst du den naechsten Termin und kommst mit wenigen Klicks direkt zur Tour oder zum Termin.",
+  },
+  "/home/tour": {
+    title: "Tour",
+    description: "Deine heutigen Termine werden zu einer Tagesroute. Erst Route planen, dann Tour starten und anschliessend Stopp fuer Stopp abarbeiten.",
+  },
+  "/home/kunden": {
+    title: "Kunden & Pferde",
+    description: "Hier verwaltest du Kunden und die dazugehoerigen Pferde. Pferdeakten, Termine und Freigaben bleiben an einem Ort zusammen.",
+  },
+  "/home/hufi-hufanalyse": {
+    title: "Hufi Hufanalyse",
+    description: "Hier dokumentierst und vergleichst du Hufe. Die Analyse unterstuetzt deine Dokumentation und ersetzt keine fachliche Diagnose.",
+  },
+  "/home/finanzen": {
+    title: "Finanzen",
+    description: "Hier laufen Leistungen, Rechnungen, offene Betraege und weitere Finanzfunktionen zusammen. Starte im Alltag meist mit Rechnungen oder Leistungen.",
+  },
+  "/home/mehr": {
+    title: "Mehr & Einstellungen",
+    description: "Hier findest du seltener benoetigte Funktionen, Einstellungen und erweiterte Werkzeuge. Dein taeglicher Arbeitsablauf bleibt dadurch bewusst schlank.",
+  },
+  "/kalender": {
+    title: "Kalender & Termine",
+    description: "Plane Termine mit Kunde, Pferd, Leistung, Uhrzeit und Ort. Wiederholungen, Serien und Dokumente sind Zusatzoptionen und muessen nicht bei jedem Termin genutzt werden.",
+  },
+  "/rechnungen": {
+    title: "Rechnungen",
+    description: "Erstelle Rechnungen und behalte offene, bezahlte und ueberfaellige Betraege im Blick. Export ist eine Zusatzfunktion und nicht fuer jeden Arbeitsschritt notwendig.",
+  },
+  "/mein-angebot": {
+    title: "Leistungen & Angebote",
+    description: "Lege fest, was du anbietest, wie lange es dauert und was es kostet. Gruppen und Matrix sind erweiterte Einstellungen und fuer den normalen Start nicht notwendig.",
+  },
+  "/anfragen": {
+    title: "Anfragen",
+    description: "Hier landen neue Interessenten und Kundenanfragen. Bearbeite sie Schritt fuer Schritt vom Erstkontakt bis zum gewonnenen Kunden.",
+  },
+  "/aufnahme": {
+    title: "Kundenaufnahme",
+    description: "Hier legst du neue Kunden und Pferde an oder verschickst eine Einladung. Pflichtfelder zuerst, Details koennen spaeter ergaenzt werden.",
+  },
+  "/tour": {
+    title: "Tour",
+    description: "Plane deine Stopps, starte die Tour und arbeite die Termine der Reihe nach ab. Navigation und Fahrtenbuch laufen als Unterstuetzung mit.",
+  },
+  "/fuhrpark": {
+    title: "Fuhrpark & Fahrtenbuch",
+    description: "Verwalte Fahrzeuge, Kilometer und Fahrtkosten. Fuer den Alltag reichen meist Start- und Endkilometer; weitere Fahrzeugdaten sind optional.",
+  },
+};
+
 function getPageTitle(pathname: string) {
   if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname];
   if (pathname.startsWith("/pferd/")) return "Pferdeakte";
@@ -55,6 +111,32 @@ function getPageTitle(pathname: string) {
   if (pathname.startsWith("/mein-office")) return "Mein Office";
   if (pathname.startsWith("/analyse/")) return "Betriebsanalyse";
   return "HufManager";
+}
+
+function getPageHelp(pathname: string) {
+  if (PAGE_HELP[pathname]) return PAGE_HELP[pathname];
+  if (pathname.startsWith("/pferd/")) {
+    return {
+      title: "Pferdeakte",
+      description: "Alle wichtigen Informationen zu diesem Pferd an einem Ort. Nutze nur die Bereiche, die du fuer deine aktuelle Arbeit brauchst.",
+    };
+  }
+  if (pathname.startsWith("/management/") || pathname.startsWith("/settings/")) {
+    return {
+      title: "Einstellungen",
+      description: "Hier passt du HufManager an deinen Betrieb an. Aendere nur Einstellungen, die du wirklich benoetigst; Standardwerte funktionieren fuer den Einstieg.",
+    };
+  }
+  if (pathname.startsWith("/analyse/")) {
+    return {
+      title: "Betriebsanalyse",
+      description: "Hier siehst du Auswertungen zu deinem Betrieb. Diese Ansicht ist fuer Kontrolle und Planung gedacht, nicht fuer den taeglichen Pflichtablauf.",
+    };
+  }
+  return {
+    title: getPageTitle(pathname),
+    description: "Kurze Hilfe zu diesem Bereich. Die wichtigsten Funktionen stehen zuerst; erweiterte Optionen kannst du bei Bedarf nutzen.",
+  };
 }
 
 function getActiveSection(pathname: string) {
@@ -87,6 +169,7 @@ export function HufManagerSlimShell() {
     () => localStorage.getItem("hm-sidebar-collapsed") === "true",
   );
   const currentTitle = getPageTitle(location.pathname);
+  const currentHelp = getPageHelp(location.pathname);
   const activeSection = getActiveSection(location.pathname);
 
   const toggleSidebar = () => {
@@ -160,9 +243,12 @@ export function HufManagerSlimShell() {
               <div className="hidden sm:block lg:hidden"><Brand /></div>
               <div className="min-w-0">
                 <p className="text-xs font-medium text-hm-muted">HufManager</p>
-                <h1 className="truncate text-lg font-semibold tracking-[-0.02em] text-hm-text">
-                  {currentTitle}
-                </h1>
+                <div className="flex min-w-0 items-center gap-1">
+                  <h1 className="truncate text-lg font-semibold tracking-[-0.02em] text-hm-text">
+                    {currentTitle}
+                  </h1>
+                  <HelpTip title={currentHelp.title} description={currentHelp.description} />
+                </div>
               </div>
             </div>
           </div>
