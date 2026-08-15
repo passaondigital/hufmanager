@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { buildGoogleMapsRouteUrl, calculateActualOdometerDistance, calculateSlimTourCosts, getSlimTourStats, isTourStopFinished } from "./slimTourUtils";
+import {
+  buildGoogleMapsRouteUrl,
+  buildInsertionOrder,
+  calculateActualOdometerDistance,
+  calculateSlimTourCosts,
+  getSlimTourStats,
+  isTourStopFinished,
+  isTourStopLockedForReplan,
+  partitionStopsForReplan,
+} from "./slimTourUtils";
 
 describe("slimTourUtils", () => {
   it("counts completed, no-show and missing-geodata stops correctly", () => {
@@ -24,6 +33,56 @@ describe("slimTourUtils", () => {
     expect(isTourStopFinished("no_show")).toBe(true);
     expect(isTourStopFinished("cancelled")).toBe(true);
     expect(isTourStopFinished("confirmed")).toBe(false);
+  });
+
+  it("locks the current in-progress stop for replanning", () => {
+    expect(isTourStopLockedForReplan("in_progress")).toBe(true);
+    expect(isTourStopLockedForReplan("confirmed")).toBe(false);
+
+    const stops = [
+      { id: "done", status: "completed" },
+      { id: "current", status: "in_progress" },
+      { id: "later-a", status: "confirmed" },
+      { id: "later-b", status: "planned" },
+    ];
+
+    expect(partitionStopsForReplan(stops)).toEqual({
+      finished: [stops[0]],
+      locked: [stops[1]],
+      candidates: [stops[2], stops[3]],
+    });
+  });
+
+  it("inserts a new next stop after the current in-progress customer", () => {
+    const stops = [
+      { id: "done", status: "completed" },
+      { id: "current", status: "in_progress" },
+      { id: "later", status: "confirmed" },
+      { id: "new", status: "planned" },
+    ];
+
+    expect(buildInsertionOrder(stops, new Set(["new"]), "next").map((stop) => stop.id)).toEqual([
+      "done",
+      "current",
+      "new",
+      "later",
+    ]);
+  });
+
+  it("keeps a new end stop after the remaining route while current stop stays pinned", () => {
+    const stops = [
+      { id: "done", status: "completed" },
+      { id: "current", status: "in_progress" },
+      { id: "later", status: "confirmed" },
+      { id: "new", status: "planned" },
+    ];
+
+    expect(buildInsertionOrder(stops, new Set(["new"]), "end").map((stop) => stop.id)).toEqual([
+      "done",
+      "current",
+      "later",
+      "new",
+    ]);
   });
 
   it("builds Google Maps navigation only from open geocoded stops", () => {
