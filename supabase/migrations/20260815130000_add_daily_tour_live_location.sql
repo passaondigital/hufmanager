@@ -26,6 +26,33 @@ SET status = 'completed', updated_at = now()
 WHERE tour_ended_at IS NOT NULL
   AND status IS DISTINCT FROM 'completed';
 
+-- vehicle_logs.distance_km is generated from end_km - start_km. Whenever the
+-- provider records both odometer values, that measured distance must win over
+-- any planned/remaining route estimate stored on daily_tours.
+CREATE OR REPLACE FUNCTION public.sync_daily_tour_actual_distance()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.distance_km IS NOT NULL AND NEW.distance_km >= 0 THEN
+    UPDATE public.daily_tours
+    SET total_distance_km = NEW.distance_km,
+        updated_at = now()
+    WHERE provider_id = NEW.provider_id
+      AND tour_date = NEW.log_date;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS sync_daily_tour_actual_distance_trigger ON public.vehicle_logs;
+CREATE TRIGGER sync_daily_tour_actual_distance_trigger
+AFTER INSERT OR UPDATE OF start_km, end_km ON public.vehicle_logs
+FOR EACH ROW
+EXECUTE FUNCTION public.sync_daily_tour_actual_distance();
+
 COMMENT ON COLUMN public.daily_tours.live_lat IS 'Ephemeral provider latitude while a tour is active; cleared after tour end.';
 COMMENT ON COLUMN public.daily_tours.live_lng IS 'Ephemeral provider longitude while a tour is active; cleared after tour end.';
 COMMENT ON COLUMN public.daily_tours.live_accuracy IS 'Browser geolocation accuracy in meters for the ephemeral live position.';
