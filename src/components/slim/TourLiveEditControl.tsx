@@ -25,8 +25,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { geocodeAppointmentAndSave } from "@/lib/geocodeAppointment";
 import { resolveProviderDisplayName, sendTypedPush } from "@/lib/pushNotificationService";
 import { calculateRoute } from "@/lib/routeService";
+import {
+  buildInsertionOrder,
+  isTourStopFinished,
+  partitionStopsForReplan,
+} from "./slimTourUtils";
 
-const FINISHED_STATUSES = new Set(["completed", "no_show", "cancelled"]);
 type AddPlacement = "optimize" | "next" | "end";
 
 type TourEditAppointment = {
@@ -127,7 +131,7 @@ export function TourLiveEditControl() {
 
   const appointments = tourEditQuery.data?.appointments ?? [];
   const openAppointments = useMemo(
-    () => appointments.filter((appointment) => !FINISHED_STATUSES.has(appointment.status || "")),
+    () => appointments.filter((appointment) => !isTourStopFinished(appointment.status)),
     [appointments],
   );
 
@@ -160,24 +164,29 @@ export function TourLiveEditControl() {
     if (error) throw error;
 
     const rows = (data ?? []) as OrderableStop[];
-    const finishedStops = rows.filter((row) => FINISHED_STATUSES.has(row.status || ""));
-    const openStops = rows.filter((row) => !FINISHED_STATUSES.has(row.status || ""));
-    const geocodedStops = openStops.filter((row) => row.appointment_lat != null && row.appointment_lng != null);
-    if (geocodedStops.length < 2) return false;
+    const { finished, locked, candidates } = partitionStopsForReplan(rows);
+    const geocodedCandidates = candidates.filter((row) => row.appointment_lat != null && row.appointment_lng != null);
+    if (geocodedCandidates.length < 2) return false;
 
     const currentPosition = await getCurrentBrowserPosition();
-    const stopPositions = geocodedStops.map((row) => [row.appointment_lat!, row.appointment_lng!] as [number, number]);
-    const planningPositions = currentPosition ? [currentPosition, ...stopPositions] : stopPositions;
+    const lockedPosition = locked.find((row) => row.appointment_lat != null && row.appointment_lng != null);
+    const explicitStart: [number, number] | null = currentPosition
+      ?? (lockedPosition ? [lockedPosition.appointment_lat!, lockedPosition.appointment_lng!] : null);
+
+    const candidatePositions = geocodedCandidates.map(
+      (row) => [row.appointment_lat!, row.appointment_lng!] as [number, number],
+    );
+    const planningPositions = explicitStart ? [explicitStart, ...candidatePositions] : candidatePositions;
     const result = await calculateRoute(planningPositions, { optimize: true });
     if (!result?.optimized_order?.length) return false;
 
-    const optimizedGeocoded = currentPosition
-      ? result.optimized_order.map((jobId) => geocodedStops[jobId - 1]).filter(Boolean)
-      : [geocodedStops[0], ...result.optimized_order.map((jobId) => geocodedStops[jobId]).filter(Boolean)];
+    const optimizedGeocoded = explicitStart
+      ? result.optimized_order.map((jobId) => geocodedCandidates[jobId - 1]).filter(Boolean)
+      : [geocodedCandidates[0], ...result.optimized_order.map((jobId) => geocodedCandidates[jobId]).filter(Boolean)];
     const optimizedIds = new Set(optimizedGeocoded.map((row) => row.id));
-    const openWithoutRoute = openStops.filter((row) => !optimizedIds.has(row.id));
+    const candidatesWithoutRoute = candidates.filter((row) => !optimizedIds.has(row.id));
 
-    await persistOrder([...finishedStops, ...optimizedGeocoded, ...openWithoutRoute]);
+    await persistOrder([...finished, ...locked, ...optimizedGeocoded, ...candidatesWithoutRoute]);
     return true;
   }, [persistOrder, today, user?.id]);
 
@@ -198,11 +207,11 @@ export function TourLiveEditControl() {
     const rows = currentAppointments ?? [];
     const previousIds = new Set(options?.previousIds ?? []);
     const newRows = options?.previousIds
-      ? rows.filter((row) => !previousIds.has(row.id) && !FINISHED_STATUSES.has(row.status || ""))
+      ? rows.filter((row) => !previousIds.has(row.id) && !isTourStopFinished(row.status))
       : [];
 
     const geocodeCandidates = rows.filter(
-      (row) => !FINISHED_STATUSES.has(row.status || "") && (row.appointment_lat == null || row.appointment_lng == null),
+      (row) => !isTourStopFinished(row.status) && (row.appointment_lat == null || row.appointment_lng == null),
     );
 
     await Promise.allSettled(
@@ -217,16 +226,11 @@ export function TourLiveEditControl() {
 
     if (newRows.length) {
       const newIds = new Set(newRows.map((row) => row.id));
-      const finishedRows = rows.filter((row) => FINISHED_STATUSES.has(row.status || ""));
-      const existingOpenRows = rows.filter((row) => !FINISHED_STATUSES.has(row.status || "") && !newIds.has(row.id));
-      const placement = options?.placement ?? "end";
-      const orderedRows = placement === "next"
-        ? [...finishedRows, ...newRows, ...existingOpenRows]
-        : [...finishedRows, ...existingOpenRows, ...newRows];
-      await persistOrder(orderedRows);
+      const placement = options?.placement === "next" ? "next" : "end";
+      await persistOrder(buildInsertionOrder(rows, newIds, placement));
     } else {
       let nextOrder = rows.reduce((max, row) => Math.max(max, Number(row.tour_order || 0)), 0) + 1;
-      const withoutOrder = rows.filter((row) => row.tour_order == null && !FINISHED_STATUSES.has(row.status || ""));
+      const withoutOrder = rows.filter((row) => row.tour_order == null && !isTourStopFinished(row.status));
       for (const row of withoutOrder) {
         const { error: orderError } = await supabase
           .from("appointments")
@@ -265,7 +269,7 @@ export function TourLiveEditControl() {
         if (addPlacement === "optimize") {
           toast.success(result.optimized ? "Stopp hinzugefügt · Route neu optimiert" : "Stopp hinzugefügt · Route aktualisiert");
         } else if (addPlacement === "next") {
-          toast.success("Stopp hinzugefügt · ist jetzt als Nächstes dran");
+          toast.success("Stopp hinzugefügt · ist nach dem aktuellen Termin als Nächstes dran");
         } else {
           toast.success("Stopp hinzugefügt · ans Tourende gesetzt");
         }
