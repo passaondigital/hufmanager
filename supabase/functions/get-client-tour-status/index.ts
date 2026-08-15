@@ -228,7 +228,10 @@ serve(async (req) => {
       }
     }
 
-    if (estimatedArrivalDate && effectiveDelayMinutes > 0) {
+    // Average estimates need the explicitly reported delay. A live road ETA is
+    // already based on the provider's current position and current clock time,
+    // so adding the delay there would count the same lateness twice.
+    if (estimatedArrivalDate && effectiveDelayMinutes > 0 && etaSource !== "live") {
       estimatedArrivalDate = new Date(
         estimatedArrivalDate.getTime() + effectiveDelayMinutes * 60_000,
       );
