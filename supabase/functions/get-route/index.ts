@@ -35,7 +35,9 @@ serve(async (req) => {
       );
     }
 
-    // If optimize=true, use ORS Optimization API (VROOM) for stop ordering
+    // If optimize=true, coordinate[0] is the real start/depot and every
+    // following coordinate is a customer stop. Keep the route open so the
+    // optimizer does not pull the final stop back toward the starting point.
     if (optimize && coordinates.length >= 3) {
       const jobs = coordinates.slice(1).map((coord: number[], i: number) => ({
         id: i + 1,
@@ -48,7 +50,6 @@ serve(async (req) => {
           id: 1,
           profile: "driving-car",
           start: coordinates[0],
-          end: coordinates[0], // return to start
         }],
       };
 
@@ -81,10 +82,10 @@ serve(async (req) => {
             .filter((s: any) => s.type === 'job')
             .map((s: any) => s.job);
 
-          // Now get full directions with geometry for the optimized order
+          // Get road geometry for exactly the optimized open route.
           const orderedCoords = [coordinates[0]];
           for (const jobId of optimizedOrder) {
-            orderedCoords.push(coordinates[jobId]); // jobId is 1-indexed into original slice
+            orderedCoords.push(coordinates[jobId]); // job ids map to coordinates[1..n]
           }
 
           const profile = vehicle?.trailerHeight ? "driving-hgv" : "driving-car";
