@@ -22,6 +22,7 @@ type ClientTourStatus = {
   isCompleted: boolean;
   myTime: string | null;
   estimatedArrival: string | null;
+  etaSource: "live" | "average" | null;
   horseName: string | null;
   hasDelay: boolean;
   delayMinutes: number;
@@ -106,9 +107,16 @@ export function ProviderTourStatusWidget({ userId }: ProviderTourStatusWidgetPro
                 <span className="font-medium">Dein Termin wurde abgeschlossen!</span>
               </div>
             ) : tourStatus.isMyTurn ? (
-              <div className="flex items-center gap-2 text-primary text-sm font-semibold">
-                <MapPin className="h-4 w-4 animate-bounce" />
-                <span>Du bist als Nächstes dran!</span>
+              <div className="flex items-start gap-2 text-primary text-sm">
+                <MapPin className="mt-0.5 h-4 w-4 animate-bounce" />
+                <div>
+                  <div className="font-semibold">Du bist als Nächstes dran!</div>
+                  {tourStatus.estimatedArrival && (
+                    <div className="mt-0.5 text-xs text-muted-foreground">
+                      {tourStatus.etaSource === "live" ? "Live-Ankunft" : "Ankunft"} ca. {tourStatus.estimatedArrival} Uhr
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex items-center gap-2 text-muted-foreground text-sm">
