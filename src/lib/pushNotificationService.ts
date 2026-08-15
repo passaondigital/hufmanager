@@ -1,5 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Send a push notification to a specific user via the send-push-notification edge function.
+ */
 export async function sendPushToUser(
   userId: string,
   title: string,
@@ -23,6 +26,8 @@ export async function sendPushToUser(
   }
 }
 
+// ── Dynamic name resolver ──────────────────────────────────
+
 export async function resolveProviderDisplayName(providerId: string): Promise<string> {
   const { data: profile } = await supabase
     .from("profiles")
@@ -38,6 +43,8 @@ export async function resolveProviderDisplayName(providerId: string): Promise<st
     .maybeSingle();
   return bs?.business_name || "Dein Hufpfleger";
 }
+
+// ── Typed notification types ───────────────────────────────
 
 export type PushNotificationType =
   | "provider_on_way"
@@ -63,26 +70,70 @@ function buildPushContent(type: PushNotificationType, input: PushTemplateInput):
 
   switch (type) {
     case "provider_on_way":
-      return { title: `${providerName} ist unterwegs 🚗`, body: time ? `Dein Termin heute um ${time} Uhr` : "Dein Termin steht heute an!" };
+      return {
+        title: `${providerName} ist unterwegs 🚗`,
+        body: time
+          ? `Dein Termin heute um ${time} Uhr`
+          : "Dein Termin steht heute an!",
+      };
     case "provider_arriving":
-      return { title: `${providerName} ist gleich da ⏱`, body: etaMinutes ? `Ankunft in ca. ${etaMinutes} Minuten` : "Ankunft in wenigen Minuten" };
+      return {
+        title: `${providerName} ist gleich da ⏱`,
+        body: etaMinutes
+          ? `Ankunft in ca. ${etaMinutes} Minuten`
+          : "Ankunft in wenigen Minuten",
+      };
     case "provider_arrived":
-      return { title: `${providerName} ist angekommen! 🐴`, body: horseName ? `Dein Termin bei ${horseName} beginnt` : "Dein Termin beginnt jetzt" };
+      return {
+        title: `${providerName} ist angekommen! 🐴`,
+        body: horseName
+          ? `Dein Termin bei ${horseName} beginnt`
+          : "Dein Termin beginnt jetzt",
+      };
     case "appointment_reminder":
-      return { title: `Termin morgen 🗓`, body: time ? `${providerName} kommt morgen um ${time} Uhr` : `${providerName} kommt morgen` };
+      return {
+        title: `Termin morgen 🗓`,
+        body: time
+          ? `${providerName} kommt morgen um ${time} Uhr`
+          : `${providerName} kommt morgen`,
+      };
     case "appointment_delay":
-      return { title: `Kleine Verspätung ⚠️`, body: `${providerName} verspätet sich um ca. ${delayMinutes || 0} Min.` };
+      return {
+        title: `Kleine Verspätung ⚠️`,
+        body: `${providerName} verspätet sich um ca. ${delayMinutes || 0} Min.`,
+      };
     case "appointment_cancelled":
-      return { title: `Termin abgesagt ❌`, body: `Bitte kontaktiere ${providerName} für einen neuen Termin` };
+      return {
+        title: `Termin abgesagt ❌`,
+        body: `Bitte kontaktiere ${providerName} für einen neuen Termin`,
+      };
     case "appointment_created":
-      return { title: `Neuer Termin 📅`, body: horseName && time ? `${providerName} kommt am ${time} zu ${horseName}` : `${providerName} hat einen neuen Termin erstellt` };
+      return {
+        title: `Neuer Termin 📅`,
+        body: horseName && time
+          ? `${providerName} kommt am ${time} zu ${horseName}`
+          : `${providerName} hat einen neuen Termin erstellt`,
+      };
     case "appointment_confirmed":
-      return { title: `Termin bestätigt ✅`, body: horseName ? `Der Termin für ${horseName} wurde bestätigt` : "Ein Termin wurde bestätigt" };
+      return {
+        title: `Termin bestätigt ✅`,
+        body: horseName
+          ? `Der Termin für ${horseName} wurde bestätigt`
+          : "Ein Termin wurde bestätigt",
+      };
     case "appointment_declined":
-      return { title: `Termin abgelehnt ❌`, body: horseName ? `Der Termin für ${horseName} wurde abgesagt` : "Ein Termin wurde abgesagt" };
+      return {
+        title: `Termin abgelehnt ❌`,
+        body: horseName
+          ? `Der Termin für ${horseName} wurde abgesagt`
+          : "Ein Termin wurde abgesagt",
+      };
   }
 }
 
+/**
+ * Send a typed push notification with dynamic names.
+ */
 export async function sendTypedPush(
   userId: string,
   type: PushNotificationType,
@@ -105,7 +156,7 @@ function berlinDateKey(date = new Date()) {
 }
 
 /**
- * Notify only clients whose appointment is still open today.
+ * Send push notifications to clients with open appointments today for a given provider.
  */
 export async function notifyTodayClients(
   providerId: string,
@@ -130,12 +181,15 @@ export async function notifyTodayClients(
   if (!appointments?.length) return 0;
 
   const resolvedName = extraData?.providerName || await resolveProviderDisplayName(providerId);
+
+  let sentCount = 0;
   const clientNotifications = new Map<string, { title: string; body: string; url: string }>();
 
   for (const appt of appointments as any[]) {
     const horse = Array.isArray(appt.horses) ? appt.horses[0] : appt.horses;
     const clientId = appt.client_id || horse?.owner_id;
     if (!clientId) continue;
+
     if (extraData?.clientId && clientId !== extraData.clientId) continue;
     if (clientNotifications.has(clientId)) continue;
 
@@ -156,7 +210,6 @@ export async function notifyTodayClients(
     clientNotifications.set(clientId, { title, body, url: "/client-home" });
   }
 
-  let sentCount = 0;
   for (const [clientId, notification] of clientNotifications) {
     const success = await sendPushToUser(clientId, notification.title, notification.body, notification.url);
     if (success) sentCount++;
