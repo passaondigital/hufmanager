@@ -37,7 +37,16 @@ import { useLiveTourEta } from "@/hooks/useLiveTourEta";
 import { calculateRoute } from "@/lib/routeService";
 import { notifyTodayClients, resolveProviderDisplayName } from "@/lib/pushNotificationService";
 import { getCheapestPrice, mapFuelType, useFuelPrices } from "@/hooks/useFuelPrices";
-import { buildGoogleMapsRouteUrl, calculateActualOdometerDistance, calculateSlimTourCosts, getSlimTourStats, hasStopCoordinates, isTourStopFinished } from "./slimTourUtils";
+import {
+  buildGoogleMapsRouteUrl,
+  calculateActualOdometerDistance,
+  calculateSlimTourCosts,
+  getSlimTourStats,
+  hasStopCoordinates,
+  isTourStopFinished,
+  isTourStopLockedForReplan,
+  partitionStopsForReplan,
+} from "./slimTourUtils";
 
 type SlimTourStop = {
   id: string;
@@ -259,24 +268,28 @@ export function SlimTourScreen() {
 
   const optimizeTour = useMutation({
     mutationFn: async () => {
-      const finishedStops = orderedStops.filter((stop) => isTourStopFinished(stop.status));
-      const openTourStops = orderedStops.filter((stop) => !isTourStopFinished(stop.status));
-      const geocodedStops = openTourStops.filter(hasStopCoordinates);
-      if (geocodedStops.length < 2) return orderedStops;
+      const { finished, locked, candidates } = partitionStopsForReplan(orderedStops);
+      const geocodedCandidates = candidates.filter(hasStopCoordinates);
+      if (geocodedCandidates.length < 2) return orderedStops;
 
       const currentPosition = await getCurrentBrowserPosition();
-      const stopPositions = geocodedStops.map((stop) => [stop.client!.geo_lat!, stop.client!.geo_lng!] as [number, number]);
-      const planningPositions = currentPosition ? [currentPosition, ...stopPositions] : stopPositions;
+      const lockedWithCoordinates = locked.find(hasStopCoordinates);
+      const explicitStart: [number, number] | null = currentPosition
+        ?? (lockedWithCoordinates
+          ? [lockedWithCoordinates.client!.geo_lat!, lockedWithCoordinates.client!.geo_lng!]
+          : null);
+      const candidatePositions = geocodedCandidates.map((stop) => [stop.client!.geo_lat!, stop.client!.geo_lng!] as [number, number]);
+      const planningPositions = explicitStart ? [explicitStart, ...candidatePositions] : candidatePositions;
       const result = await calculateRoute(planningPositions, { optimize: true });
       if (!result) throw new Error("ROUTE_OPTIMIZATION_FAILED");
       if (!result.optimized_order?.length) return orderedStops;
 
-      const optimizedGeocoded = currentPosition
-        ? result.optimized_order.map((jobId) => geocodedStops[jobId - 1]).filter(Boolean)
-        : [geocodedStops[0], ...result.optimized_order.map((jobId) => geocodedStops[jobId]).filter(Boolean)];
+      const optimizedGeocoded = explicitStart
+        ? result.optimized_order.map((jobId) => geocodedCandidates[jobId - 1]).filter(Boolean)
+        : [geocodedCandidates[0], ...result.optimized_order.map((jobId) => geocodedCandidates[jobId]).filter(Boolean)];
       const optimizedIds = new Set(optimizedGeocoded.map((stop) => stop.id));
-      const openWithoutRoute = openTourStops.filter((stop) => !optimizedIds.has(stop.id));
-      return [...finishedStops, ...optimizedGeocoded, ...openWithoutRoute];
+      const candidatesWithoutRoute = candidates.filter((stop) => !optimizedIds.has(stop.id));
+      return [...finished, ...locked, ...optimizedGeocoded, ...candidatesWithoutRoute];
     },
     onSuccess: async (stops) => {
       setOrderedStops(stops);
@@ -425,6 +438,19 @@ export function SlimTourScreen() {
     if (!over || active.id === over.id) return;
     const oldIndex = orderedStops.findIndex((stop) => stop.id === active.id);
     const newIndex = orderedStops.findIndex((stop) => stop.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const activeStop = orderedStops[oldIndex];
+    const lockedIndex = orderedStops.findIndex((stop) => isTourStopLockedForReplan(stop.status));
+    if (isTourStopFinished(activeStop.status) || isTourStopLockedForReplan(activeStop.status)) {
+      toast.info("Erledigte oder gerade laufende Stopps bleiben an ihrer Position.");
+      return;
+    }
+    if (lockedIndex >= 0 && newIndex <= lockedIndex) {
+      toast.info("Der aktuelle Termin bleibt vorne. Du kannst nur die folgenden Stopps verschieben.");
+      return;
+    }
+
     const reordered = arrayMove(orderedStops, oldIndex, newIndex);
     setOrderedStops(reordered);
     persistOrder.mutate(reordered);
@@ -445,11 +471,11 @@ export function SlimTourScreen() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1">
-            <Button variant="outline" onClick={() => optimizeTour.mutate()} disabled={openStops.filter(hasStopCoordinates).length < 2 || optimizeTour.isPending}>
+            <Button variant="outline" onClick={() => optimizeTour.mutate()} disabled={openStops.filter((stop) => !isTourStopLockedForReplan(stop.status)).filter(hasStopCoordinates).length < 2 || optimizeTour.isPending}>
               <RotateCcw className={`h-4 w-4 ${optimizeTour.isPending ? "animate-spin" : ""}`} />
               Route planen
             </Button>
-            <HelpTip title="Route planen" description="HufManager startet bei deinem aktuellen Standort, sortiert die offenen Stopps sinnvoll und berechnet die Strecke. Falls dein Standort nicht verfügbar ist, bleibt der erste offene Stopp der Ausgangspunkt." />
+            <HelpTip title="Route planen" description="HufManager lässt einen bereits laufenden Termin fest stehen und optimiert nur die danach offenen Stopps. Als Start dient dein aktueller Standort, ersatzweise der aktuelle Stopp." />
           </div>
           {isActive && (
             <Button
@@ -499,12 +525,12 @@ export function SlimTourScreen() {
 
           <aside className="flex min-h-0 flex-col border-t border-[var(--hm-border)] xl:border-l xl:border-t-0">
             <div className="border-b border-[var(--hm-border)] p-4">
-              <p className="text-sm font-medium text-orange-600">Nächster Stopp</p>
+              <p className="text-sm font-medium text-orange-600">{nextStop?.status === "in_progress" ? "Aktueller Stopp" : "Nächster Stopp"}</p>
               <h2 className="mt-1 truncate text-xl font-semibold text-[var(--hm-text-primary)]">{nextStop?.client?.full_name || (stats.openStops === 0 ? "Alle Stopps erledigt" : "Kunde")}</h2>
               <p className="mt-1 text-sm text-[var(--hm-text-secondary)]">{nextStop ? `${nextStop.horses.map((horse) => horse.name).join(" · ") || "Pferd"} · ${formatTime(nextStop.time)}` : "Die Tagesroute ist abgearbeitet."}</p>
               <div className="mt-2 flex items-center gap-1 text-xs text-[var(--hm-text-secondary)]">
                 <Clock3 className={`h-3.5 w-3.5 text-orange-600 ${liveEta.isCalculating ? "animate-pulse" : ""}`} />
-                <span className={liveEta.arrivalLabel ? "font-semibold text-[var(--hm-text-primary)]" : ""}>{liveEtaText}</span>
+                <span className={liveEta.arrivalLabel ? "font-semibold text-[var(--hm-text-primary)]" : ""}>{nextStop?.status === "in_progress" ? "Du bist an diesem Stopp angekommen." : liveEtaText}</span>
                 <HelpTip title="Voraussichtliche Ankunft" description="Während einer aktiven Tour nutzt HufManager deinen aktuellen Gerätestandort und die echte Straßenfahrzeit zum nächsten offenen Stopp. Der Standort wird für diese ETA im Browser verwendet und hier nicht als Tourverlauf gespeichert." />
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
@@ -523,7 +549,7 @@ export function SlimTourScreen() {
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1">
                   <h3 className="text-base font-semibold text-[var(--hm-text-primary)]">Stop-Reihenfolge</h3>
-                  <HelpTip title="Stop-Reihenfolge" description="Die Reihenfolge wird beim Route planen automatisch berechnet. Ziehen musst du nur, wenn du bewusst einen Stopp anders anfahren moechtest." />
+                  <HelpTip title="Stop-Reihenfolge" description="Die Reihenfolge wird beim Route planen automatisch berechnet. Ein bereits laufender oder erledigter Stopp bleibt fest; die folgenden Stopps kannst du weiter verschieben." />
                 </div>
                 <span className="text-xs text-[var(--hm-text-secondary)]">Optional verschieben</span>
               </div>
@@ -612,9 +638,10 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
 
 function SortableStop({ stop, index, onOpen }: { stop: SlimTourStop; index: number; onOpen: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: stop.id });
+  const isPinned = isTourStopFinished(stop.status) || isTourStopLockedForReplan(stop.status);
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={`flex items-center gap-2 rounded-xl border border-[var(--hm-border)] bg-[var(--hm-surface)] p-2 ${isDragging ? "z-10 shadow-xl" : ""}`}>
-      <button type="button" {...attributes} {...listeners} className="flex h-9 w-8 cursor-grab items-center justify-center rounded-lg text-[var(--hm-text-secondary)] hover:bg-orange-500/10 hover:text-orange-600" aria-label="Stopp verschieben"><GripVertical className="h-4 w-4" /></button>
+      <button type="button" {...attributes} {...listeners} disabled={isPinned} className="flex h-9 w-8 cursor-grab items-center justify-center rounded-lg text-[var(--hm-text-secondary)] hover:bg-orange-500/10 hover:text-orange-600 disabled:cursor-default disabled:opacity-35" aria-label={isPinned ? "Stopp ist fixiert" : "Stopp verschieben"}><GripVertical className="h-4 w-4" /></button>
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-600 text-xs font-bold text-white">{index + 1}</span>
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 py-1 text-left"><span className="block truncate text-sm font-semibold text-[var(--hm-text-primary)]">{stop.client?.full_name || "Kunde"}</span><span className="block truncate text-xs text-[var(--hm-text-secondary)]">{formatTime(stop.time)} · {stop.horses.map((horse) => horse.name).join(" + ") || stop.service_type}</span></button>
       {isTourStopFinished(stop.status) ? <CheckCircle2 className="h-4 w-4 text-orange-600" /> : <ArrowRight className="h-4 w-4 text-[var(--hm-text-secondary)]" />}
