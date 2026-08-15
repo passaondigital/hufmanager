@@ -19,6 +19,20 @@ function safeDate(value: unknown) {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
 }
 
+function isCoordinate(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function formatEta(value: Date | null) {
+  return value
+    ? new Intl.DateTimeFormat("de-DE", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Berlin",
+      }).format(value)
+    : null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -42,13 +56,13 @@ serve(async (req) => {
 
     const { data: horses, error: horseError } = await supabase
       .from("horses")
-      .select("id, name")
+      .select("id, name, latitude, longitude")
       .eq("owner_id", user.id)
       .is("deleted_at", null);
     if (horseError) throw horseError;
 
     const horseIds = (horses || []).map((horse: any) => horse.id);
-    const appointmentSelect = "id, time, status, provider_id, tour_order, horse_id, client_id, completed_at";
+    const appointmentSelect = "id, time, status, provider_id, tour_order, horse_id, client_id, completed_at, appointment_lat, appointment_lng";
 
     const [directResult, horseResult] = await Promise.all([
       supabase
@@ -91,7 +105,7 @@ serve(async (req) => {
     const providerId = myAppointment.provider_id;
     const { data: tour, error: tourError } = await supabase
       .from("daily_tours")
-      .select("id, status, tour_active_since, tour_ended_at")
+      .select("id, status, tour_active_since, tour_ended_at, live_lat, live_lng, live_accuracy, live_location_at")
       .eq("provider_id", providerId)
       .eq("tour_date", date)
       .maybeSingle();
@@ -120,25 +134,7 @@ serve(async (req) => {
       .filter((appointment: any) => !finishedStatuses.has(appointment.status)).length;
     const isMyTurn = !finishedStatuses.has(myAppointment.status) && openStopsBeforeMe === 0;
 
-    let estimatedArrival: string | null = null;
-    const timedFinishedStops = stops.filter((appointment: any) =>
-      finishedStatuses.has(appointment.status) && appointment.completed_at,
-    );
-    if (tour.tour_active_since && timedFinishedStops.length > 0 && openStopsBeforeMe > 0) {
-      const tourStartMs = new Date(tour.tour_active_since).getTime();
-      const lastFinishedMs = new Date(timedFinishedStops[timedFinishedStops.length - 1].completed_at).getTime();
-      const avgMsPerStop = Math.max((lastFinishedMs - tourStartMs) / timedFinishedStops.length, 0);
-      if (Number.isFinite(avgMsPerStop) && avgMsPerStop > 0) {
-        const eta = new Date(lastFinishedMs + openStopsBeforeMe * avgMsPerStop);
-        estimatedArrival = new Intl.DateTimeFormat("de-DE", {
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: "Europe/Berlin",
-        }).format(eta);
-      }
-    }
-
-    const [{ data: providerProfile }, { data: businessSettings }, { data: emergency }] = await Promise.all([
+    const [{ data: providerProfile }, { data: businessSettings }, { data: emergency }, { data: clientProfile }] = await Promise.all([
       supabase.from("profiles").select("full_name").eq("id", providerId).maybeSingle(),
       supabase.from("business_settings").select("business_name").eq("user_id", providerId).maybeSingle(),
       supabase
@@ -147,9 +143,93 @@ serve(async (req) => {
         .eq("tour_id", tour.id)
         .is("ended_at", null)
         .maybeSingle(),
+      supabase.from("profiles").select("geo_lat, geo_lng").eq("id", user.id).maybeSingle(),
     ]);
 
-    const horseName = (horses || []).find((horse: any) => horse.id === myAppointment.horse_id)?.name || null;
+    let estimatedArrivalDate: Date | null = null;
+    let etaSource: "live" | "average" | null = null;
+
+    const timedFinishedStops = stops.filter((appointment: any) =>
+      finishedStatuses.has(appointment.status) && appointment.completed_at,
+    );
+    if (tour.tour_active_since && timedFinishedStops.length > 0 && openStopsBeforeMe > 0) {
+      const tourStartMs = new Date(tour.tour_active_since).getTime();
+      const lastFinishedMs = new Date(timedFinishedStops[timedFinishedStops.length - 1].completed_at).getTime();
+      const avgMsPerStop = Math.max((lastFinishedMs - tourStartMs) / timedFinishedStops.length, 0);
+      if (Number.isFinite(avgMsPerStop) && avgMsPerStop > 0) {
+        estimatedArrivalDate = new Date(lastFinishedMs + openStopsBeforeMe * avgMsPerStop);
+        etaSource = "average";
+      }
+    }
+
+    // For the next client only, replace the average estimate with an actual
+    // road ETA from the provider's ephemeral live point. Coordinates never
+    // leave this server response; only the resulting arrival time is returned.
+    const liveAtMs = tour.live_location_at ? new Date(tour.live_location_at).getTime() : 0;
+    const tourStartMs = tour.tour_active_since ? new Date(tour.tour_active_since).getTime() : 0;
+    const livePositionIsFresh = liveAtMs > 0
+      && liveAtMs >= tourStartMs
+      && Date.now() - liveAtMs <= 120_000;
+
+    const appointmentHorse = (horses || []).find((horse: any) => horse.id === myAppointment.horse_id);
+    const destinationLat = isCoordinate(myAppointment.appointment_lat)
+      ? myAppointment.appointment_lat
+      : isCoordinate(appointmentHorse?.latitude)
+        ? appointmentHorse.latitude
+        : clientProfile?.geo_lat;
+    const destinationLng = isCoordinate(myAppointment.appointment_lng)
+      ? myAppointment.appointment_lng
+      : isCoordinate(appointmentHorse?.longitude)
+        ? appointmentHorse.longitude
+        : clientProfile?.geo_lng;
+
+    if (
+      isMyTurn
+      && livePositionIsFresh
+      && isCoordinate(tour.live_lat)
+      && isCoordinate(tour.live_lng)
+      && isCoordinate(destinationLat)
+      && isCoordinate(destinationLng)
+    ) {
+      const orsKey = Deno.env.get("ORS_API_KEY");
+      if (orsKey) {
+        try {
+          const routeResponse = await fetch("https://api.openrouteservice.org/v2/directions/driving-car/geojson", {
+            method: "POST",
+            headers: {
+              "Authorization": orsKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              coordinates: [
+                [tour.live_lng, tour.live_lat],
+                [destinationLng, destinationLat],
+              ],
+              instructions: false,
+            }),
+          });
+
+          if (routeResponse.ok) {
+            const routeData = await routeResponse.json();
+            const durationSeconds = routeData?.features?.[0]?.properties?.summary?.duration;
+            if (typeof durationSeconds === "number" && Number.isFinite(durationSeconds)) {
+              estimatedArrivalDate = new Date(Date.now() + durationSeconds * 1000);
+              etaSource = "live";
+            }
+          }
+        } catch (routeError) {
+          console.warn("Client live ETA unavailable", routeError);
+        }
+      }
+    }
+
+    if (estimatedArrivalDate && emergency?.estimated_delay_minutes > 0) {
+      estimatedArrivalDate = new Date(
+        estimatedArrivalDate.getTime() + emergency.estimated_delay_minutes * 60_000,
+      );
+    }
+
+    const horseName = appointmentHorse?.name || null;
 
     return json({
       tourStatus: {
@@ -162,7 +242,8 @@ serve(async (req) => {
         isMyTurn,
         isCompleted: finishedStatuses.has(myAppointment.status),
         myTime: myAppointment.time,
-        estimatedArrival,
+        estimatedArrival: formatEta(estimatedArrivalDate),
+        etaSource,
         horseName,
         hasDelay: !!emergency,
         delayMinutes: emergency?.estimated_delay_minutes || 0,
