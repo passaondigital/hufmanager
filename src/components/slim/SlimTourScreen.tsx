@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLiveTourEta } from "@/hooks/useLiveTourEta";
 import { calculateRoute } from "@/lib/routeService";
 import { getCheapestPrice, mapFuelType, useFuelPrices } from "@/hooks/useFuelPrices";
 import { buildGoogleMapsRouteUrl, calculateActualOdometerDistance, calculateSlimTourCosts, getSlimTourStats, hasStopCoordinates } from "./slimTourUtils";
@@ -202,6 +203,23 @@ export function SlimTourScreen() {
   const actualDistance = calculateActualOdometerDistance(startKm ? Number(startKm) : null, endKm ? Number(endKm) : null);
   const isActive = tourQuery.data?.dailyTour?.status === "active";
   const mapsUrl = buildGoogleMapsRouteUrl(orderedStops);
+  const liveEtaDestination = nextStop?.client?.geo_lat != null && nextStop?.client?.geo_lng != null
+    ? [nextStop.client.geo_lat, nextStop.client.geo_lng] as [number, number]
+    : null;
+  const liveEta = useLiveTourEta({ enabled: isActive, destination: liveEtaDestination });
+  const liveEtaText = !isActive
+    ? "Tour starten für Live-Ankunft"
+    : liveEta.arrivalLabel
+      ? `Ankunft ca. ${liveEta.arrivalLabel} Uhr${liveEta.durationMinutes != null ? ` · ${liveEta.durationMinutes} Min.` : ""}`
+      : liveEta.locationState === "denied"
+        ? "Standortfreigabe fehlt – ETA nicht verfügbar"
+        : liveEta.locationState === "unsupported"
+          ? "Standort wird auf diesem Gerät nicht unterstützt"
+          : liveEta.locationState === "unavailable"
+            ? "Standort gerade nicht verfügbar"
+            : liveEta.routeError
+              ? "Fahrzeit konnte gerade nicht berechnet werden"
+              : "Live-Ankunft wird berechnet …";
 
   const persistOrder = useMutation({
     mutationFn: async (stops: SlimTourStop[]) => {
@@ -303,7 +321,7 @@ export function SlimTourScreen() {
       ) : (
         <div className="grid min-h-[calc(100vh-11rem)] overflow-hidden rounded-2xl border border-[var(--hm-border)] bg-[var(--hm-surface)] shadow-[var(--hm-shadow-card)] xl:grid-cols-[minmax(0,1fr)_23rem]">
           <section className="relative min-h-[31rem] overflow-hidden xl:min-h-full">
-            <SlimRouteMap stops={orderedStops} routeLine={routeLine} selectedId={nextStop?.id ?? null} />
+            <SlimRouteMap stops={orderedStops} routeLine={routeLine} selectedId={nextStop?.id ?? null} currentPosition={liveEta.position} />
             <div className="pointer-events-none absolute left-3 top-3 z-[500] flex flex-wrap gap-2 sm:left-4 sm:top-4">
               <MapBadge icon={Route} value={routeDistance == null ? "Route offen" : `${routeDistance.toFixed(1)} km`} />
               <MapBadge icon={Clock3} value={routeDuration == null ? "Fahrzeit offen" : `${routeDuration} Min.`} />
@@ -318,9 +336,9 @@ export function SlimTourScreen() {
               <h2 className="mt-1 truncate text-xl font-semibold text-[var(--hm-text-primary)]">{nextStop?.client?.full_name || "Kunde"}</h2>
               <p className="mt-1 text-sm text-[var(--hm-text-secondary)]">{nextStop?.horses.map((horse) => horse.name).join(" · ") || "Pferd"} · {formatTime(nextStop?.time)}</p>
               <div className="mt-2 flex items-center gap-1 text-xs text-[var(--hm-text-secondary)]">
-                <Clock3 className="h-3.5 w-3.5 text-orange-600" />
-                <span>Live-Ankunft erscheint, sobald Standort und Fahrzeit sicher berechnet sind.</span>
-                <HelpTip title="Voraussichtliche Ankunft" description="Die ETA soll aus deinem aktuellen Standort und der echten Fahrzeit entstehen. HufManager zeigt keine geratenen Ankunftszeiten an." />
+                <Clock3 className={`h-3.5 w-3.5 text-orange-600 ${liveEta.isCalculating ? "animate-pulse" : ""}`} />
+                <span className={liveEta.arrivalLabel ? "font-semibold text-[var(--hm-text-primary)]" : ""}>{liveEtaText}</span>
+                <HelpTip title="Voraussichtliche Ankunft" description="Während einer aktiven Tour nutzt HufManager deinen aktuellen Gerätestandort und die echte Straßenfahrzeit zum nächsten Stopp. Der Standort wird für diese ETA im Browser verwendet und hier nicht als Tourverlauf gespeichert." />
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button className="hm-button-primary" onClick={() => mapsUrl && window.open(mapsUrl, "_blank", "noopener,noreferrer")} disabled={!mapsUrl}><Navigation className="h-4 w-4" />Navigation</button>
@@ -375,14 +393,20 @@ export function SlimTourScreen() {
   );
 }
 
-function SlimRouteMap({ stops, routeLine, selectedId }: { stops: SlimTourStop[]; routeLine: [number, number][]; selectedId: string | null }) {
-  const positions = stops.filter(hasStopCoordinates).map((stop) => [stop.client!.geo_lat!, stop.client!.geo_lng!] as [number, number]);
+function SlimRouteMap({ stops, routeLine, selectedId, currentPosition }: { stops: SlimTourStop[]; routeLine: [number, number][]; selectedId: string | null; currentPosition: [number, number] | null }) {
+  const stopPositions = stops.filter(hasStopCoordinates).map((stop) => [stop.client!.geo_lat!, stop.client!.geo_lng!] as [number, number]);
+  const positions = currentPosition ? [currentPosition, ...stopPositions] : stopPositions;
   const center = positions[0] ?? [49.75, 6.95];
   return (
     <MapContainer center={center} zoom={12} className="h-full min-h-[31rem] w-full bg-[#e9e7e1]" scrollWheelZoom>
       <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       <FitBounds positions={positions} />
       {routeLine.length > 1 && <Polyline positions={routeLine} pathOptions={{ color: "#FF6A00", weight: 6, opacity: 0.9 }} />}
+      {currentPosition && (
+        <CircleMarker center={currentPosition} radius={9} pathOptions={{ color: "#FFFFFF", weight: 3, fillColor: "#2563EB", fillOpacity: 1 }}>
+          <Popup><strong>Dein aktueller Standort</strong></Popup>
+        </CircleMarker>
+      )}
       {stops.map((stop, index) => hasStopCoordinates(stop) ? (
         <CircleMarker key={stop.id} center={[stop.client!.geo_lat!, stop.client!.geo_lng!]} radius={selectedId === stop.id ? 14 : 11} pathOptions={{ color: "#FFFFFF", weight: 3, fillColor: stop.status === "completed" ? "#5d625f" : "#FF6A00", fillOpacity: 1 }}>
           <Popup><div className="min-w-40"><strong>{index + 1}. {stop.client?.full_name || "Kunde"}</strong><div>{stop.horses.map((horse) => horse.name).join(", ")}</div><div>{formatTime(stop.time)} Uhr</div></div></Popup>
