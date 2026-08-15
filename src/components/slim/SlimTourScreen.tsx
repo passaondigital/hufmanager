@@ -32,7 +32,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLiveTourEta } from "@/hooks/useLiveTourEta";
 import { calculateRoute } from "@/lib/routeService";
 import { getCheapestPrice, mapFuelType, useFuelPrices } from "@/hooks/useFuelPrices";
-import { buildGoogleMapsRouteUrl, calculateActualOdometerDistance, calculateSlimTourCosts, getSlimTourStats, hasStopCoordinates } from "./slimTourUtils";
+import { buildGoogleMapsRouteUrl, calculateActualOdometerDistance, calculateSlimTourCosts, getSlimTourStats, hasStopCoordinates, isTourStopFinished } from "./slimTourUtils";
 
 type SlimTourStop = {
   id: string;
@@ -77,6 +77,18 @@ function distanceKm(a: [number, number], b: [number, number]) {
 function estimateDistance(positions: [number, number][]) {
   if (positions.length < 2) return null;
   return Math.round(positions.slice(1).reduce((sum, point, index) => sum + distanceKm(positions[index], point), 0) * 10) / 10;
+}
+
+function getCurrentBrowserPosition(): Promise<[number, number] | null> {
+  if (!("geolocation" in navigator)) return Promise.resolve(null);
+
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => resolve([coords.latitude, coords.longitude]),
+      () => resolve(null),
+      { enableHighAccuracy: true, maximumAge: 30_000, timeout: 12_000 },
+    );
+  });
 }
 
 export function SlimTourScreen() {
@@ -167,9 +179,13 @@ export function SlimTourScreen() {
     if (log?.end_km != null) setEndKm(String(log.end_km));
   }, [tourQuery.data?.vehicleLog]);
 
-  const routePositions = useMemo(() => orderedStops.filter(hasStopCoordinates).map((stop) => [stop.client!.geo_lat!, stop.client!.geo_lng!] as [number, number]), [orderedStops]);
+  const isActive = tourQuery.data?.dailyTour?.status === "active";
+  const openStops = useMemo(() => orderedStops.filter((stop) => !isTourStopFinished(stop.status)), [orderedStops]);
+  const nextStop = openStops[0] ?? null;
+  const routeStops = isActive ? openStops : orderedStops;
+  const routePositions = useMemo(() => routeStops.filter(hasStopCoordinates).map((stop) => [stop.client!.geo_lat!, stop.client!.geo_lng!] as [number, number]), [routeStops]);
   const routeQuery = useQuery({
-    queryKey: ["slim-tour-route-unchained", user?.id, routePositions.map((point) => point.join(",")).join("|")],
+    queryKey: ["slim-tour-route-unchained", user?.id, isActive ? "active" : "planned", routePositions.map((point) => point.join(",")).join("|")],
     enabled: routePositions.length >= 2,
     queryFn: () => calculateRoute(routePositions, { optimize: false }),
     staleTime: 5 * 60 * 1000,
@@ -181,7 +197,6 @@ export function SlimTourScreen() {
     // keep the stop markers visible instead of drawing misleading straight lines.
     return coordinates?.length ? coordinates.map(([lng, lat]) => [lat, lng]) : [];
   }, [routeQuery.data?.geometry]);
-  const nextStop = orderedStops.find((stop) => stop.status !== "completed") ?? orderedStops[0] ?? null;
   const stats = useMemo(() => getSlimTourStats(orderedStops), [orderedStops]);
   const routeDistance = routeQuery.data?.distance ?? tourQuery.data?.dailyTour?.total_distance_km ?? estimateDistance(routePositions);
   const routeDuration = routeQuery.data?.duration ?? (routeDistance ? Math.round((routeDistance / 50) * 60) : null);
@@ -201,7 +216,6 @@ export function SlimTourScreen() {
     fuelCost: estimatedFuelCost,
   });
   const actualDistance = calculateActualOdometerDistance(startKm ? Number(startKm) : null, endKm ? Number(endKm) : null);
-  const isActive = tourQuery.data?.dailyTour?.status === "active";
   const mapsUrl = buildGoogleMapsRouteUrl(orderedStops);
   const liveEtaDestination = nextStop?.client?.geo_lat != null && nextStop?.client?.geo_lng != null
     ? [nextStop.client.geo_lat, nextStop.client.geo_lng] as [number, number]
@@ -209,17 +223,19 @@ export function SlimTourScreen() {
   const liveEta = useLiveTourEta({ enabled: isActive, destination: liveEtaDestination });
   const liveEtaText = !isActive
     ? "Tour starten für Live-Ankunft"
-    : liveEta.arrivalLabel
-      ? `Ankunft ca. ${liveEta.arrivalLabel} Uhr${liveEta.durationMinutes != null ? ` · ${liveEta.durationMinutes} Min.` : ""}`
-      : liveEta.locationState === "denied"
-        ? "Standortfreigabe fehlt – ETA nicht verfügbar"
-        : liveEta.locationState === "unsupported"
-          ? "Standort wird auf diesem Gerät nicht unterstützt"
-          : liveEta.locationState === "unavailable"
-            ? "Standort gerade nicht verfügbar"
-            : liveEta.routeError
-              ? "Fahrzeit konnte gerade nicht berechnet werden"
-              : "Live-Ankunft wird berechnet …";
+    : !nextStop
+      ? "Alle Stopps erledigt"
+      : liveEta.arrivalLabel
+        ? `Ankunft ca. ${liveEta.arrivalLabel} Uhr${liveEta.durationMinutes != null ? ` · ${liveEta.durationMinutes} Min.` : ""}`
+        : liveEta.locationState === "denied"
+          ? "Standortfreigabe fehlt – ETA nicht verfügbar"
+          : liveEta.locationState === "unsupported"
+            ? "Standort wird auf diesem Gerät nicht unterstützt"
+            : liveEta.locationState === "unavailable"
+              ? "Standort gerade nicht verfügbar"
+              : liveEta.routeError
+                ? "Fahrzeit konnte gerade nicht berechnet werden"
+                : "Live-Ankunft wird berechnet …";
 
   const persistOrder = useMutation({
     mutationFn: async (stops: SlimTourStop[]) => {
@@ -232,13 +248,28 @@ export function SlimTourScreen() {
 
   const optimizeTour = useMutation({
     mutationFn: async () => {
-      const result = await calculateRoute(routePositions, { optimize: true });
+      const finishedStops = orderedStops.filter((stop) => isTourStopFinished(stop.status));
+      const openTourStops = orderedStops.filter((stop) => !isTourStopFinished(stop.status));
+      const geocodedStops = openTourStops.filter(hasStopCoordinates);
+      if (geocodedStops.length < 2) return orderedStops;
+
+      const currentPosition = await getCurrentBrowserPosition();
+      const stopPositions = geocodedStops.map((stop) => [stop.client!.geo_lat!, stop.client!.geo_lng!] as [number, number]);
+      const planningPositions = currentPosition ? [currentPosition, ...stopPositions] : stopPositions;
+      const result = await calculateRoute(planningPositions, { optimize: true });
       if (!result) throw new Error("ROUTE_OPTIMIZATION_FAILED");
-      if (!result.optimized_order?.length || orderedStops.length < 3) return orderedStops;
-      const first = orderedStops[0];
-      const optimized = [first, ...result.optimized_order.map((index) => orderedStops[index]).filter(Boolean)];
-      const remaining = orderedStops.filter((stop) => !optimized.some((candidate) => candidate.id === stop.id));
-      return [...optimized, ...remaining];
+      if (!result.optimized_order?.length) return orderedStops;
+
+      const optimizedGeocoded = currentPosition
+        ? result.optimized_order.map((jobId) => geocodedStops[jobId - 1]).filter(Boolean)
+        : [
+            geocodedStops[0],
+            ...result.optimized_order.map((jobId) => geocodedStops[jobId]).filter(Boolean),
+          ];
+      const optimizedIds = new Set(optimizedGeocoded.map((stop) => stop.id));
+      const openWithoutRoute = openTourStops.filter((stop) => !optimizedIds.has(stop.id));
+
+      return [...finishedStops, ...optimizedGeocoded, ...openWithoutRoute];
     },
     onSuccess: async (stops) => { setOrderedStops(stops); await persistOrder.mutateAsync(stops); void routeQuery.refetch(); },
   });
@@ -303,11 +334,11 @@ export function SlimTourScreen() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1">
-            <Button variant="outline" onClick={() => optimizeTour.mutate()} disabled={routePositions.length < 2 || optimizeTour.isPending}>
+            <Button variant="outline" onClick={() => optimizeTour.mutate()} disabled={openStops.filter(hasStopCoordinates).length < 2 || optimizeTour.isPending}>
               <RotateCcw className={`h-4 w-4 ${optimizeTour.isPending ? "animate-spin" : ""}`} />
               Route planen
             </Button>
-            <HelpTip title="Route planen" description="HufManager sortiert deine Stopps sinnvoll und berechnet die Strecke. Du kannst die Reihenfolge danach trotzdem noch manuell aendern." />
+            <HelpTip title="Route planen" description="HufManager startet bei deinem aktuellen Standort, sortiert die offenen Stopps sinnvoll und berechnet die Strecke. Falls dein Standort nicht verfügbar ist, bleibt der erste offene Stopp der Ausgangspunkt." />
           </div>
           <Button onClick={() => isActive ? stopTour.mutate() : startTour.mutate()} disabled={!orderedStops.length || startTour.isPending || stopTour.isPending}>
             {isActive ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
@@ -333,12 +364,12 @@ export function SlimTourScreen() {
           <aside className="flex min-h-0 flex-col border-t border-[var(--hm-border)] xl:border-l xl:border-t-0">
             <div className="border-b border-[var(--hm-border)] p-4">
               <p className="text-sm font-medium text-orange-600">Nächster Stopp</p>
-              <h2 className="mt-1 truncate text-xl font-semibold text-[var(--hm-text-primary)]">{nextStop?.client?.full_name || "Kunde"}</h2>
-              <p className="mt-1 text-sm text-[var(--hm-text-secondary)]">{nextStop?.horses.map((horse) => horse.name).join(" · ") || "Pferd"} · {formatTime(nextStop?.time)}</p>
+              <h2 className="mt-1 truncate text-xl font-semibold text-[var(--hm-text-primary)]">{nextStop?.client?.full_name || (stats.openStops === 0 ? "Alle Stopps erledigt" : "Kunde")}</h2>
+              <p className="mt-1 text-sm text-[var(--hm-text-secondary)]">{nextStop ? `${nextStop.horses.map((horse) => horse.name).join(" · ") || "Pferd"} · ${formatTime(nextStop.time)}` : "Die Tagesroute ist abgearbeitet."}</p>
               <div className="mt-2 flex items-center gap-1 text-xs text-[var(--hm-text-secondary)]">
                 <Clock3 className={`h-3.5 w-3.5 text-orange-600 ${liveEta.isCalculating ? "animate-pulse" : ""}`} />
                 <span className={liveEta.arrivalLabel ? "font-semibold text-[var(--hm-text-primary)]" : ""}>{liveEtaText}</span>
-                <HelpTip title="Voraussichtliche Ankunft" description="Während einer aktiven Tour nutzt HufManager deinen aktuellen Gerätestandort und die echte Straßenfahrzeit zum nächsten Stopp. Der Standort wird für diese ETA im Browser verwendet und hier nicht als Tourverlauf gespeichert." />
+                <HelpTip title="Voraussichtliche Ankunft" description="Während einer aktiven Tour nutzt HufManager deinen aktuellen Gerätestandort und die echte Straßenfahrzeit zum nächsten offenen Stopp. Der Standort wird für diese ETA im Browser verwendet und hier nicht als Tourverlauf gespeichert." />
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button className="hm-button-primary" onClick={() => mapsUrl && window.open(mapsUrl, "_blank", "noopener,noreferrer")} disabled={!mapsUrl}><Navigation className="h-4 w-4" />Navigation</button>
@@ -386,7 +417,7 @@ export function SlimTourScreen() {
           onClose={() => setSelectedStop(null)}
           appointmentId={selectedStop.id}
           horseName={selectedStop.horses.map((horse) => horse.name).join(", ") || "Pferd"}
-          onCompleted={() => { setSelectedStop(null); void tourQuery.refetch(); navigate("/home/finanzen"); }}
+          onCompleted={() => { setSelectedStop(null); void tourQuery.refetch(); }}
         />
       )}
     </div>
@@ -408,7 +439,7 @@ function SlimRouteMap({ stops, routeLine, selectedId, currentPosition }: { stops
         </CircleMarker>
       )}
       {stops.map((stop, index) => hasStopCoordinates(stop) ? (
-        <CircleMarker key={stop.id} center={[stop.client!.geo_lat!, stop.client!.geo_lng!]} radius={selectedId === stop.id ? 14 : 11} pathOptions={{ color: "#FFFFFF", weight: 3, fillColor: stop.status === "completed" ? "#5d625f" : "#FF6A00", fillOpacity: 1 }}>
+        <CircleMarker key={stop.id} center={[stop.client!.geo_lat!, stop.client!.geo_lng!]} radius={selectedId === stop.id ? 14 : 11} pathOptions={{ color: "#FFFFFF", weight: 3, fillColor: isTourStopFinished(stop.status) ? "#5d625f" : "#FF6A00", fillOpacity: 1 }}>
           <Popup><div className="min-w-40"><strong>{index + 1}. {stop.client?.full_name || "Kunde"}</strong><div>{stop.horses.map((horse) => horse.name).join(", ")}</div><div>{formatTime(stop.time)} Uhr</div></div></Popup>
         </CircleMarker>
       ) : null)}
@@ -429,7 +460,7 @@ function SortableStop({ stop, index, onOpen }: { stop: SlimTourStop; index: numb
       <button type="button" {...attributes} {...listeners} className="flex h-9 w-8 cursor-grab items-center justify-center rounded-lg text-[var(--hm-text-secondary)] hover:bg-orange-500/10 hover:text-orange-600" aria-label="Stopp verschieben"><GripVertical className="h-4 w-4" /></button>
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-600 text-xs font-bold text-white">{index + 1}</span>
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 py-1 text-left"><span className="block truncate text-sm font-semibold text-[var(--hm-text-primary)]">{stop.client?.full_name || "Kunde"}</span><span className="block truncate text-xs text-[var(--hm-text-secondary)]">{formatTime(stop.time)} · {stop.horses.map((horse) => horse.name).join(" + ") || stop.service_type}</span></button>
-      {stop.status === "completed" ? <CheckCircle2 className="h-4 w-4 text-orange-600" /> : <ArrowRight className="h-4 w-4 text-[var(--hm-text-secondary)]" />}
+      {isTourStopFinished(stop.status) ? <CheckCircle2 className="h-4 w-4 text-orange-600" /> : <ArrowRight className="h-4 w-4 text-[var(--hm-text-secondary)]" />}
     </div>
   );
 }
