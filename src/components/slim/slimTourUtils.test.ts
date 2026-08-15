@@ -53,6 +53,20 @@ describe("slimTourUtils", () => {
     });
   });
 
+  it("keeps multiple defensive in-progress rows pinned before future candidates", () => {
+    const stops = [
+      { id: "current-a", status: "in_progress" },
+      { id: "future", status: "confirmed" },
+      { id: "current-b", status: "in_progress" },
+    ];
+
+    expect(partitionStopsForReplan(stops)).toEqual({
+      finished: [],
+      locked: [stops[0], stops[2]],
+      candidates: [stops[1]],
+    });
+  });
+
   it("inserts a new next stop after the current in-progress customer", () => {
     const stops = [
       { id: "done", status: "completed" },
@@ -82,6 +96,22 @@ describe("slimTourUtils", () => {
       "current",
       "later",
       "new",
+    ]);
+  });
+
+  it("never promotes a future stop ahead of the current one through insertion ordering", () => {
+    const stops = [
+      { id: "current", status: "in_progress" },
+      { id: "new-a", status: "confirmed" },
+      { id: "new-b", status: "planned" },
+      { id: "later", status: "confirmed" },
+    ];
+
+    expect(buildInsertionOrder(stops, new Set(["new-a", "new-b"]), "next").map((stop) => stop.id)).toEqual([
+      "current",
+      "new-a",
+      "new-b",
+      "later",
     ]);
   });
 
