@@ -26,8 +26,6 @@ export async function sendPushToUser(
   }
 }
 
-// ── Dynamic name resolver ──────────────────────────────────
-
 export async function resolveProviderDisplayName(providerId: string): Promise<string> {
   const { data: profile } = await supabase
     .from("profiles")
@@ -43,8 +41,6 @@ export async function resolveProviderDisplayName(providerId: string): Promise<st
     .maybeSingle();
   return bs?.business_name || "Dein Hufpfleger";
 }
-
-// ── Typed notification types ───────────────────────────────
 
 export type PushNotificationType =
   | "provider_on_way"
@@ -72,30 +68,22 @@ function buildPushContent(type: PushNotificationType, input: PushTemplateInput):
     case "provider_on_way":
       return {
         title: `${providerName} ist unterwegs 🚗`,
-        body: time
-          ? `Dein Termin heute um ${time} Uhr`
-          : "Dein Termin steht heute an!",
+        body: time ? `Dein Termin heute um ${time} Uhr` : "Dein Termin steht heute an!",
       };
     case "provider_arriving":
       return {
         title: `${providerName} ist gleich da ⏱`,
-        body: etaMinutes
-          ? `Ankunft in ca. ${etaMinutes} Minuten`
-          : "Ankunft in wenigen Minuten",
+        body: etaMinutes ? `Ankunft in ca. ${etaMinutes} Minuten` : "Ankunft in wenigen Minuten",
       };
     case "provider_arrived":
       return {
         title: `${providerName} ist angekommen! 🐴`,
-        body: horseName
-          ? `Dein Termin bei ${horseName} beginnt`
-          : "Dein Termin beginnt jetzt",
+        body: horseName ? `Dein Termin bei ${horseName} beginnt` : "Dein Termin beginnt jetzt",
       };
     case "appointment_reminder":
       return {
         title: `Termin morgen 🗓`,
-        body: time
-          ? `${providerName} kommt morgen um ${time} Uhr`
-          : `${providerName} kommt morgen`,
+        body: time ? `${providerName} kommt morgen um ${time} Uhr` : `${providerName} kommt morgen`,
       };
     case "appointment_delay":
       return {
@@ -117,23 +105,16 @@ function buildPushContent(type: PushNotificationType, input: PushTemplateInput):
     case "appointment_confirmed":
       return {
         title: `Termin bestätigt ✅`,
-        body: horseName
-          ? `Der Termin für ${horseName} wurde bestätigt`
-          : "Ein Termin wurde bestätigt",
+        body: horseName ? `Der Termin für ${horseName} wurde bestätigt` : "Ein Termin wurde bestätigt",
       };
     case "appointment_declined":
       return {
         title: `Termin abgelehnt ❌`,
-        body: horseName
-          ? `Der Termin für ${horseName} wurde abgesagt`
-          : "Ein Termin wurde abgesagt",
+        body: horseName ? `Der Termin für ${horseName} wurde abgesagt` : "Ein Termin wurde abgesagt",
       };
   }
 }
 
-/**
- * Send a typed push notification with dynamic names.
- */
 export async function sendTypedPush(
   userId: string,
   type: PushNotificationType,
@@ -144,37 +125,51 @@ export async function sendTypedPush(
   return sendPushToUser(userId, title, body, url);
 }
 
+function berlinDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Berlin",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
 /**
- * Send push notifications to all clients with appointments today for a given provider.
+ * Send a tour notification to affected clients with an open appointment today.
+ * Finished/cancelled appointments are deliberately excluded so a delay later in
+ * the day does not notify customers whose visit is already over.
  */
 export async function notifyTodayClients(
   providerId: string,
   type: "tour_start" | "delay" | "arrived",
   extraData?: { clientId?: string; delayMinutes?: number; providerName?: string }
 ): Promise<number> {
-  const today = new Date().toISOString().split("T")[0];
+  const today = berlinDateKey();
 
-  const { data: appointments } = await supabase
+  const { data: appointments, error } = await supabase
     .from("appointments")
-    .select("id, horse_id, time, horses!inner(owner_id, name)")
+    .select("id, client_id, horse_id, time, status, horses(owner_id, name)")
     .eq("provider_id", providerId)
     .eq("date", today)
-    .neq("status", "cancelled");
+    .not("status", "in", '("completed","no_show","cancelled")');
 
+  if (error) {
+    console.error("Tour notification appointment lookup failed:", error);
+    return 0;
+  }
   if (!appointments?.length) return 0;
 
   const resolvedName = extraData?.providerName || await resolveProviderDisplayName(providerId);
-
-  let sentCount = 0;
   const clientNotifications = new Map<string, { title: string; body: string; url: string }>();
 
-  for (const appt of appointments) {
-    const horse = appt.horses as any;
-    if (!horse?.owner_id) continue;
-    const ownerId = horse.owner_id;
-
-    if (extraData?.clientId && ownerId !== extraData.clientId) continue;
-    if (clientNotifications.has(ownerId)) continue;
+  for (const appt of appointments as any[]) {
+    const horse = Array.isArray(appt.horses) ? appt.horses[0] : appt.horses;
+    const clientId = appt.client_id || horse?.owner_id;
+    if (!clientId) continue;
+    if (extraData?.clientId && clientId !== extraData.clientId) continue;
+    if (clientNotifications.has(clientId)) continue;
 
     let pushType: PushNotificationType;
     switch (type) {
@@ -185,14 +180,15 @@ export async function notifyTodayClients(
 
     const { title, body } = buildPushContent(pushType, {
       providerName: resolvedName,
-      horseName: horse.name || undefined,
-      time: appt.time ? (appt.time as string).slice(0, 5) : undefined,
+      horseName: horse?.name || undefined,
+      time: appt.time ? String(appt.time).slice(0, 5) : undefined,
       delayMinutes: extraData?.delayMinutes,
     });
 
-    clientNotifications.set(ownerId, { title, body, url: "/client-home" });
+    clientNotifications.set(clientId, { title, body, url: "/client-home" });
   }
 
+  let sentCount = 0;
   for (const [clientId, notification] of clientNotifications) {
     const success = await sendPushToUser(clientId, notification.title, notification.body, notification.url);
     if (success) sentCount++;
