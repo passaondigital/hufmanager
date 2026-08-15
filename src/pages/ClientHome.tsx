@@ -10,7 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Plus, MessageSquare, Camera, Calendar, ChevronRight, Sparkles,
+  Plus, MessageSquare, Camera, Calendar, Sparkles,
 } from "lucide-react";
 
 import { motion } from "framer-motion";
@@ -24,6 +24,7 @@ import { HorseIntervalReminderWidget } from "@/components/client/HorseIntervalRe
 import { HorseTransferReceive } from "@/components/client/HorseTransferReceive";
 import { ServiceOrderList } from "@/components/client/ServiceOrderList";
 import { ConnectedProviderCard } from "@/components/client/ConnectedProviderCard";
+import { ProviderTourStatusWidget } from "@/components/client/ProviderTourStatusWidget";
 import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
 import { MyConnectionRequests } from "@/components/network/MyConnectionRequests";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
@@ -95,7 +96,6 @@ function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string })
     queryFn: async (): Promise<string> => {
       if (horses.length === 0) return "none";
       const horseIds = horses.map(h => h.id);
-      // Check horse_health_logs for any warning/critical entries
       const { data: logs } = await supabase
         .from("horse_health_logs")
         .select("wellbeing")
@@ -151,7 +151,6 @@ function ClientKpiGrid({ horses, userId }: { horses: Horse[]; userId?: string })
 export default function ClientHome() {
   const { user, loading: authLoading } = useAuth();
   const { showOnboarding, completeOnboarding } = useOnboarding();
-  
   const navigate = useNavigate();
   const [horses, setHorses] = useState<Horse[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -198,7 +197,6 @@ export default function ClientHome() {
 
     setHasProvider((grants && grants.length > 0) || false);
 
-    // Prüfen ob der verknüpfte Provider ein Pro-Abo hat
     if (grants && grants.length > 0) {
       const providerId = grants[0].provider_id;
       const { data: providerProfile } = await supabase
@@ -245,7 +243,6 @@ export default function ClientHome() {
     }
   }, [loading, isFirstLogin, horses.length, showOnboarding]);
 
-  
   const handleHorseCreated = (horseId: string) => {
     setShowMandatoryHorseModal(false);
     fetchData();
@@ -272,11 +269,7 @@ export default function ClientHome() {
       {showOnboarding && <ClientOnboarding onComplete={completeOnboarding} />}
 
       <div className="min-h-[100dvh] bg-gradient-to-b from-background via-background to-muted/20 overflow-safe">
-
-        {/* Main Content */}
         <main className="px-4 py-6 max-w-lg mx-auto space-y-5 pb-safe" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}>
-
-          {/* === First-Login Welcome Banner === */}
           {isFirstLogin && horses.length === 0 && !loading && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
               <div className="flex items-center gap-2">
@@ -308,17 +301,14 @@ export default function ClientHome() {
             </div>
           )}
 
-          {/* === Compact Banners (non-intrusive) === */}
           <ClientPushPermissionBanner />
           <UnconfirmedAppointmentsBanner />
 
-          {/* Hinweis: Provider hat noch kein Pro-Abo */}
           {providerHasNoPro && (
             <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
               <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
               <p className="text-sm text-amber-700 dark:text-amber-400 leading-relaxed">
-                Dein Hufbearbeiter hat noch kein Pro-Abo aktiv. Bitte wende dich
-                direkt an ihn.
+                Dein Hufbearbeiter hat noch kein Pro-Abo aktiv. Bitte wende dich direkt an ihn.
               </p>
             </div>
           )}
@@ -326,14 +316,12 @@ export default function ClientHome() {
           <HorseIntervalReminderWidget />
           <HorseTransferReceive />
 
-          {/* ══════════════════════════════════════ */}
-          {/* ZONE 1 — HERO                         */}
-          {/* ══════════════════════════════════════ */}
           <DashboardHero
             name={profile?.full_name}
             subtitle="Dein Pferdeplaner auf einen Blick"
           >
-            {/* Next Appointment */}
+            {user && <ProviderTourStatusWidget userId={user.id} />}
+
             {user && (
               <NextAppointmentCard
                 userId={user.id}
@@ -342,7 +330,6 @@ export default function ClientHome() {
               />
             )}
 
-            {/* Quick Actions */}
             <QuickActionBar actions={[
               { key: "chat", label: "Chat", icon: MessageSquare, primary: true, onClick: () => navigate("/client-chat") },
               { key: "buchen", label: "Buchen", icon: Calendar, onClick: () => navigate("/client-booking") },
@@ -350,16 +337,8 @@ export default function ClientHome() {
             ]} />
           </DashboardHero>
 
-          {/* ══════════════════════════════════════ */}
-          {/* ZONE 2 — KPI GRID                     */}
-          {/* ══════════════════════════════════════ */}
           <ClientKpiGrid horses={horses} userId={user?.id} />
 
-          {/* ══════════════════════════════════════ */}
-          {/* ZONE 3 — DETAIL SECTIONS              */}
-          {/* ══════════════════════════════════════ */}
-
-          {/* 3a: Meine Pferde (horizontal scroll) */}
           <div>
             <SectionHeader
               title="Meine Pferde"
@@ -403,7 +382,6 @@ export default function ClientHome() {
                     </p>
                   </button>
                 ))}
-                {/* Add card */}
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="min-w-[100px] rounded-xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/30 hover:text-primary transition-colors flex-shrink-0"
@@ -415,13 +393,8 @@ export default function ClientHome() {
             )}
           </div>
 
-          {/* 3b: Service Orders */}
           <ServiceOrderList />
-
-          {/* 3c: Tips */}
           <HorseTipsWidget />
-
-          {/* 3d: Provider Connection */}
           <PendingConnectionRequests userType="client" onStatusChanged={fetchData} />
           <MyConnectionRequests />
 
@@ -436,18 +409,21 @@ export default function ClientHome() {
                   Suche deinen Hufbearbeiter, um Termine zu buchen und Pferdeakten zu teilen.
                 </p>
               </div>
-              <ConnectionSearch searchType="provider" onConnectionRequested={fetchData} />
+              {showConnectionSearch && <ConnectionSearch searchType="provider" onConnectionRequested={fetchData} />}
+              <button
+                type="button"
+                className="w-full rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-medium text-primary"
+                onClick={() => setShowConnectionSearch((value) => !value)}
+              >
+                {showConnectionSearch ? "Suche schließen" : "Hufbearbeiter suchen"}
+              </button>
               <ProviderSelector onProviderConnected={fetchData} />
             </div>
           )}
 
-          {/* 3e: Service History */}
           {user && <ServiceHistoryWidget userId={user.id} />}
         </main>
 
-        
-
-        {/* Modals */}
         <CreateHorseModal open={showCreateModal} onClose={() => setShowCreateModal(false)} onCreated={handleHorseCreated} />
         <HMCamModal
           open={showHMCamModal}
