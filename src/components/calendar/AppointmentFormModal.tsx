@@ -20,20 +20,20 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { 
-  AlertTriangle, 
-  Loader2, 
-  CalendarClock, 
-  Package, 
-  Upload, 
-  X, 
-  MessageSquare, 
-  AlertCircle, 
-  Stethoscope, 
+import {
+  AlertTriangle,
+  Loader2,
+  CalendarClock,
+  Package,
+  Upload,
+  X,
+  MessageSquare,
+  AlertCircle,
+  Stethoscope,
   MoreHorizontal,
   FileText,
-  Image as ImageIcon,
-  Camera
+  Camera,
+  ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -48,6 +48,7 @@ import { cn } from "@/lib/utils";
 import { useServicePresets } from "@/hooks/useServicePresets";
 import { useProfessionConfig } from "@/hooks/useProfessionConfig";
 import { sendTypedPush, resolveProviderDisplayName } from "@/lib/pushNotificationService";
+import { HelpTip } from "@/components/ui/HelpTip";
 
 const appointmentSchema = z.object({
   horseIds: z.array(z.string()).min(1, "Bitte wählen Sie mindestens ein Pferd aus"),
@@ -107,6 +108,7 @@ export function AppointmentFormModal({
   const [pendingEvidence, setPendingEvidence] = useState<PendingEvidence[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0, fileName: "" });
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
   const [selectionMode, setSelectionMode] = useState<"horse" | "owner">("horse");
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>("");
@@ -123,17 +125,16 @@ export function AppointmentFormModal({
     seriesTotal: 5,
   });
 
-  // Fetch service time presets (provider-specific from DB)
-  const { presets: servicePresets, colorMap } = useServicePresets();
+  const { presets: servicePresets } = useServicePresets();
 
-  // Build a preset map for quick lookup
   const presetMap = useMemo(() => {
     const map: Record<string, typeof servicePresets[0]> = {};
-    servicePresets.forEach(p => { map[p.service_type] = p; });
+    servicePresets.forEach((preset) => {
+      map[preset.service_type] = preset;
+    });
     return map;
   }, [servicePresets]);
 
-  // Fetch services with billing_type
   const { data: services = [] } = useQuery({
     queryKey: ["services"],
     queryFn: async () => {
@@ -143,12 +144,10 @@ export function AppointmentFormModal({
     },
   });
 
-  // Get current service billing type
-  const currentService = services.find((s: any) => s.name === formData.serviceType);
+  const currentService = services.find((service: any) => service.name === formData.serviceType);
   const isFlatRate = currentService?.billing_type === "flat_rate";
   const isSeriesService = currentService?.billing_type === "series";
 
-  // Fetch horses with owner price_group
   const { data: horses = [] } = useQuery({
     queryKey: ["horses-with-price-group"],
     queryFn: async () => {
@@ -160,19 +159,18 @@ export function AppointmentFormModal({
     },
   });
 
-  // Unique owners from horses list
   const owners = useMemo(() => {
     const ownerMap = new Map<string, { id: string; horses: typeof horses }>();
-    horses.forEach((h: any) => {
-      if (h.owner_id) {
-        if (!ownerMap.has(h.owner_id)) ownerMap.set(h.owner_id, { id: h.owner_id, horses: [] });
-        ownerMap.get(h.owner_id)!.horses.push(h);
+    horses.forEach((horse: any) => {
+      if (!horse.owner_id) return;
+      if (!ownerMap.has(horse.owner_id)) {
+        ownerMap.set(horse.owner_id, { id: horse.owner_id, horses: [] });
       }
+      ownerMap.get(horse.owner_id)!.horses.push(horse);
     });
     return ownerMap;
   }, [horses]);
 
-  // Fetch contacts for owner names
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts-for-appointment"],
     queryFn: async () => {
@@ -182,22 +180,21 @@ export function AppointmentFormModal({
   });
 
   const contactMap = useMemo(() => {
-    const m = new Map<string, string>();
-    contacts.forEach((c: any) => m.set(c.id, c.full_name));
-    return m;
+    const map = new Map<string, string>();
+    contacts.forEach((contact: any) => map.set(contact.id, contact.full_name));
+    return map;
   }, [contacts]);
 
-  // Filtered horses when in owner mode
   const filteredHorses = useMemo(() => {
     if (selectionMode === "owner" && selectedOwnerId) {
-      return horses.filter((h: any) => h.owner_id === selectedOwnerId);
+      return horses.filter((horse: any) => horse.owner_id === selectedOwnerId);
     }
     return horses;
   }, [horses, selectionMode, selectedOwnerId]);
 
-  // Fetch client locations for the first selected horse's owner
-  const firstSelectedHorse = horses.find((h: any) => formData.horseIds.includes(h.id));
+  const firstSelectedHorse = horses.find((horse: any) => formData.horseIds.includes(horse.id));
   const selectedHorseOwnerId = firstSelectedHorse?.owner_id;
+
   const { data: clientLocations = [] } = useQuery({
     queryKey: ["client-locations", selectedHorseOwnerId, user?.id],
     queryFn: async () => {
@@ -213,39 +210,38 @@ export function AppointmentFormModal({
     enabled: !!selectedHorseOwnerId && !!user?.id,
   });
 
-  // Auto-select default location when horse selection changes
   const prevHorseRef = useRef(formData.horseIds.join(","));
   useEffect(() => {
     const key = formData.horseIds.join(",");
     if (key !== prevHorseRef.current) {
       prevHorseRef.current = key;
-      const defaultLoc = clientLocations.find((l: any) => l.is_default);
-      if (defaultLoc) {
-        setFormData(prev => ({ ...prev, location: defaultLoc.name + (defaultLoc.address ? `, ${defaultLoc.address}` : "") }));
+      const defaultLocation = clientLocations.find((location: any) => location.is_default);
+      if (defaultLocation) {
+        setFormData((previous) => ({
+          ...previous,
+          location: defaultLocation.name + (defaultLocation.address ? `, ${defaultLocation.address}` : ""),
+        }));
       }
     }
   }, [formData.horseIds, clientLocations]);
 
-  // Toggle horse in multi-select
   const toggleHorse = useCallback((horseId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      horseIds: prev.horseIds.includes(horseId)
-        ? prev.horseIds.filter(id => id !== horseId)
-        : [...prev.horseIds, horseId],
+    setFormData((previous) => ({
+      ...previous,
+      horseIds: previous.horseIds.includes(horseId)
+        ? previous.horseIds.filter((id) => id !== horseId)
+        : [...previous.horseIds, horseId],
     }));
   }, []);
 
-  // Select all horses for an owner
   const selectAllOwnerHorses = useCallback((ownerId: string) => {
-    const ownerHorses = horses.filter((h: any) => h.owner_id === ownerId);
-    setFormData(prev => ({
-      ...prev,
-      horseIds: [...new Set([...prev.horseIds, ...ownerHorses.map((h: any) => h.id)])],
+    const ownerHorses = horses.filter((horse: any) => horse.owner_id === ownerId);
+    setFormData((previous) => ({
+      ...previous,
+      horseIds: [...new Set([...previous.horseIds, ...ownerHorses.map((horse: any) => horse.id)])],
     }));
   }, [horses]);
 
-  // Fetch service price overrides for the current service
   const { data: priceOverrides = [] } = useQuery({
     queryKey: ["service-price-overrides", currentService?.id],
     queryFn: async () => {
@@ -260,16 +256,15 @@ export function AppointmentFormModal({
     enabled: !!currentService?.id,
   });
 
-  // Check for conflicts
   const checkForConflicts = (date: Date, time: string) => {
-    const dateStr = format(date, "yyyy-MM-dd");
+    const dateString = format(date, "yyyy-MM-dd");
     const existingAtTime = existingAppointments.filter(
-      (apt) => apt.date === dateStr && apt.time === time
+      (appointment) => appointment.date === dateString && appointment.time === time,
     );
-    
+
     if (existingAtTime.length > 0) {
       const horseNames = existingAtTime
-        .map((apt) => apt.horses?.name || "Unbekannt")
+        .map((appointment) => appointment.horses?.name || "Unbekannt")
         .join(", ");
       setConflictWarning(`Zur gleichen Zeit ist bereits ein Termin geplant: ${horseNames}`);
     } else {
@@ -283,34 +278,39 @@ export function AppointmentFormModal({
     }
   }, [selectedDate, formData.time, existingAppointments]);
 
-  // Pre-select horse when passed from calendar
   useEffect(() => {
     if (preselectedHorseId && isOpen) {
-      setFormData(prev => ({ ...prev, horseIds: [preselectedHorseId] }));
+      setFormData((previous) => ({ ...previous, horseIds: [preselectedHorseId] }));
     }
   }, [preselectedHorseId, isOpen]);
 
-  // Create appointment mutation - with proper error handling and sequential flow
+  useEffect(() => {
+    if (isSeriesService) {
+      setShowAdvancedOptions(true);
+    }
+  }, [isSeriesService]);
+
   const createAppointments = useMutation({
     networkMode: "always",
     onMutate: (appointments: any[]) => {
-      if (import.meta.env.DEV) console.log("[AppointmentFormModal] mutate", { appointmentsCount: appointments?.length });
+      if (import.meta.env.DEV) {
+        console.log("[AppointmentFormModal] mutate", { appointmentsCount: appointments?.length });
+      }
     },
     mutationFn: async (appointments: any[]) => {
       if (import.meta.env.DEV) console.log("[AppointmentFormModal] mutationFn start");
-      // Start upload progress tracking immediately if we have evidence
+
       if (pendingEvidence.length > 0) {
         setIsUploading(true);
         setUploadProgress({ current: 0, total: pendingEvidence.length, fileName: "Termin wird erstellt..." });
       }
-      
+
       try {
-        // Step A: Create the appointment records first
         const { data: createdAppointments, error: insertError } = await supabase
           .from("appointments")
           .insert(appointments)
           .select();
-        
+
         if (insertError) {
           console.error("Appointment insert error:", insertError);
           throw new Error(`Termin konnte nicht erstellt werden: ${insertError.message}`);
@@ -320,21 +320,21 @@ export function AppointmentFormModal({
           throw new Error("Keine Termine erstellt - unbekannter Fehler");
         }
 
-        if (import.meta.env.DEV) console.log("[AppointmentFormModal] createdAppointments", createdAppointments.length);
+        if (import.meta.env.DEV) {
+          console.log("[AppointmentFormModal] createdAppointments", createdAppointments.length);
+        }
 
-        // Step B: Get the first appointment ID for evidence linking
         const firstAppointment = createdAppointments[0];
-        
-        // Step C: Upload and link evidence files BEFORE returning
+
         if (pendingEvidence.length > 0 && firstAppointment) {
           const totalFiles = pendingEvidence.length;
-          
-          for (let i = 0; i < pendingEvidence.length; i++) {
-            const evidence = pendingEvidence[i];
-            setUploadProgress({ current: i + 1, total: totalFiles, fileName: evidence.file.name });
-            
-            const fileExt = evidence.file.name.split('.').pop();
-            const fileName = `${crypto.randomUUID()}.${fileExt}`;
+
+          for (let index = 0; index < pendingEvidence.length; index += 1) {
+            const evidence = pendingEvidence[index];
+            setUploadProgress({ current: index + 1, total: totalFiles, fileName: evidence.file.name });
+
+            const fileExtension = evidence.file.name.split(".").pop();
+            const fileName = `${crypto.randomUUID()}.${fileExtension}`;
             const filePath = `evidence/${formData.horseIds[0]}/${fileName}`;
 
             let fileType = "document";
@@ -342,19 +342,16 @@ export function AppointmentFormModal({
             else if (evidence.file.type.startsWith("video/")) fileType = "video";
             else if (evidence.file.type === "application/pdf") fileType = "pdf";
 
-            // Upload file to storage
             const uploadResult = await uploadFile("horse-documents", filePath, evidence.file);
             if (uploadResult.error) {
               console.error("Upload error:", uploadResult.error);
               throw new Error(`Datei-Upload fehlgeschlagen: ${uploadResult.error.message || "Unbekannter Fehler"}`);
             }
 
-            // Insert media_asset record with appointment_id
-            // Validate captureDate before parsing
-            const capturedAtDate = evidence.captureDate && !isNaN(Date.parse(evidence.captureDate))
+            const capturedAtDate = evidence.captureDate && !Number.isNaN(Date.parse(evidence.captureDate))
               ? new Date(evidence.captureDate).toISOString()
               : new Date().toISOString();
-              
+
             const { error: assetError } = await supabase.from("media_assets").insert({
               horse_id: formData.horseIds[0],
               appointment_id: firstAppointment.id,
@@ -362,7 +359,7 @@ export function AppointmentFormModal({
               file_type: fileType,
               category: evidence.category,
               captured_at: capturedAtDate,
-              title: evidence.file.name.split('.')[0],
+              title: evidence.file.name.split(".")[0],
               uploaded_by: user!.id,
             });
 
@@ -375,18 +372,15 @@ export function AppointmentFormModal({
 
         return createdAppointments;
       } finally {
-        // Always reset upload state, regardless of success or failure
         setIsUploading(false);
         setUploadProgress({ current: 0, total: 0, fileName: "" });
       }
     },
     onSuccess: async (createdAppointments) => {
-      // Clean up file previews
-      pendingEvidence.forEach(item => {
+      pendingEvidence.forEach((item) => {
         if (item.preview) URL.revokeObjectURL(item.preview);
       });
 
-      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
       queryClient.invalidateQueries({ queryKey: ["calendar-appointments"] });
       queryClient.invalidateQueries({ queryKey: ["horse-appointments"] });
@@ -394,60 +388,55 @@ export function AppointmentFormModal({
       queryClient.invalidateQueries({ queryKey: ["visit-evidence"] });
       queryClient.invalidateQueries({ queryKey: ["recent-horses"] });
 
-      // Background geocoding for appointments without coordinates
       if (createdAppointments?.length) {
         import("@/lib/geocodeAppointment").then(({ geocodeAppointmentAndSave }) => {
-          for (const apt of createdAppointments) {
-            if (!apt.appointment_lat || !apt.appointment_lng) {
-              geocodeAppointmentAndSave(apt.id, {
-                clientId: apt.client_id,
-                horseId: apt.horse_id,
-                location: apt.location,
+          for (const appointment of createdAppointments) {
+            if (!appointment.appointment_lat || !appointment.appointment_lng) {
+              geocodeAppointmentAndSave(appointment.id, {
+                clientId: appointment.client_id,
+                horseId: appointment.horse_id,
+                location: appointment.location,
               }).catch(console.error);
             }
           }
         }).catch(console.error);
       }
 
-      // Send push notification to horse owner(s)
       if (user?.id && createdAppointments.length > 0) {
         const providerName = await resolveProviderDisplayName(user.id);
-        const firstAppt = createdAppointments[0];
-        
-        // Get horse owner
+        const firstAppointment = createdAppointments[0];
+
         const { data: horse } = await supabase
           .from("horses")
           .select("owner_id, name")
-          .eq("id", firstAppt.horse_id)
+          .eq("id", firstAppointment.horse_id)
           .maybeSingle();
 
         if (horse?.owner_id && horse.owner_id !== user.id) {
-          const dateStr = format(new Date(firstAppt.date), "dd.MM.yyyy");
-          const timeStr = firstAppt.time ? (firstAppt.time as string).slice(0, 5) : undefined;
-          
+          const dateString = format(new Date(firstAppointment.date), "dd.MM.yyyy");
+          const timeString = firstAppointment.time ? (firstAppointment.time as string).slice(0, 5) : undefined;
+
           sendTypedPush(horse.owner_id, "appointment_created", {
             providerName,
             horseName: horse.name,
-            time: timeStr ? `${dateStr} um ${timeStr}` : dateStr,
+            time: timeString ? `${dateString} um ${timeString}` : dateString,
           }).catch(console.error);
         }
       }
 
-      // Step D: Show success toast and close modal
       const count = createdAppointments.length;
       toast({
         title: count > 1 ? `${count} Termine erstellt` : "Termin erstellt",
-        description: pendingEvidence.length > 0 
+        description: pendingEvidence.length > 0
           ? `Termin mit ${pendingEvidence.length} Beweis(en) gespeichert.`
-          : count > 1 
+          : count > 1
             ? `${count} wiederkehrende Termine wurden gespeichert.`
             : "Der Termin wurde erfolgreich gespeichert.",
       });
-      
+
       resetForm();
       onClose();
     },
-    // Error handling happens in handleSubmit (mutateAsync catch)
   });
 
   const resetForm = () => {
@@ -468,56 +457,56 @@ export function AppointmentFormModal({
     setSelectionMode("horse");
     setSelectedOwnerId("");
     setPendingEvidence([]);
+    setShowAdvancedOptions(false);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
     if (!files || !selectedDate) return;
 
     const newEvidence: PendingEvidence[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    for (let index = 0; index < files.length; index += 1) {
+      const file = files[index];
       const isImage = file.type.startsWith("image/");
       newEvidence.push({
         id: crypto.randomUUID(),
         file,
-        category: "chat", // Default category
-        captureDate: format(selectedDate, "yyyy-MM-dd"), // Default to visit date
+        category: "chat",
+        captureDate: format(selectedDate, "yyyy-MM-dd"),
         preview: isImage ? URL.createObjectURL(file) : undefined,
       });
     }
-    
-    setPendingEvidence(prev => [...prev, ...newEvidence]);
+
+    setPendingEvidence((previous) => [...previous, ...newEvidence]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
   const updateEvidenceCategory = (id: string, category: string) => {
-    setPendingEvidence(prev => 
-      prev.map(e => e.id === id ? { ...e, category } : e)
+    setPendingEvidence((previous) =>
+      previous.map((evidence) => evidence.id === id ? { ...evidence, category } : evidence),
     );
   };
 
   const updateEvidenceDate = (id: string, captureDate: string) => {
-    setPendingEvidence(prev => 
-      prev.map(e => e.id === id ? { ...e, captureDate } : e)
+    setPendingEvidence((previous) =>
+      previous.map((evidence) => evidence.id === id ? { ...evidence, captureDate } : evidence),
     );
   };
 
   const removeEvidence = (id: string) => {
-    setPendingEvidence(prev => {
-      const item = prev.find(e => e.id === id);
+    setPendingEvidence((previous) => {
+      const item = previous.find((evidence) => evidence.id === id);
       if (item?.preview) URL.revokeObjectURL(item.preview);
-      return prev.filter(e => e.id !== id);
+      return previous.filter((evidence) => evidence.id !== id);
     });
   };
 
   const visitStatusLabelToDbStatus = (labelOrValue: string) => {
     const normalized = (labelOrValue || "").trim().toLowerCase();
-
     if (["erledigt", "completed"].includes(normalized)) return "completed";
     if (["geplant", "planned", "scheduled"].includes(normalized)) return "planned";
     if (["abgesagt", "cancelled", "canceled"].includes(normalized)) return "cancelled";
-
     return labelOrValue;
   };
 
@@ -552,26 +541,22 @@ export function AppointmentFormModal({
     }
 
     const validated = validationResult.data;
-    
-    // Check if date is in the past - if so, auto-complete the appointment
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const appointments: any[] = [];
     const recurringGroupId = recurrence !== "none" ? crypto.randomUUID() : null;
-
-    // Calculate number of occurrences (12 months worth)
-    const weeksInterval = recurrence === "custom" ? customWeeks : (recurrence === "none" ? 1 : parseInt(recurrence) || 4);
+    const weeksInterval = recurrence === "custom"
+      ? customWeeks
+      : (recurrence === "none" ? 1 : parseInt(recurrence, 10) || 4);
     const occurrences = recurrence === "none" ? 1 : Math.floor(52 / weeksInterval) || 1;
 
-    // Create appointments for EACH selected horse × EACH recurrence
     for (const horseId of validated.horseIds) {
-      for (let i = 0; i < occurrences; i++) {
-        const appointmentDate = addWeeks(selectedDate, i * weeksInterval);
+      for (let index = 0; index < occurrences; index += 1) {
+        const appointmentDate = addWeeks(selectedDate, index * weeksInterval);
         const occurrenceIsPast = appointmentDate < today;
-        
-        const selectedHorse = horses.find((h: any) => h.id === horseId);
+        const selectedHorse = horses.find((horse: any) => horse.id === horseId);
         const ownerPriceGroup = selectedHorse?.owner?.price_group || "standard";
-        const override = priceOverrides.find((o: any) => o.price_group === ownerPriceGroup);
+        const override = priceOverrides.find((item: any) => item.price_group === ownerPriceGroup);
         const resolvedPrice = isFlatRate ? 0 : (override ? override.price : (currentService?.base_price || 0));
         const appliedGroup = override ? ownerPriceGroup : (ownerPriceGroup !== "standard" ? ownerPriceGroup : null);
 
@@ -592,7 +577,7 @@ export function AppointmentFormModal({
           price_group_applied: appliedGroup,
           is_internally_paid: isFlatRate,
           is_series_appointment: formData.isSeriesAppointment || isSeriesService,
-          series_current: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesCurrent + i : null,
+          series_current: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesCurrent + index : null,
           series_total: (formData.isSeriesAppointment || isSeriesService) ? formData.seriesTotal : null,
           is_multi_horse: validated.horseIds.length > 1,
           status: visitStatusLabelToDbStatus(occurrenceIsPast ? "Erledigt" : "Geplant"),
@@ -617,14 +602,15 @@ export function AppointmentFormModal({
       });
   };
 
-  const isPastDate = selectedDate ? selectedDate < new Date(new Date().setHours(0, 0, 0, 0)) : false;
+  const isPastDate = selectedDate
+    ? selectedDate < new Date(new Date().setHours(0, 0, 0, 0))
+    : false;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        {/* Upload Progress Overlay */}
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] max-h-[92dvh] overflow-y-auto p-4 sm:max-w-[560px] sm:p-6">
         {isUploading && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg">
+          <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-4 p-6 text-center">
               <div className="relative">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -638,12 +624,12 @@ export function AppointmentFormModal({
                 <p className="font-medium text-foreground">
                   Lade hoch {uploadProgress.current} von {uploadProgress.total}...
                 </p>
-                <p className="text-sm text-muted-foreground truncate max-w-[280px]">
+                <p className="max-w-[280px] truncate text-sm text-muted-foreground">
                   {uploadProgress.fileName}
                 </p>
               </div>
-              <div className="w-full max-w-[280px] h-2 bg-muted rounded-full overflow-hidden">
-                <div 
+              <div className="h-2 w-full max-w-[280px] overflow-hidden rounded-full bg-muted">
+                <div
                   className="h-full bg-primary transition-all duration-300 ease-out"
                   style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
                 />
@@ -651,15 +637,15 @@ export function AppointmentFormModal({
             </div>
           </div>
         )}
-        
-        <DialogHeader>
+
+        <DialogHeader className="pr-6 text-left">
           <DialogTitle>Neuer Termin</DialogTitle>
           <DialogDescription>
             {selectedDate ? (
-              <span className="flex items-center gap-2">
-                Termin für {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}
+              <span className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
+                <span>Termin für {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}</span>
                 {isPastDate && (
-                  <span className="text-xs bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded">
+                  <span className="w-fit rounded bg-amber-500/10 px-2 py-0.5 text-xs text-amber-600">
                     Vergangenes Datum → Status: Erledigt
                   </span>
                 )}
@@ -670,7 +656,7 @@ export function AppointmentFormModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-4 py-2 sm:py-4">
           {conflictWarning && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
@@ -678,44 +664,55 @@ export function AppointmentFormModal({
             </Alert>
           )}
 
-          {/* Selection Mode Toggle */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Label className="flex-shrink-0">Zuweisen nach:</Label>
-              <div className="flex rounded-lg border border-border overflow-hidden">
+          <section className="space-y-3 rounded-xl border border-border bg-background p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1">
+                <Label className="text-sm font-semibold">Kunde / Pferd *</Label>
+                <HelpTip
+                  title="Kunde oder Pferd"
+                  description="Wähle direkt ein Pferd oder zuerst den Kunden/Besitzer. Mehrere Pferde eines Kunden kannst du in einem Schritt auswählen."
+                />
+              </div>
+              <div className="flex overflow-hidden rounded-lg border border-border">
                 <button
                   type="button"
                   className={cn(
-                    "px-3 py-1.5 text-xs font-medium transition-colors",
-                    selectionMode === "horse" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    "px-3 py-2 text-xs font-medium transition-colors",
+                    selectionMode === "horse"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80",
                   )}
-                  onClick={() => { setSelectionMode("horse"); setSelectedOwnerId(""); }}
+                  onClick={() => setSelectionMode("horse")}
                 >
                   Pferd
                 </button>
                 <button
                   type="button"
                   className={cn(
-                    "px-3 py-1.5 text-xs font-medium transition-colors",
-                    selectionMode === "owner" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    "px-3 py-2 text-xs font-medium transition-colors",
+                    selectionMode === "owner"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80",
                   )}
                   onClick={() => setSelectionMode("owner")}
                 >
-                  Besitzer
+                  Kunde
                 </button>
               </div>
             </div>
 
-            {/* Owner selector (when in owner mode) */}
             {selectionMode === "owner" && (
               <div className="space-y-2">
-                <Label className="text-xs">Besitzer auswählen</Label>
-                <Select value={selectedOwnerId} onValueChange={(v) => {
-                  setSelectedOwnerId(v);
-                  selectAllOwnerHorses(v);
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Besitzer wählen..." />
+                <Label className="text-xs">Kunde auswählen</Label>
+                <Select
+                  value={selectedOwnerId}
+                  onValueChange={(value) => {
+                    setSelectedOwnerId(value);
+                    selectAllOwnerHorses(value);
+                  }}
+                >
+                  <SelectTrigger className="min-h-11">
+                    <SelectValue placeholder="Kunde wählen..." />
                   </SelectTrigger>
                   <SelectContent>
                     {Array.from(owners.entries()).map(([ownerId, data]) => (
@@ -728,97 +725,104 @@ export function AppointmentFormModal({
               </div>
             )}
 
-            {/* Horse checkboxes */}
-            <div className="space-y-1.5 max-h-[180px] overflow-y-auto rounded-lg border border-border p-2">
-              <div className="flex items-center justify-between mb-1">
+            <div className="max-h-[170px] space-y-1.5 overflow-y-auto rounded-lg border border-border p-2 sm:max-h-[180px]">
+              <div className="mb-1 flex items-center justify-between gap-2">
                 <Label className="text-xs text-muted-foreground">
                   {formData.horseIds.length > 0
                     ? `${formData.horseIds.length} Pferd(e) ausgewählt`
-                    : "Pferd(e) auswählen *"}
+                    : "Pferd(e) auswählen"}
                 </Label>
                 {filteredHorses.length > 1 && (
                   <button
                     type="button"
-                    className="text-[10px] text-primary hover:underline"
+                    className="text-[11px] font-medium text-primary hover:underline"
                     onClick={() => {
-                      const allIds = filteredHorses.map((h: any) => h.id);
-                      const allSelected = allIds.every(id => formData.horseIds.includes(id));
-                      setFormData(prev => ({
-                        ...prev,
-                        horseIds: allSelected ? prev.horseIds.filter(id => !allIds.includes(id)) : [...new Set([...prev.horseIds, ...allIds])],
+                      const allIds = filteredHorses.map((horse: any) => horse.id);
+                      const allSelected = allIds.every((id) => formData.horseIds.includes(id));
+                      setFormData((previous) => ({
+                        ...previous,
+                        horseIds: allSelected
+                          ? previous.horseIds.filter((id) => !allIds.includes(id))
+                          : [...new Set([...previous.horseIds, ...allIds])],
                       }));
                     }}
                   >
-                    {filteredHorses.every((h: any) => formData.horseIds.includes(h.id)) ? "Alle abwählen" : "Alle auswählen"}
+                    {filteredHorses.every((horse: any) => formData.horseIds.includes(horse.id))
+                      ? "Alle abwählen"
+                      : "Alle auswählen"}
                   </button>
                 )}
               </div>
+
               {filteredHorses.map((horse: any) => (
                 <label
                   key={horse.id}
                   className={cn(
-                    "flex items-center gap-2.5 p-2 rounded-md cursor-pointer transition-colors",
-                    formData.horseIds.includes(horse.id) ? "bg-primary/10" : "hover:bg-muted"
+                    "flex min-h-11 cursor-pointer items-center gap-2.5 rounded-md p-2 transition-colors",
+                    formData.horseIds.includes(horse.id) ? "bg-primary/10" : "hover:bg-muted",
                   )}
                 >
                   <Checkbox
                     checked={formData.horseIds.includes(horse.id)}
                     onCheckedChange={() => toggleHorse(horse.id)}
                   />
-                  <span className="text-sm font-medium">{horse.name}</span>
-                  <span className="text-xs text-muted-foreground">({horse.breed || "Unbekannt"})</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium">{horse.name}</span>
+                    <span className="block truncate text-[11px] text-muted-foreground sm:hidden">
+                      {selectionMode === "horse" && horse.owner_id && contactMap.get(horse.owner_id)
+                        ? contactMap.get(horse.owner_id)
+                        : horse.breed || ""}
+                    </span>
+                  </span>
+                  <span className="hidden text-xs text-muted-foreground sm:inline">
+                    {horse.breed || "Unbekannt"}
+                  </span>
                   {horse.owner_id && contactMap.get(horse.owner_id) && selectionMode === "horse" && (
-                    <span className="text-[10px] text-muted-foreground ml-auto truncate max-w-[100px]">
+                    <span className="ml-auto hidden max-w-[120px] truncate text-[10px] text-muted-foreground sm:inline">
                       {contactMap.get(horse.owner_id)}
                     </span>
                   )}
                 </label>
               ))}
+
               {filteredHorses.length === 0 && (
-                <p className="text-xs text-muted-foreground text-center py-4">
-                  {selectionMode === "owner" ? "Bitte zuerst einen Besitzer wählen" : "Keine Pferde gefunden"}
+                <p className="py-4 text-center text-xs text-muted-foreground">
+                  {selectionMode === "owner" ? "Bitte zuerst einen Kunden wählen" : "Keine Pferde gefunden"}
                 </p>
               )}
             </div>
+          </section>
 
-            {/* Price group info for first selected horse */}
-            {formData.horseIds.length > 0 && (() => {
-              const h = horses.find((ho: any) => ho.id === formData.horseIds[0]);
-              const pg = h?.owner?.price_group;
-              if (!pg || pg === "standard") {
-                return (
-                  <p className="text-xs text-destructive/80 flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" />
-                    Kunde hat keine Preisgruppe → Basispreis wird verwendet
-                  </p>
-                );
-              }
-              const override = priceOverrides.find((o: any) => o.price_group === pg);
-              return (
-                <p className="text-xs text-muted-foreground">
-                  Preisgruppe: <span className="font-medium">{pg.toUpperCase()}</span>
-                  {override ? ` → €${override.price}` : " (kein Override → Basispreis)"}
-                </p>
-              );
-            })()}
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
             <div className="space-y-2">
-              <Label>Uhrzeit *</Label>
+              <div className="flex items-center gap-1">
+                <Label>Uhrzeit *</Label>
+                <HelpTip
+                  title="Uhrzeit"
+                  description="Startzeit des Termins. Bei einer Überschneidung zeigt HufManager direkt einen Hinweis."
+                />
+              </div>
               <Input
+                className="min-h-11"
                 type="time"
                 value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                onChange={(event) => setFormData({ ...formData, time: event.target.value })}
               />
             </div>
+
             <div className="space-y-2">
-              <Label>Dauer (Min.)</Label>
+              <div className="flex items-center gap-1">
+                <Label>Dauer</Label>
+                <HelpTip
+                  title="Termindauer"
+                  description="Die Dauer wird für Kalender und Tourenplanung verwendet. Eine Leistung kann automatisch einen passenden Standardwert setzen."
+                />
+              </div>
               <Select
                 value={formData.duration.toString()}
-                onValueChange={(value) => setFormData({ ...formData, duration: parseInt(value) })}
+                onValueChange={(value) => setFormData({ ...formData, duration: parseInt(value, 10) })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="min-h-11">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -833,19 +837,25 @@ export function AppointmentFormModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Service-Typ *</Label>
+            <div className="flex items-center gap-1">
+              <Label>Leistung *</Label>
+              <HelpTip
+                title="Leistung"
+                description="Wähle die Leistung, die bei diesem Termin erbracht wird. Hinterlegte Dauer und Preisregeln werden automatisch übernommen."
+              />
+            </div>
             <Select
               value={formData.serviceType}
               onValueChange={(value) => {
                 const preset = presetMap[value];
-                setFormData(prev => ({
-                  ...prev,
+                setFormData((previous) => ({
+                  ...previous,
                   serviceType: value,
-                  duration: preset?.estimated_minutes || prev.duration,
+                  duration: preset?.estimated_minutes || previous.duration,
                 }));
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="min-h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -856,337 +866,414 @@ export function AppointmentFormModal({
                       <SelectItem key={service.id} value={service.name}>
                         <span className="flex items-center gap-2">
                           {preset?.color_hex && (
-                            <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: preset.color_hex }} />
+                            <span
+                              className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                              style={{ background: preset.color_hex }}
+                            />
                           )}
                           {service.name}
-                          {preset && <span className="text-muted-foreground text-xs">({preset.estimated_minutes} Min.)</span>}
+                          {preset && (
+                            <span className="text-xs text-muted-foreground">
+                              ({preset.estimated_minutes} Min.)
+                            </span>
+                          )}
                           {service.billing_type === "flat_rate" && " (Pauschal)"}
                           {service.billing_type === "series" && " (Serie)"}
                         </span>
                       </SelectItem>
                     );
                   })
-                ) : (
-                  servicePresets.length > 0 ? (
-                    servicePresets.map((preset) => (
-                      <SelectItem key={preset.id} value={preset.service_type}>
-                        <span className="flex items-center gap-2">
-                          <span className="inline-block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: preset.color_hex }} />
-                          {preset.service_type}
-                          <span className="text-muted-foreground text-xs">({preset.estimated_minutes} Min.)</span>
-                        </span>
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <>
-                      <SelectItem value="Barhuf">Barhuf</SelectItem>
-                      <SelectItem value="Beschlag">Beschlag</SelectItem>
-                      <SelectItem value="Korrektur">Korrektur</SelectItem>
-                      <SelectItem value="Notfall">Notfall</SelectItem>
-                      <SelectItem value="Kontrolle">Kontrolle</SelectItem>
-                    </>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-            
-            {isFlatRate && (
-              <p className="text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/20 p-2 rounded">
-                💡 Pauschal-Service: Preis wird auf 0,00€ gesetzt, aber als "intern bezahlt" markiert.
-              </p>
-            )}
-          </div>
-
-          {/* Evidence Upload Section (Arsch-Retter) */}
-          <div className="space-y-3 p-3 rounded-lg bg-primary/5 border border-primary/20">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2 text-primary">
-                <Upload className="h-4 w-4" />
-                Beweise & Dokumente
-              </Label>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                accept="image/*,.pdf,.doc,.docx"
-                multiple
-                className="hidden"
-              />
-              <input
-                type="file"
-                ref={cameraInputRef}
-                onChange={handleFileSelect}
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-              />
-              <div className="flex gap-1.5">
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant="default"
-                  onClick={() => cameraInputRef.current?.click()}
-                  disabled={formData.horseIds.length === 0}
-                  className="gap-1"
-                >
-                  <Camera className="h-4 w-4" />
-                  <span className="hidden sm:inline">Foto</span>
-                </Button>
-                <Button 
-                  type="button" 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={formData.horseIds.length === 0}
-                >
-                  <Upload className="h-4 w-4 mr-1" />
-                  Datei
-                </Button>
-              </div>
-            </div>
-            
-            {formData.horseIds.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Bitte zuerst ein Pferd auswählen
-              </p>
-            )}
-
-            {pendingEvidence.length > 0 && (
-              <div className="space-y-2">
-                {pendingEvidence.map((evidence) => {
-                  const category = EVIDENCE_CATEGORIES.find(c => c.value === evidence.category) || EVIDENCE_CATEGORIES[0];
-                  const isImage = evidence.file.type.startsWith("image/");
-                  
-                  return (
-                    <div key={evidence.id} className="p-2 bg-background rounded-lg border space-y-2">
-                      <div className="flex items-start gap-2">
-                        {/* Preview */}
-                        <div className="h-12 w-12 rounded bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                          {isImage && evidence.preview ? (
-                            <img src={evidence.preview} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <FileText className="h-5 w-5 text-muted-foreground" />
-                          )}
-                        </div>
-                        
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{evidence.file.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {(evidence.file.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        </div>
-                        
-                        {/* Remove button */}
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6 shrink-0"
-                          onClick={() => removeEvidence(evidence.id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      
-                      {/* Category & Date */}
-                      <div className="flex gap-2">
-                        <Select 
-                          value={evidence.category} 
-                          onValueChange={(val) => updateEvidenceCategory(evidence.id, val)}
-                        >
-                          <SelectTrigger className="h-8 text-xs flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <div className={cn("h-4 w-4 rounded-full flex items-center justify-center", category.color)}>
-                                <category.icon className="h-2.5 w-2.5 text-white" />
-                              </div>
-                              <span>{category.label}</span>
-                            </div>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {EVIDENCE_CATEGORIES.map((cat) => (
-                              <SelectItem key={cat.value} value={cat.value}>
-                                <div className="flex items-center gap-2">
-                                  <div className={cn("h-4 w-4 rounded-full flex items-center justify-center", cat.color)}>
-                                    <cat.icon className="h-2.5 w-2.5 text-white" />
-                                  </div>
-                                  {cat.label}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        
-                        <Input
-                          type="date"
-                          value={evidence.captureDate}
-                          onChange={(e) => updateEvidenceDate(evidence.id, e.target.value)}
-                          className="h-8 text-xs w-[130px]"
-                          title="Aufnahmedatum"
+                ) : servicePresets.length > 0 ? (
+                  servicePresets.map((preset) => (
+                    <SelectItem key={preset.id} value={preset.service_type}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+                          style={{ background: preset.color_hex }}
                         />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            
-            {pendingEvidence.length === 0 && formData.horseIds.length > 0 && (
-              <p className="text-xs text-muted-foreground text-center py-2">
-                Chat-Screenshots, Fotos vom Zustand, Befunde...
-              </p>
-            )}
-          </div>
-
-          {/* Series Appointment Section */}
-          <div className="space-y-3 p-3 rounded-lg bg-muted/50 border border-border">
-            <div className="flex items-center gap-3">
-              <Checkbox
-                id="seriesAppointment"
-                checked={formData.isSeriesAppointment || isSeriesService}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, isSeriesAppointment: checked as boolean })
-                }
-                disabled={isSeriesService}
-              />
-              <Label htmlFor="seriesAppointment" className="flex items-center gap-2 cursor-pointer">
-                <Package className="h-4 w-4" />
-                Serien-Termin (Teil eines Pakets)
-              </Label>
-            </div>
-            
-            {(formData.isSeriesAppointment || isSeriesService) && (
-              <div className="flex items-center gap-2 ml-6">
-                <Label className="text-sm whitespace-nowrap">Termin</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={formData.seriesTotal}
-                  value={formData.seriesCurrent}
-                  onChange={(e) => setFormData({ ...formData, seriesCurrent: parseInt(e.target.value) || 1 })}
-                  className="w-16"
-                />
-                <Label className="text-sm">von</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={formData.seriesTotal}
-                  onChange={(e) => setFormData({ ...formData, seriesTotal: parseInt(e.target.value) || 5 })}
-                  className="w-16"
-                />
-                <span className="text-xs text-muted-foreground">(erscheint auf der Rechnung)</span>
-              </div>
-            )}
-          </div>
-
-          {/* Recurring Options */}
-          <div className="space-y-2 p-3 rounded-lg bg-muted/50 border border-border">
-            <Label className="flex items-center gap-2">
-              <CalendarClock className="h-4 w-4" />
-              Wiederholung
-            </Label>
-            <Select value={recurrence} onValueChange={setRecurrence}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {RECURRENCE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
+                        {preset.service_type}
+                        <span className="text-xs text-muted-foreground">
+                          ({preset.estimated_minutes} Min.)
+                        </span>
+                      </span>
+                    </SelectItem>
+                  ))
+                ) : (
+                  <>
+                    <SelectItem value="Barhuf">Barhuf</SelectItem>
+                    <SelectItem value="Beschlag">Beschlag</SelectItem>
+                    <SelectItem value="Korrektur">Korrektur</SelectItem>
+                    <SelectItem value="Notfall">Notfall</SelectItem>
+                    <SelectItem value="Kontrolle">Kontrolle</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
-            
-            {recurrence === "custom" && (
-              <div className="flex items-center gap-2 mt-2">
-                <Label className="text-sm whitespace-nowrap">Alle</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={customWeeks}
-                  onChange={(e) => setCustomWeeks(parseInt(e.target.value) || 4)}
-                  className="w-20"
-                />
-                <Label className="text-sm">Wochen</Label>
-              </div>
-            )}
-            
-            {recurrence !== "none" && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Es werden automatisch Termine für die nächsten 12 Monate erstellt.
+
+            {isFlatRate && (
+              <p className="rounded-lg bg-purple-50 p-2 text-xs text-purple-600 dark:bg-purple-950/20 dark:text-purple-400">
+                Pauschal-Service: Der Termin wird mit 0,00 € gespeichert und als intern bezahlt markiert.
               </p>
             )}
+
+            {formData.horseIds.length > 0 && (() => {
+              const horse = horses.find((item: any) => item.id === formData.horseIds[0]);
+              const priceGroup = horse?.owner?.price_group;
+              if (!priceGroup || priceGroup === "standard") return null;
+              const override = priceOverrides.find((item: any) => item.price_group === priceGroup);
+              return (
+                <p className="text-xs text-muted-foreground">
+                  Preisgruppe: <span className="font-medium">{priceGroup.toUpperCase()}</span>
+                  {override ? ` → €${override.price}` : " → Basispreis"}
+                </p>
+              );
+            })()}
           </div>
 
-          <div className="space-y-2">
-            <Label>Ort</Label>
-            {clientLocations.length > 0 ? (
-              <div className="space-y-2">
-                <Select
-                  value={formData.location}
-                  onValueChange={(v) => setFormData({ ...formData, location: v })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Standort wählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {clientLocations.map((loc: any) => (
-                      <SelectItem key={loc.id} value={loc.name + (loc.address ? `, ${loc.address}` : "")}>
-                        {loc.name}{loc.is_default ? " ⭐" : ""}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value="__custom__">✏️ Freitext eingeben</SelectItem>
-                  </SelectContent>
-                </Select>
-                {formData.location === "__custom__" && (
-                  <Input
-                    value=""
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    placeholder="z.B. Reitstall Sonnenhof"
-                    maxLength={255}
+          <div className="rounded-xl border border-border bg-muted/20">
+            <button
+              type="button"
+              onClick={() => setShowAdvancedOptions((open) => !open)}
+              className="flex min-h-12 w-full items-center justify-between gap-3 px-3 py-2 text-left sm:px-4"
+              aria-expanded={showAdvancedOptions}
+            >
+              <span className="min-w-0">
+                <span className="flex items-center gap-1 text-sm font-semibold text-foreground">
+                  Mehr Optionen
+                  <HelpTip
+                    title="Mehr Optionen"
+                    description="Ort, Notizen, Wiederholungen, Serien-Termine sowie Fotos und Dokumente brauchst du nur bei Bedarf."
                   />
+                </span>
+                <span className="block truncate text-xs text-muted-foreground">
+                  Ort, Wiederholung, Fotos, Dokumente & Notizen
+                </span>
+              </span>
+              <ChevronDown
+                className={cn(
+                  "h-5 w-5 shrink-0 text-muted-foreground transition-transform",
+                  showAdvancedOptions && "rotate-180",
                 )}
-              </div>
-            ) : (
-              <Input
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="z.B. Reitstall Sonnenhof"
-                maxLength={255}
               />
-            )}
-          </div>
+            </button>
 
-          <div className="space-y-2">
-            <Label>Notizen</Label>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Zusätzliche Informationen..."
-              maxLength={2000}
-              rows={3}
-            />
+            {showAdvancedOptions && (
+              <div className="space-y-4 border-t border-border p-3 sm:p-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1">
+                    <Label>Ort</Label>
+                    <HelpTip
+                      title="Terminort"
+                      description="Wenn ein Kundenstandort hinterlegt ist, kannst du ihn hier auswählen. Der Ort wird auch für Tour und Navigation verwendet."
+                    />
+                  </div>
+                  {clientLocations.length > 0 ? (
+                    <Select
+                      value={formData.location}
+                      onValueChange={(value) => setFormData({ ...formData, location: value })}
+                    >
+                      <SelectTrigger className="min-h-11">
+                        <SelectValue placeholder="Standort wählen..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clientLocations.map((location: any) => (
+                          <SelectItem
+                            key={location.id}
+                            value={location.name + (location.address ? `, ${location.address}` : "")}
+                          >
+                            {location.name}{location.is_default ? " ⭐" : ""}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="__custom__">✏️ Freitext eingeben</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Input
+                      className="min-h-11"
+                      value={formData.location}
+                      onChange={(event) => setFormData({ ...formData, location: event.target.value })}
+                      placeholder="z.B. Reitstall Sonnenhof"
+                      maxLength={255}
+                    />
+                  )}
+                  {formData.location === "__custom__" && (
+                    <Input
+                      className="min-h-11"
+                      value=""
+                      onChange={(event) => setFormData({ ...formData, location: event.target.value })}
+                      placeholder="z.B. Reitstall Sonnenhof"
+                      maxLength={255}
+                    />
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Notizen</Label>
+                  <Textarea
+                    value={formData.notes}
+                    onChange={(event) => setFormData({ ...formData, notes: event.target.value })}
+                    placeholder="Zusätzliche Informationen..."
+                    maxLength={2000}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+                  <div className="flex items-center gap-1">
+                    <Label className="flex items-center gap-2">
+                      <CalendarClock className="h-4 w-4" />
+                      Wiederholung
+                    </Label>
+                    <HelpTip
+                      title="Termin wiederholen"
+                      description="Erstellt die gleiche Terminfolge automatisch für die nächsten 12 Monate. Für einen einzelnen Termin bleibt Einmalig ausgewählt."
+                    />
+                  </div>
+                  <Select value={recurrence} onValueChange={setRecurrence}>
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RECURRENCE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  {recurrence === "custom" && (
+                    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 pt-1">
+                      <Label className="text-sm">Alle</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={12}
+                        value={customWeeks}
+                        onChange={(event) => setCustomWeeks(parseInt(event.target.value, 10) || 4)}
+                      />
+                      <Label className="text-sm">Wochen</Label>
+                    </div>
+                  )}
+
+                  {recurrence !== "none" && (
+                    <p className="text-xs text-muted-foreground">
+                      Es werden automatisch Termine für die nächsten 12 Monate erstellt.
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-3 rounded-lg border border-border bg-background p-3">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      id="seriesAppointment"
+                      checked={formData.isSeriesAppointment || isSeriesService}
+                      onCheckedChange={(checked) =>
+                        setFormData({ ...formData, isSeriesAppointment: checked as boolean })
+                      }
+                      disabled={isSeriesService}
+                    />
+                    <Label htmlFor="seriesAppointment" className="flex cursor-pointer items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Serien-Termin
+                    </Label>
+                  </div>
+
+                  {(formData.isSeriesAppointment || isSeriesService) && (
+                    <div className="grid grid-cols-[auto_1fr_auto_1fr] items-center gap-2 sm:max-w-sm">
+                      <Label className="text-sm">Termin</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={formData.seriesTotal}
+                        value={formData.seriesCurrent}
+                        onChange={(event) => setFormData({
+                          ...formData,
+                          seriesCurrent: parseInt(event.target.value, 10) || 1,
+                        })}
+                      />
+                      <Label className="text-sm">von</Label>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={formData.seriesTotal}
+                        onChange={(event) => setFormData({
+                          ...formData,
+                          seriesTotal: parseInt(event.target.value, 10) || 5,
+                        })}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-1">
+                      <Label className="flex items-center gap-2 text-primary">
+                        <Upload className="h-4 w-4" />
+                        Fotos & Dokumente
+                      </Label>
+                      <HelpTip
+                        title="Fotos und Dokumente"
+                        description="Optional: Fotos, Screenshots, Befunde oder andere Unterlagen direkt mit dem Termin und dem Pferd verknüpfen."
+                      />
+                    </div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      accept="image/*,.pdf,.doc,.docx"
+                      multiple
+                      className="hidden"
+                    />
+                    <input
+                      type="file"
+                      ref={cameraInputRef}
+                      onChange={handleFileSelect}
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                    />
+                    <div className="grid grid-cols-2 gap-2 sm:flex">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="default"
+                        onClick={() => cameraInputRef.current?.click()}
+                        disabled={formData.horseIds.length === 0}
+                        className="gap-1"
+                      >
+                        <Camera className="h-4 w-4" />
+                        Foto
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={formData.horseIds.length === 0}
+                      >
+                        <Upload className="mr-1 h-4 w-4" />
+                        Datei
+                      </Button>
+                    </div>
+                  </div>
+
+                  {formData.horseIds.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Bitte zuerst ein Pferd auswählen</p>
+                  )}
+
+                  {pendingEvidence.length > 0 && (
+                    <div className="space-y-2">
+                      {pendingEvidence.map((evidence) => {
+                        const category = EVIDENCE_CATEGORIES.find((item) => item.value === evidence.category)
+                          || EVIDENCE_CATEGORIES[0];
+                        const isImage = evidence.file.type.startsWith("image/");
+
+                        return (
+                          <div key={evidence.id} className="space-y-2 rounded-lg border bg-background p-2">
+                            <div className="flex items-start gap-2">
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded bg-muted">
+                                {isImage && evidence.preview ? (
+                                  <img src={evidence.preview} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <FileText className="h-5 w-5 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">{evidence.file.name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {(evidence.file.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 shrink-0"
+                                onClick={() => removeEvidence(evidence.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_140px]">
+                              <Select
+                                value={evidence.category}
+                                onValueChange={(value) => updateEvidenceCategory(evidence.id, value)}
+                              >
+                                <SelectTrigger className="h-9 text-xs">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className={cn(
+                                      "flex h-4 w-4 items-center justify-center rounded-full",
+                                      category.color,
+                                    )}>
+                                      <category.icon className="h-2.5 w-2.5 text-white" />
+                                    </div>
+                                    <span>{category.label}</span>
+                                  </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {EVIDENCE_CATEGORIES.map((item) => (
+                                    <SelectItem key={item.value} value={item.value}>
+                                      <div className="flex items-center gap-2">
+                                        <div className={cn(
+                                          "flex h-4 w-4 items-center justify-center rounded-full",
+                                          item.color,
+                                        )}>
+                                          <item.icon className="h-2.5 w-2.5 text-white" />
+                                        </div>
+                                        {item.label}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+
+                              <Input
+                                type="date"
+                                value={evidence.captureDate}
+                                onChange={(event) => updateEvidenceDate(evidence.id, event.target.value)}
+                                className="h-9 text-xs"
+                                title="Aufnahmedatum"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {pendingEvidence.length === 0 && formData.horseIds.length > 0 && (
+                    <p className="py-1 text-center text-xs text-muted-foreground">
+                      Optional – nur hinzufügen, wenn du etwas dokumentieren möchtest.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="sticky bottom-0 -mx-4 -mb-4 gap-2 border-t border-border bg-background px-4 pb-4 pt-3 sm:static sm:mx-0 sm:mb-0 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0">
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
             Abbrechen
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={createAppointments.isPending || isUploading || formData.horseIds.length === 0}
+            className="w-full sm:w-auto"
           >
-            {(createAppointments.isPending || isUploading) ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : null}
+            {(createAppointments.isPending || isUploading) && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             {formData.horseIds.length > 1
               ? `${formData.horseIds.length} Termine erstellen`
-              : recurrence !== "none" ? "Termine erstellen" : "Speichern"}
-            {pendingEvidence.length > 0 && ` (${pendingEvidence.length} Beweise)`}
+              : recurrence !== "none"
+                ? "Termine erstellen"
+                : "Termin speichern"}
+            {pendingEvidence.length > 0 && ` (${pendingEvidence.length})`}
           </Button>
         </DialogFooter>
       </DialogContent>
