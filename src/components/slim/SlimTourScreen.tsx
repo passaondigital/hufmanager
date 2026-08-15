@@ -20,12 +20,14 @@ import {
   Route,
   RotateCcw,
   Square,
+  UserX,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import "leaflet/dist/leaflet.css";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
 import { DelayReportSheet } from "@/components/day-cockpit/DelayReportSheet";
+import { NoShowSheet } from "@/components/day-cockpit/NoShowSheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { HelpTip } from "@/components/ui/HelpTip";
@@ -108,6 +110,7 @@ export function SlimTourScreen() {
   const [endKm, setEndKm] = useState("");
   const [selectedStop, setSelectedStop] = useState<SlimTourStop | null>(null);
   const [delaySheetOpen, setDelaySheetOpen] = useState(false);
+  const [noShowStop, setNoShowStop] = useState<SlimTourStop | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const tourQuery = useQuery({
@@ -128,7 +131,7 @@ export function SlimTourScreen() {
           .neq("status", "cancelled")
           .order("tour_order", { ascending: true, nullsFirst: false })
           .order("time", { ascending: true }) as any,
-        supabase.from("daily_tours").select("id, status, total_distance_km, delay_minutes, delay_reason").eq("provider_id", user.id).eq("tour_date", today).maybeSingle(),
+        (supabase.from("daily_tours") as any).select("id, status, total_distance_km, delay_minutes, delay_reason").eq("provider_id", user.id).eq("tour_date", today).maybeSingle(),
         supabase.from("business_settings").select("travel_cost_per_km, travel_cost_flat, vehicle_consumption_per_100km, vehicle_fuel_type").eq("user_id", user.id).maybeSingle(),
         supabase.from("provider_vehicles").select("id, name, price_per_km, travel_cost_flat, fuel_type, average_consumption").eq("provider_id", user.id).eq("is_primary", true).maybeSingle(),
         supabase.from("vehicle_logs").select("id, distance_km, fuel_cost, start_km, end_km").eq("provider_id", user.id).eq("log_date", today).maybeSingle(),
@@ -144,6 +147,7 @@ export function SlimTourScreen() {
         const horses = Array.isArray(row.horses) ? row.horses : row.horses ? [row.horses] : [];
         const horse = horses[0] ?? null;
         const client = Array.isArray(row.client) ? row.client[0] : row.client;
+        const ownerId = client?.id ?? horse?.owner_id ?? null;
         return {
           id: row.id,
           time: row.time,
@@ -156,15 +160,15 @@ export function SlimTourScreen() {
           applied_price: row.applied_price == null ? null : Number(row.applied_price),
           price: row.price == null ? null : Number(row.price),
           horses: horses.map((item: any) => ({ id: item.id, name: item.name, owner_id: item.owner_id })),
-          client: client
+          client: ownerId
             ? {
-                id: client.id,
-                full_name: client.full_name,
-                street: client.street,
-                zip: client.zip_code,
-                city: client.city,
-                geo_lat: row.appointment_lat ?? client.geo_lat ?? horse?.latitude ?? null,
-                geo_lng: row.appointment_lng ?? client.geo_lng ?? horse?.longitude ?? null,
+                id: ownerId,
+                full_name: client?.full_name ?? null,
+                street: client?.street ?? null,
+                zip: client?.zip_code ?? null,
+                city: client?.city ?? null,
+                geo_lat: row.appointment_lat ?? client?.geo_lat ?? horse?.latitude ?? null,
+                geo_lng: row.appointment_lng ?? client?.geo_lng ?? horse?.longitude ?? null,
               }
             : null,
         } satisfies SlimTourStop;
@@ -348,6 +352,34 @@ export function SlimTourScreen() {
     onError: () => toast.error("Verspätung konnte nicht aufgehoben werden"),
   });
 
+  const markNoShow = useMutation({
+    mutationFn: async ({ stop, notes }: { stop: SlimTourStop; notes: string }) => {
+      const { error } = await supabase.from("appointments").update({
+        status: "no_show",
+        completion_notes: notes.trim() || "Kunde nicht angetroffen",
+        completed_at: new Date().toISOString(),
+      }).eq("id", stop.id);
+      if (error) throw error;
+
+      if (stop.client?.id && user?.id) {
+        const providerName = await resolveProviderDisplayName(user.id);
+        await supabase.from("notifications").insert({
+          user_id: stop.client.id,
+          title: "Termin verpasst 😕",
+          message: `${providerName} war heute bei dir – leider warst du nicht da. Bitte melde dich für einen neuen Termin.`,
+          type: "no_show",
+          link: "/client-home",
+        });
+      }
+    },
+    onSuccess: async () => {
+      setNoShowStop(null);
+      await queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] });
+      toast.success("Als nicht angetroffen markiert");
+    },
+    onError: () => toast.error("Status konnte nicht gespeichert werden"),
+  });
+
   const stopTour = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error("AUTH_REQUIRED");
@@ -479,6 +511,12 @@ export function SlimTourScreen() {
                 <button className="hm-button-primary" onClick={() => mapsUrl && window.open(mapsUrl, "_blank", "noopener,noreferrer")} disabled={!mapsUrl}><Navigation className="h-4 w-4" />Navigation</button>
                 <button className="hm-button-secondary" onClick={() => nextStop && setSelectedStop(nextStop)} disabled={!nextStop}>Termin öffnen</button>
               </div>
+              {nextStop && (
+                <button type="button" className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-[var(--hm-text-secondary)] hover:bg-amber-500/10 hover:text-amber-700" onClick={() => setNoShowStop(nextStop)}>
+                  <UserX className="h-4 w-4" />
+                  Nicht angetroffen
+                </button>
+              )}
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
@@ -520,6 +558,14 @@ export function SlimTourScreen() {
         onOpenChange={setDelaySheetOpen}
         onConfirm={(minutes) => reportDelay.mutate(minutes)}
         isSending={reportDelay.isPending}
+      />
+
+      <NoShowSheet
+        open={!!noShowStop}
+        onOpenChange={(open) => { if (!open) setNoShowStop(null); }}
+        onConfirm={(notes) => noShowStop && markNoShow.mutate({ stop: noShowStop, notes })}
+        isSending={markNoShow.isPending}
+        clientName={noShowStop?.client?.full_name || noShowStop?.horses[0]?.name || undefined}
       />
 
       {selectedStop && (
