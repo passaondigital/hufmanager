@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { geocodeAppointmentAndSave } from "@/lib/geocodeAppointment";
 import { resolveProviderDisplayName, sendTypedPush } from "@/lib/pushNotificationService";
+import { calculateRoute } from "@/lib/routeService";
 
 const FINISHED_STATUSES = new Set(["completed", "no_show", "cancelled"]);
 type AddPlacement = "optimize" | "next" | "end";
@@ -42,6 +43,14 @@ type TourEditAppointment = {
   client: { full_name: string | null } | Array<{ full_name: string | null }> | null;
 };
 
+type OrderableStop = {
+  id: string;
+  status: string | null;
+  tour_order: number | null;
+  appointment_lat: number | null;
+  appointment_lng: number | null;
+};
+
 function firstHorse(appointment: TourEditAppointment) {
   return Array.isArray(appointment.horses) ? appointment.horses[0] ?? null : appointment.horses;
 }
@@ -55,6 +64,17 @@ function stopLabel(appointment: TourEditAppointment) {
   const horseName = firstHorse(appointment)?.name || "Pferd";
   const time = appointment.time ? String(appointment.time).slice(0, 5) : "–";
   return `${clientName} · ${horseName} · ${time}`;
+}
+
+function getCurrentBrowserPosition(): Promise<[number, number] | null> {
+  if (!("geolocation" in navigator)) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => resolve([coords.latitude, coords.longitude]),
+      () => resolve(null),
+      { enableHighAccuracy: true, maximumAge: 30_000, timeout: 12_000 },
+    );
+  });
 }
 
 export function TourLiveEditControl() {
@@ -111,8 +131,58 @@ export function TourLiveEditControl() {
     [appointments],
   );
 
+  const persistOrder = useCallback(async (rows: Array<{ id: string }>) => {
+    if (!user?.id) throw new Error("AUTH_REQUIRED");
+    const results = await Promise.all(
+      rows.map((row, index) =>
+        supabase
+          .from("appointments")
+          .update({ tour_order: index + 1 })
+          .eq("id", row.id)
+          .eq("provider_id", user.id),
+      ),
+    );
+    const failure = results.find((result) => result.error);
+    if (failure?.error) throw failure.error;
+  }, [user?.id]);
+
+  const optimizeCurrentOpenStops = useCallback(async () => {
+    if (!user?.id) return false;
+
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("id, status, tour_order, appointment_lat, appointment_lng")
+      .eq("provider_id", user.id)
+      .eq("date", today)
+      .neq("status", "cancelled")
+      .order("tour_order", { ascending: true, nullsFirst: false })
+      .order("time", { ascending: true });
+    if (error) throw error;
+
+    const rows = (data ?? []) as OrderableStop[];
+    const finishedStops = rows.filter((row) => FINISHED_STATUSES.has(row.status || ""));
+    const openStops = rows.filter((row) => !FINISHED_STATUSES.has(row.status || ""));
+    const geocodedStops = openStops.filter((row) => row.appointment_lat != null && row.appointment_lng != null);
+    if (geocodedStops.length < 2) return false;
+
+    const currentPosition = await getCurrentBrowserPosition();
+    const stopPositions = geocodedStops.map((row) => [row.appointment_lat!, row.appointment_lng!] as [number, number]);
+    const planningPositions = currentPosition ? [currentPosition, ...stopPositions] : stopPositions;
+    const result = await calculateRoute(planningPositions, { optimize: true });
+    if (!result?.optimized_order?.length) return false;
+
+    const optimizedGeocoded = currentPosition
+      ? result.optimized_order.map((jobId) => geocodedStops[jobId - 1]).filter(Boolean)
+      : [geocodedStops[0], ...result.optimized_order.map((jobId) => geocodedStops[jobId]).filter(Boolean)];
+    const optimizedIds = new Set(optimizedGeocoded.map((row) => row.id));
+    const openWithoutRoute = openStops.filter((row) => !optimizedIds.has(row.id));
+
+    await persistOrder([...finishedStops, ...optimizedGeocoded, ...openWithoutRoute]);
+    return true;
+  }, [persistOrder, today, user?.id]);
+
   const refreshTourAfterEdit = useCallback(async (options?: { previousIds?: string[]; placement?: AddPlacement }) => {
-    if (!user?.id) return { addedCount: 0 };
+    if (!user?.id) return { addedCount: 0, optimized: false };
 
     const { data: currentAppointments, error } = await supabase
       .from("appointments")
@@ -153,18 +223,7 @@ export function TourLiveEditControl() {
       const orderedRows = placement === "next"
         ? [...finishedRows, ...newRows, ...existingOpenRows]
         : [...finishedRows, ...existingOpenRows, ...newRows];
-
-      const orderResults = await Promise.all(
-        orderedRows.map((row, index) =>
-          supabase
-            .from("appointments")
-            .update({ tour_order: index + 1 })
-            .eq("id", row.id)
-            .eq("provider_id", user.id),
-        ),
-      );
-      const orderFailure = orderResults.find((result) => result.error);
-      if (orderFailure?.error) throw orderFailure.error;
+      await persistOrder(orderedRows);
     } else {
       let nextOrder = rows.reduce((max, row) => Math.max(max, Number(row.tour_order || 0)), 0) + 1;
       const withoutOrder = rows.filter((row) => row.tour_order == null && !FINISHED_STATUSES.has(row.status || ""));
@@ -179,6 +238,10 @@ export function TourLiveEditControl() {
       }
     }
 
+    const optimized = newRows.length > 0 && options?.placement === "optimize"
+      ? await optimizeCurrentOpenStops()
+      : false;
+
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["tour-live-edit", user.id, today] }),
       queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user.id, today] }),
@@ -186,8 +249,8 @@ export function TourLiveEditControl() {
       queryClient.invalidateQueries({ queryKey: ["client-tour-status"] }),
     ]);
 
-    return { addedCount: newRows.length };
-  }, [queryClient, today, user?.id]);
+    return { addedCount: newRows.length, optimized };
+  }, [optimizeCurrentOpenStops, persistOrder, queryClient, today, user?.id]);
 
   const openAddDialog = () => {
     setAddSnapshotIds(appointments.map((appointment) => appointment.id));
@@ -200,8 +263,7 @@ export function TourLiveEditControl() {
       const result = await refreshTourAfterEdit({ previousIds: addSnapshotIds, placement: addPlacement });
       if (result.addedCount > 0) {
         if (addPlacement === "optimize") {
-          window.dispatchEvent(new CustomEvent("hufmanager:tour-optimize-requested"));
-          toast.success("Stopp hinzugefügt · Route wird neu optimiert");
+          toast.success(result.optimized ? "Stopp hinzugefügt · Route neu optimiert" : "Stopp hinzugefügt · Route aktualisiert");
         } else if (addPlacement === "next") {
           toast.success("Stopp hinzugefügt · ist jetzt als Nächstes dran");
         } else {
