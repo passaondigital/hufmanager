@@ -1,8 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Send a push notification to a specific user via the send-push-notification edge function.
- */
 export async function sendPushToUser(
   userId: string,
   title: string,
@@ -66,52 +63,23 @@ function buildPushContent(type: PushNotificationType, input: PushTemplateInput):
 
   switch (type) {
     case "provider_on_way":
-      return {
-        title: `${providerName} ist unterwegs 🚗`,
-        body: time ? `Dein Termin heute um ${time} Uhr` : "Dein Termin steht heute an!",
-      };
+      return { title: `${providerName} ist unterwegs 🚗`, body: time ? `Dein Termin heute um ${time} Uhr` : "Dein Termin steht heute an!" };
     case "provider_arriving":
-      return {
-        title: `${providerName} ist gleich da ⏱`,
-        body: etaMinutes ? `Ankunft in ca. ${etaMinutes} Minuten` : "Ankunft in wenigen Minuten",
-      };
+      return { title: `${providerName} ist gleich da ⏱`, body: etaMinutes ? `Ankunft in ca. ${etaMinutes} Minuten` : "Ankunft in wenigen Minuten" };
     case "provider_arrived":
-      return {
-        title: `${providerName} ist angekommen! 🐴`,
-        body: horseName ? `Dein Termin bei ${horseName} beginnt` : "Dein Termin beginnt jetzt",
-      };
+      return { title: `${providerName} ist angekommen! 🐴`, body: horseName ? `Dein Termin bei ${horseName} beginnt` : "Dein Termin beginnt jetzt" };
     case "appointment_reminder":
-      return {
-        title: `Termin morgen 🗓`,
-        body: time ? `${providerName} kommt morgen um ${time} Uhr` : `${providerName} kommt morgen`,
-      };
+      return { title: `Termin morgen 🗓`, body: time ? `${providerName} kommt morgen um ${time} Uhr` : `${providerName} kommt morgen` };
     case "appointment_delay":
-      return {
-        title: `Kleine Verspätung ⚠️`,
-        body: `${providerName} verspätet sich um ca. ${delayMinutes || 0} Min.`,
-      };
+      return { title: `Kleine Verspätung ⚠️`, body: `${providerName} verspätet sich um ca. ${delayMinutes || 0} Min.` };
     case "appointment_cancelled":
-      return {
-        title: `Termin abgesagt ❌`,
-        body: `Bitte kontaktiere ${providerName} für einen neuen Termin`,
-      };
+      return { title: `Termin abgesagt ❌`, body: `Bitte kontaktiere ${providerName} für einen neuen Termin` };
     case "appointment_created":
-      return {
-        title: `Neuer Termin 📅`,
-        body: horseName && time
-          ? `${providerName} kommt am ${time} zu ${horseName}`
-          : `${providerName} hat einen neuen Termin erstellt`,
-      };
+      return { title: `Neuer Termin 📅`, body: horseName && time ? `${providerName} kommt am ${time} zu ${horseName}` : `${providerName} hat einen neuen Termin erstellt` };
     case "appointment_confirmed":
-      return {
-        title: `Termin bestätigt ✅`,
-        body: horseName ? `Der Termin für ${horseName} wurde bestätigt` : "Ein Termin wurde bestätigt",
-      };
+      return { title: `Termin bestätigt ✅`, body: horseName ? `Der Termin für ${horseName} wurde bestätigt` : "Ein Termin wurde bestätigt" };
     case "appointment_declined":
-      return {
-        title: `Termin abgelehnt ❌`,
-        body: horseName ? `Der Termin für ${horseName} wurde abgesagt` : "Ein Termin wurde abgesagt",
-      };
+      return { title: `Termin abgelehnt ❌`, body: horseName ? `Der Termin für ${horseName} wurde abgesagt` : "Ein Termin wurde abgesagt" };
   }
 }
 
@@ -137,9 +105,7 @@ function berlinDateKey(date = new Date()) {
 }
 
 /**
- * Send a tour notification to affected clients with an open appointment today.
- * Finished/cancelled appointments are deliberately excluded so a delay later in
- * the day does not notify customers whose visit is already over.
+ * Notify only clients whose appointment is still open today.
  */
 export async function notifyTodayClients(
   providerId: string,
@@ -153,7 +119,9 @@ export async function notifyTodayClients(
     .select("id, client_id, horse_id, time, status, horses(owner_id, name)")
     .eq("provider_id", providerId)
     .eq("date", today)
-    .not("status", "in", '("completed","no_show","cancelled")');
+    .neq("status", "completed")
+    .neq("status", "no_show")
+    .neq("status", "cancelled");
 
   if (error) {
     console.error("Tour notification appointment lookup failed:", error);
