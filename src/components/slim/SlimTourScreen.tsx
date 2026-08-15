@@ -26,6 +26,7 @@ import "leaflet/dist/leaflet.css";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { calculateRoute } from "@/lib/routeService";
@@ -275,10 +276,25 @@ export function SlimTourScreen() {
   return (
     <div className="space-y-4">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div><p className="text-sm font-medium text-[var(--hm-text-secondary)]">Unterwegs arbeiten</p><h1 className="mt-1 text-[clamp(1.75rem,3vw,2rem)] font-bold tracking-[-0.035em] text-[var(--hm-text-primary)]">Tour</h1></div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => optimizeTour.mutate()} disabled={routePositions.length < 2 || optimizeTour.isPending}><RotateCcw className={`h-4 w-4 ${optimizeTour.isPending ? "animate-spin" : ""}`} />Route optimieren</Button>
-          <Button onClick={() => isActive ? stopTour.mutate() : startTour.mutate()} disabled={!orderedStops.length || startTour.isPending || stopTour.isPending}>{isActive ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}{isActive ? "Tour beenden" : "Tour starten"}</Button>
+        <div>
+          <p className="text-sm font-medium text-[var(--hm-text-secondary)]">Unterwegs arbeiten</p>
+          <div className="mt-1 flex items-center gap-1">
+            <h1 className="text-[clamp(1.75rem,3vw,2rem)] font-bold tracking-[-0.035em] text-[var(--hm-text-primary)]">Tour</h1>
+            <HelpTip title="Tour" description="Plane zuerst deine Tagesroute und starte danach die Tour. Anschliessend musst du immer nur den naechsten Stopp bearbeiten." />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Button variant="outline" onClick={() => optimizeTour.mutate()} disabled={routePositions.length < 2 || optimizeTour.isPending}>
+              <RotateCcw className={`h-4 w-4 ${optimizeTour.isPending ? "animate-spin" : ""}`} />
+              Route planen
+            </Button>
+            <HelpTip title="Route planen" description="HufManager sortiert deine Stopps sinnvoll und berechnet die Strecke. Du kannst die Reihenfolge danach trotzdem noch manuell aendern." />
+          </div>
+          <Button onClick={() => isActive ? stopTour.mutate() : startTour.mutate()} disabled={!orderedStops.length || startTour.isPending || stopTour.isPending}>
+            {isActive ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            {isActive ? "Tour beenden" : "Tour starten"}
+          </Button>
         </div>
       </header>
 
@@ -301,6 +317,11 @@ export function SlimTourScreen() {
               <p className="text-sm font-medium text-orange-600">Nächster Stopp</p>
               <h2 className="mt-1 truncate text-xl font-semibold text-[var(--hm-text-primary)]">{nextStop?.client?.full_name || "Kunde"}</h2>
               <p className="mt-1 text-sm text-[var(--hm-text-secondary)]">{nextStop?.horses.map((horse) => horse.name).join(" · ") || "Pferd"} · {formatTime(nextStop?.time)}</p>
+              <div className="mt-2 flex items-center gap-1 text-xs text-[var(--hm-text-secondary)]">
+                <Clock3 className="h-3.5 w-3.5 text-orange-600" />
+                <span>Live-Ankunft erscheint, sobald Standort und Fahrzeit sicher berechnet sind.</span>
+                <HelpTip title="Voraussichtliche Ankunft" description="Die ETA soll aus deinem aktuellen Standort und der echten Fahrzeit entstehen. HufManager zeigt keine geratenen Ankunftszeiten an." />
+              </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button className="hm-button-primary" onClick={() => mapsUrl && window.open(mapsUrl, "_blank", "noopener,noreferrer")} disabled={!mapsUrl}><Navigation className="h-4 w-4" />Navigation</button>
                 <button className="hm-button-secondary" onClick={() => nextStop && setSelectedStop(nextStop)} disabled={!nextStop}>Termin öffnen</button>
@@ -308,7 +329,13 @@ export function SlimTourScreen() {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              <div className="flex items-center justify-between"><h3 className="text-base font-semibold text-[var(--hm-text-primary)]">Stop-Reihenfolge</h3><span className="text-xs text-[var(--hm-text-secondary)]">Ziehen zum Sortieren</span></div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1">
+                  <h3 className="text-base font-semibold text-[var(--hm-text-primary)]">Stop-Reihenfolge</h3>
+                  <HelpTip title="Stop-Reihenfolge" description="Die Reihenfolge wird beim Route planen automatisch berechnet. Ziehen musst du nur, wenn du bewusst einen Stopp anders anfahren moechtest." />
+                </div>
+                <span className="text-xs text-[var(--hm-text-secondary)]">Optional verschieben</span>
+              </div>
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
                 <SortableContext items={orderedStops.map((stop) => stop.id)} strategy={verticalListSortingStrategy}>
                   <div className="mt-3 space-y-2">{orderedStops.map((stop, index) => <SortableStop key={stop.id} stop={stop} index={index} onOpen={() => setSelectedStop(stop)} />)}</div>
@@ -316,7 +343,10 @@ export function SlimTourScreen() {
               </DndContext>
 
               <div className="mt-6 border-t border-[var(--hm-border)] pt-5">
-                <h3 className="text-base font-semibold text-[var(--hm-text-primary)]">Fahrtkosten & Fahrtenbuch</h3>
+                <div className="flex items-center gap-1">
+                  <h3 className="text-base font-semibold text-[var(--hm-text-primary)]">Fahrtkosten & Fahrtenbuch</h3>
+                  <HelpTip title="Fahrtkosten & Fahrtenbuch" description="Dieser Bereich dokumentiert Kilometer und Fahrtkosten. Fuer den normalen Tourablauf musst du hier nur Start- und Endkilometer eintragen, wenn du das Fahrtenbuch nutzen willst." />
+                </div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <CostCard label="Interne Fahrzeugkosten" value={formatMoney(costs.operatingCost)} hint={vehicle?.name || "Fahrzeug"} />
                   <CostCard label="Kunden-Anfahrt" value={formatMoney(costs.customerTravelCharge)} hint="separat berechnet" />
