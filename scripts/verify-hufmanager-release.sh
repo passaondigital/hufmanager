@@ -78,8 +78,9 @@ if grep -qF 'Hufi läuft als Homescreen-App' src/pages/ManagementHub.tsx \
   echo "❌ ABBRUCH: HufiApp-Installationscopy ist wieder im gemeinsamen Management gelandet." >&2
   exit 1
 fi
-if ! grep -qF 'FLAVOR_CONFIG.appName' src/pages/ManagementHub.tsx; then
-  echo "❌ ABBRUCH: Installationsbereich ist nicht produkt-spezifisch gebrandet." >&2
+if ! grep -qF 'HufManager als App installieren' src/pages/ManagementHub.tsx \
+  || ! grep -qF 'Jetzt installieren' src/pages/ManagementHub.tsx; then
+  echo "❌ ABBRUCH: HufManager-Installationsbereich oder CTA fehlt." >&2
   exit 1
 fi
 
