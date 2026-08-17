@@ -131,7 +131,7 @@ export const ClientAppLayout = () => {
   );
 
   return (
-    <div className="hm-app min-h-screen bg-hm-canvas text-hm-text">
+    <div className="hm-app min-h-screen min-w-0 max-w-full overflow-x-hidden bg-hm-canvas text-hm-text">
       <div className="hidden lg:block">
         <AppSidebar
           appName={modeInfo.label}
@@ -148,11 +148,11 @@ export const ClientAppLayout = () => {
         navigationConfig={navigationConfig}
       />
 
-      <div className="lg:pl-[var(--hm-sidebar-w)]">
+      <div className="min-w-0 max-w-full overflow-x-hidden lg:pl-[var(--hm-sidebar-w)]">
         <AppTopBar />
 
-        <main className="relative z-0 min-h-screen w-full px-4 pb-bottom-nav pt-app-header sm:px-6 lg:px-8 lg:pb-10">
-          <div className="mx-auto w-full max-w-[1440px]">
+        <main className="relative z-0 min-h-screen w-full min-w-0 max-w-full overflow-x-hidden px-4 pb-bottom-nav pt-app-header sm:px-6 lg:px-8 lg:pb-10">
+          <div className="mx-auto w-full min-w-0 max-w-[1440px]">
             <Outlet />
           </div>
         </main>
