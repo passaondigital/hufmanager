@@ -31,6 +31,28 @@ SUPA_KEY_FINGERPRINT="${SUPA_KEY:0:40}"
 echo "▶ Git-Diff prüfen"
 git diff --check
 
+echo "▶ HufManager-Startup-/Login-Regeln prüfen"
+if grep -qF 'Dein proaktiver Mitarbeiter' src/components/auth/AuthLoadingScreen.tsx; then
+  echo "❌ ABBRUCH: HufiApp-Claim ist wieder im HufManager-Startup gelandet." >&2
+  exit 1
+fi
+if grep -qF 'Produktzugang wird geprüft' src/components/auth/ProductChoiceGate.tsx; then
+  echo "❌ ABBRUCH: Separater Produktzugang-Ladescreen ist wieder aktiv." >&2
+  exit 1
+fi
+if ! grep -qF 'FLAVOR_CONFIG.appName' src/components/auth/AuthLoadingScreen.tsx; then
+  echo "❌ ABBRUCH: Startup-Screen ist nicht flavor-/HufManager-gebrandet." >&2
+  exit 1
+fi
+if ! grep -qF "ACTIVE_FLAVOR === 'hufmanager' ? sessionStorage : localStorage" src/integrations/supabase/client.ts; then
+  echo "❌ ABBRUCH: HufManager-Session ist nicht auf Browser-Sitzung begrenzt." >&2
+  exit 1
+fi
+if ! grep -qF '<AuthLoadingScreen />' src/pages/Welcome.tsx; then
+  echo "❌ ABBRUCH: Welcome-Redirect verwendet wieder einen separaten Loader." >&2
+  exit 1
+fi
+
 echo "▶ Abhängigkeiten reproduzierbar installieren"
 npm ci
 
