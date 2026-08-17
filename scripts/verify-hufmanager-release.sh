@@ -63,6 +63,26 @@ if ! grep -qF '<AuthLoadingScreen />' src/pages/Welcome.tsx; then
   exit 1
 fi
 
+echo "▶ HufManager-Management von HufiApp-Funktionen trennen"
+if ! grep -qF 'const isHufiApp = ACTIVE_FLAVOR === "hufiapp";' src/pages/ManagementHub.tsx; then
+  echo "❌ ABBRUCH: Management trennt HufManager und HufiApp nicht mehr sauber." >&2
+  exit 1
+fi
+if ! grep -qF '<HufiPermissionsSettings' src/pages/ManagementHub.tsx \
+  || ! grep -qF '{isHufiApp && (' src/pages/ManagementHub.tsx; then
+  echo "❌ ABBRUCH: Hufi-Voice-/KI-Einstellungen sind nicht mehr flavor-geschützt." >&2
+  exit 1
+fi
+if grep -qF 'Hufi läuft als Homescreen-App' src/pages/ManagementHub.tsx \
+  || grep -qF 'Hufi zum Homescreen hinzufügen' src/pages/ManagementHub.tsx; then
+  echo "❌ ABBRUCH: HufiApp-Installationscopy ist wieder im gemeinsamen Management gelandet." >&2
+  exit 1
+fi
+if ! grep -qF 'FLAVOR_CONFIG.appName' src/pages/ManagementHub.tsx; then
+  echo "❌ ABBRUCH: Installationsbereich ist nicht produkt-spezifisch gebrandet." >&2
+  exit 1
+fi
+
 echo "▶ Abhängigkeiten reproduzierbar installieren"
 npm ci
 
