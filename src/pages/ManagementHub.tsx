@@ -52,7 +52,13 @@ const TAB_REDIRECTS: Record<string, string> = {
 function PwaInstallCard() {
   const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
 
-  if (!isInstalled && !isIOS && !canInstall) return null;
+  const handleFallbackInstall = () => {
+    toast.info("HufManager installieren", {
+      description:
+        'Öffne im Browser das Menü ⋮ und wähle „HufManager installieren“, „App installieren“ oder „Zum Startbildschirm hinzufügen“.',
+      duration: 9000,
+    });
+  };
 
   return (
     <div
@@ -115,15 +121,17 @@ function PwaInstallCard() {
           <div className="min-w-0 flex-1">
             <div className="text-sm font-bold text-slate-900">App installieren</div>
             <div className="mt-0.5 text-xs text-slate-500">
-              {FLAVOR_CONFIG.appName} direkt auf diesem Gerät installieren
+              {canInstall
+                ? `${FLAVOR_CONFIG.appName} direkt auf diesem Gerät installieren`
+                : `${FLAVOR_CONFIG.appName} als App auf diesem Gerät nutzen`}
             </div>
           </div>
           <button
             type="button"
-            onClick={promptInstall}
+            onClick={canInstall ? promptInstall : handleFallbackInstall}
             className="h-9 shrink-0 rounded-xl bg-orange-500 px-4 text-sm font-bold text-white hover:bg-orange-600"
           >
-            Installieren
+            App installieren
           </button>
         </div>
       )}
@@ -274,7 +282,7 @@ export default function ManagementHub() {
         </button>
       </div>
 
-      {/* Installationsfunktion bewusst direkt unter Abmelden. */}
+      {/* Installationsfunktion bewusst direkt unter Abmelden und immer sichtbar. */}
       <PwaInstallCard />
 
       <div className="space-y-2 px-1 pb-4">
