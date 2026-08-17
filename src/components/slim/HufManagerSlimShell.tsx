@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { HelpTip } from "@/components/ui/HelpTip";
+import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
 
 const NAV_ITEMS = [
   { label: "Heute", path: "/home", icon: CalendarDays },
@@ -37,6 +40,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/anfragen": "Anfragen",
   "/aufnahme": "Kundenaufnahme",
   "/tour": "Tour",
+  "/lager": "Material & Lager",
   "/ausgaben": "Ausgaben & Belege",
   "/buchhaltung": "Buchhaltung",
   "/guv": "Gewinn & Verlust",
@@ -97,6 +101,10 @@ const PAGE_HELP: Record<string, { title: string; description: string }> = {
   "/tour": {
     title: "Tour",
     description: "Plane deine Stopps, starte die Tour und arbeite die Termine der Reihe nach ab. Navigation und Fahrtenbuch laufen als Unterstuetzung mit.",
+  },
+  "/lager": {
+    title: "Material & Lager",
+    description: "Verwalte Materialbestand, Mindestbestand, Einkaufspreise und Lieferanten. Bestandswarnungen helfen dir, rechtzeitig nachzubestellen.",
   },
   "/fuhrpark": {
     title: "Fuhrpark & Fahrtenbuch",
@@ -164,6 +172,8 @@ function getActiveSection(pathname: string) {
 
 export function HufManagerSlimShell() {
   const location = useLocation();
+  const { role } = useAuth();
+  const { isLoading: onboardingLoading, showOnboarding, completeOnboarding } = useOnboarding();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => localStorage.getItem("hm-sidebar-collapsed") === "true",
@@ -171,6 +181,16 @@ export function HufManagerSlimShell() {
   const currentTitle = getPageTitle(location.pathname);
   const currentHelp = getPageHelp(location.pathname);
   const activeSection = getActiveSection(location.pathname);
+
+  // Das Dashboard wird immer zuerst gerendert. Erst nachdem der Profilstatus
+  // asynchron feststeht, darf sich das Onboarding als Overlay darueberlegen.
+  // Abschliessen UND bewusstes Ueberspringen speichern dauerhaft
+  // onboarding_completed=true und verhindern den Dialog beim naechsten Login.
+  const shouldShowOnboarding =
+    role === "provider" &&
+    location.pathname === "/home" &&
+    !onboardingLoading &&
+    showOnboarding;
 
   const toggleSidebar = () => {
     setSidebarCollapsed((collapsed) => {
@@ -180,7 +200,7 @@ export function HufManagerSlimShell() {
   };
 
   return (
-    <div className="hm-slim min-h-screen bg-hm-canvas text-hm-text">
+    <div className="hm-slim min-h-screen min-w-0 max-w-full overflow-x-hidden bg-hm-canvas text-hm-text">
       <aside
         className={`fixed inset-y-0 left-0 z-bar hidden border-r border-hm-border bg-hm-surface transition-[width] duration-200 lg:flex lg:flex-col ${
           sidebarCollapsed ? "w-20" : "w-[var(--hm-sidebar-w)]"
@@ -225,11 +245,11 @@ export function HufManagerSlimShell() {
         </div>
       </aside>
 
-      <div className={`transition-[padding] duration-200 ${
+      <div className={`min-w-0 max-w-full overflow-x-hidden transition-[padding] duration-200 ${
         sidebarCollapsed ? "lg:pl-20" : "lg:pl-[var(--hm-sidebar-w)]"
       }`}>
-        <header className="sticky top-0 z-bar border-b border-hm-border bg-hm-surface/95 backdrop-blur">
-          <div className="flex h-[var(--hm-header-h)] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-bar min-w-0 max-w-full border-b border-hm-border bg-hm-surface/95 backdrop-blur">
+          <div className="flex h-[var(--hm-header-h)] w-full min-w-0 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
             <div className="flex min-w-0 items-center gap-3">
               <button
                 type="button"
@@ -270,9 +290,18 @@ export function HufManagerSlimShell() {
           )}
         </header>
 
-        <main className="w-full px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-10">
-          <div className="mx-auto w-full max-w-[1440px]"><Outlet /></div>
+        <main className="w-full min-w-0 max-w-full overflow-x-hidden px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-10">
+          <div className="mx-auto w-full min-w-0 max-w-[1440px]">
+            <Outlet />
+          </div>
         </main>
+
+        {shouldShowOnboarding && (
+          <OnboardingWizard
+            onComplete={completeOnboarding}
+            onSkip={completeOnboarding}
+          />
+        )}
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-bar border-t border-hm-border bg-hm-surface md:hidden">
