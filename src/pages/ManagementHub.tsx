@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { User, Briefcase, Mic, Shield, Smartphone, Share, Globe, MessageSquare, Scale, Calculator, Upload, LogOut, XCircle, Trash2, Loader2 } from "lucide-react";
+import { User, Briefcase, Mic, Shield, Smartphone, Share, Globe, MessageSquare, Scale, Calculator, Upload, LogOut, XCircle, Trash2, Loader2, Megaphone } from "lucide-react";
 import { useLogout } from "@/hooks/useLogout";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { HufiPermissionsSettings } from "@/components/consent/HufiPermissionsSettings";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { ACTIVE_FLAVOR, FLAVOR_CONFIG } from "@/config/appFlavor";
 import { toast } from "sonner";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -31,6 +32,7 @@ export default function ManagementHub() {
   const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
   const { user, role } = useAuth();
   const logout = useLogout();
+  const isHufiApp = ACTIVE_FLAVOR === "hufiapp";
 
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -85,7 +87,7 @@ export default function ManagementHub() {
             </div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#10B981" }}>App installiert</div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Hufi läuft als Homescreen-App</div>
+              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{FLAVOR_CONFIG.appName} läuft als Homescreen-App</div>
             </div>
           </div>
         ) : isIOS ? (
@@ -96,7 +98,7 @@ export default function ManagementHub() {
               </div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>App installieren</div>
-                <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Hufi zum Homescreen hinzufügen</div>
+                <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{FLAVOR_CONFIG.appName} zum Homescreen hinzufügen</div>
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -121,7 +123,7 @@ export default function ManagementHub() {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>App installieren</div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>Schnellzugriff vom Homescreen</div>
+              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{FLAVOR_CONFIG.appName} direkt auf diesem Gerät installieren</div>
             </div>
             <button
               onClick={promptInstall}
@@ -192,12 +194,14 @@ export default function ManagementHub() {
           description="Aktueller Plan, Upgrade, Rechnungen, Kündigung"
           onClick={() => navigate("/management/abo")}
         />
-        <Tile
-          icon={<Mic className="w-10 h-10 text-primary" />}
-          title="Voice-Guthaben"
-          description="Guthabenstand, Verlauf, Aufladen"
-          onClick={() => navigate("/management/guthaben")}
-        />
+        {isHufiApp && (
+          <Tile
+            icon={<Mic className="w-10 h-10 text-primary" />}
+            title="Voice-Guthaben"
+            description="Guthabenstand, Verlauf, Aufladen"
+            onClick={() => navigate("/management/guthaben")}
+          />
+        )}
       </TileCategory>
 
       <TileCategory title="Daten & Tools">
@@ -208,17 +212,19 @@ export default function ManagementHub() {
           onClick={() => navigate("/management/import")}
         />
         <Tile
-          icon={<Mic className="w-10 h-10 text-primary" />}
+          icon={<Megaphone className="w-10 h-10 text-primary" />}
           title="Botschafter werden"
           description="Provision verdienen, Empfehlungslinks, Werbemittel"
           onClick={() => navigate("/management/botschafter")}
         />
       </TileCategory>
 
-      {/* Berechtigungen & Hufi — inline Einstellungsbereich */}
-      <div className="px-1">
-        <HufiPermissionsSettings userId={user?.id ?? ""} role={role} />
-      </div>
+      {/* Hufi-spezifische Voice-/KI-Berechtigungen gehoeren nur in HufiApp. */}
+      {isHufiApp && (
+        <div className="px-1">
+          <HufiPermissionsSettings userId={user?.id ?? ""} role={role} />
+        </div>
+      )}
 
       {/* Abmelden */}
       <div className="px-1 pb-2">
@@ -256,8 +262,8 @@ export default function ManagementHub() {
             <AlertDialogTitle>Abo kündigen?</AlertDialogTitle>
             <AlertDialogDescription>
               Dein Abo läuft bis zum Ende des aktuellen Abrechnungszeitraums weiter.
-              Bestehendes Voice-Guthaben bleibt bis zum Ablaufdatum nutzbar.
-              Du wirst jetzt zum CopeCart-Kundenportal weitergeleitet, wo du die
+              {isHufiApp && <> Bestehendes Voice-Guthaben bleibt bis zum Ablaufdatum nutzbar.</>}
+              {" "}Du wirst jetzt zum CopeCart-Kundenportal weitergeleitet, wo du die
               Kündigung selbst abschließt.
             </AlertDialogDescription>
           </AlertDialogHeader>
