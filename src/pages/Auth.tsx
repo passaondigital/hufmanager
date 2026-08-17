@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { FLAVOR_CONFIG } from "@/config/appFlavor";
+import { FLAVOR_CONFIG, ACTIVE_FLAVOR } from "@/config/appFlavor";
 import { isDemoEmail } from "@/lib/demo-accounts";
 import { isPortalBusinessEmail, isStallbetreiberDemoEmail, getPostLoginPath } from "@/lib/portal-user-detect";
 import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
@@ -50,11 +50,11 @@ const SWITCH_ACCOUNT_STORAGE_KEY = "hm_switch_account_target";
 const AUTH_STORAGE_PRESERVE_KEYS = ["theme", "vite-ui-theme"];
 
 function clearStoredAuthState() {
-  const storageKeysToRemove = Object.keys(localStorage).filter((key) =>
-    key.startsWith("sb-") && key.endsWith("-auth-token")
-  );
-
-  storageKeysToRemove.forEach((key) => localStorage.removeItem(key));
+  [localStorage, sessionStorage].forEach((storage) => {
+    Object.keys(storage)
+      .filter((key) => key.startsWith("sb-") && key.endsWith("-auth-token"))
+      .forEach((key) => storage.removeItem(key));
+  });
   sessionStorage.removeItem(SWITCH_ACCOUNT_STORAGE_KEY);
 }
 
@@ -167,8 +167,10 @@ export default function Auth() {
     }
   }, [inviteCode, hmInviteToken, urlRole, urlEmail]);
 
-  // Redirect if already logged in
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  // HufiApp keeps its historic onboarding redirect for now. HufManager no longer
+  // blocks auth on an onboarding query: it enters /home first and lets the shared
+  // HufManager shell decide asynchronously whether the wizard is still needed.
+  const [onboardingChecked, setOnboardingChecked] = useState(ACTIVE_FLAVOR === "hufmanager");
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   // Auto-sign-out while preserving the current auth entry point
@@ -201,6 +203,11 @@ export default function Auth() {
   }, [authLoading, currentEntryPath, isSwitchingAccount]);
 
   useEffect(() => {
+    if (ACTIVE_FLAVOR === "hufmanager") {
+      setNeedsOnboarding(false);
+      setOnboardingChecked(true);
+      return;
+    }
     if (!user || !role || authLoading || isSwitchingAccount || signingOut) return;
     if (isPortalBusinessEmail(user.email) || isStallbetreiberDemoEmail(user.email)) {
       setOnboardingChecked(true);
@@ -239,8 +246,8 @@ export default function Auth() {
     if (forcePasswordChange) {
       return <Navigate to="/update-password" replace />;
     }
-    if (role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
-      // Show loading while checking onboarding status
+    if (ACTIVE_FLAVOR !== "hufmanager" && role === "provider" && !onboardingChecked && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
+      // HufiApp legacy onboarding check only. HufManager renders /home first.
       return (
         <div className="min-h-[100dvh] flex flex-col items-center justify-center bg-background gap-6">
           <HufManagerWordmark />
@@ -248,7 +255,7 @@ export default function Auth() {
         </div>
       );
     }
-    if (role === "provider" && needsOnboarding && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
+    if (ACTIVE_FLAVOR !== "hufmanager" && role === "provider" && needsOnboarding && !isPortalBusinessEmail(user.email) && !isStallbetreiberDemoEmail(user.email)) {
       return <Navigate to="/welcome" replace />;
     }
 
