@@ -6,14 +6,58 @@ export type SlimTourStopLike = {
   } | null;
 };
 
+export type TourOrderStopLike = {
+  id: string;
+  status?: string | null;
+};
+
+export type TourInsertionPlacement = "next" | "end";
+
+export function isTourStopFinished(status?: string | null) {
+  return status === "completed" || status === "no_show" || status === "cancelled";
+}
+
+export function isTourStopLockedForReplan(status?: string | null) {
+  return status === "in_progress";
+}
+
+export function partitionStopsForReplan<T extends TourOrderStopLike>(stops: T[]) {
+  const finished: T[] = [];
+  const locked: T[] = [];
+  const candidates: T[] = [];
+
+  for (const stop of stops) {
+    if (isTourStopFinished(stop.status)) finished.push(stop);
+    else if (isTourStopLockedForReplan(stop.status)) locked.push(stop);
+    else candidates.push(stop);
+  }
+
+  return { finished, locked, candidates };
+}
+
+export function buildInsertionOrder<T extends TourOrderStopLike>(
+  stops: T[],
+  newStopIds: Set<string>,
+  placement: TourInsertionPlacement,
+) {
+  const { finished, locked, candidates } = partitionStopsForReplan(stops);
+  const newStops = candidates.filter((stop) => newStopIds.has(stop.id));
+  const remaining = candidates.filter((stop) => !newStopIds.has(stop.id));
+
+  return placement === "next"
+    ? [...finished, ...locked, ...newStops, ...remaining]
+    : [...finished, ...locked, ...remaining, ...newStops];
+}
+
 export function getSlimTourStats(stops: SlimTourStopLike[]) {
   const completedStops = stops.filter((stop) => stop.status === "completed").length;
+  const openStops = stops.filter((stop) => !isTourStopFinished(stop.status)).length;
   const geocodedStops = stops.filter((stop) => hasStopCoordinates(stop)).length;
 
   return {
     totalStops: stops.length,
     completedStops,
-    openStops: Math.max(stops.length - completedStops, 0),
+    openStops,
     geocodedStops,
     missingGeoStops: Math.max(stops.length - geocodedStops, 0),
   };
@@ -25,6 +69,7 @@ export function hasStopCoordinates(stop: SlimTourStopLike) {
 
 export function buildGoogleMapsRouteUrl(stops: SlimTourStopLike[]) {
   const coordinates = stops
+    .filter((stop) => !isTourStopFinished(stop.status))
     .filter(hasStopCoordinates)
     .map((stop) => `${stop.client!.geo_lat},${stop.client!.geo_lng}`);
 

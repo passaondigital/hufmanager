@@ -8,22 +8,26 @@ import { CSS } from "@dnd-kit/utilities";
 import { CircleMarker, MapContainer, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import {
+  AlertTriangle,
   ArrowRight,
   CheckCircle2,
   Clock3,
-  Euro,
   Fuel,
   GripVertical,
-  Loader2,
   MapPin,
   Navigation,
   Play,
   Route,
   RotateCcw,
   Square,
+  UserX,
+  X,
 } from "lucide-react";
+import { toast } from "sonner";
 import "leaflet/dist/leaflet.css";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
+import { DelayReportSheet } from "@/components/day-cockpit/DelayReportSheet";
+import { NoShowSheet } from "@/components/day-cockpit/NoShowSheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { HelpTip } from "@/components/ui/HelpTip";
@@ -31,8 +35,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLiveTourEta } from "@/hooks/useLiveTourEta";
 import { calculateRoute } from "@/lib/routeService";
+import { notifyTodayClients, resolveProviderDisplayName } from "@/lib/pushNotificationService";
 import { getCheapestPrice, mapFuelType, useFuelPrices } from "@/hooks/useFuelPrices";
-import { buildGoogleMapsRouteUrl, calculateActualOdometerDistance, calculateSlimTourCosts, getSlimTourStats, hasStopCoordinates } from "./slimTourUtils";
+import {
+  buildGoogleMapsRouteUrl,
+  calculateActualOdometerDistance,
+  calculateSlimTourCosts,
+  getSlimTourStats,
+  hasStopCoordinates,
+  isTourStopFinished,
+  isTourStopLockedForReplan,
+  partitionStopsForReplan,
+} from "./slimTourUtils";
 
 type SlimTourStop = {
   id: string;
@@ -57,14 +71,19 @@ type SlimTourStop = {
   } | null;
 };
 
-type DailyTour = { id: string; status: string | null; total_distance_km: number | null };
+type DailyTour = {
+  id: string;
+  status: string | null;
+  total_distance_km: number | null;
+  delay_minutes: number | null;
+  delay_reason: string | null;
+};
 type TourSettings = { travel_cost_per_km: number | null; travel_cost_flat: number | null; vehicle_consumption_per_100km: number | null; vehicle_fuel_type: string | null };
 type Vehicle = { id: string; name: string | null; price_per_km: number | null; travel_cost_flat: number | null; fuel_type: string | null; average_consumption: number | null };
 type VehicleLog = { id: string; distance_km: number | null; fuel_cost: number | null; start_km?: number | null; end_km?: number | null };
 
 function formatTime(value?: string | null) { return value ? value.slice(0, 5) : "–"; }
 function formatMoney(value?: number | null) { return value == null ? "Noch offen" : new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(value); }
-function stopAddress(stop: SlimTourStop) { return [stop.client?.street, stop.client?.zip, stop.client?.city].filter(Boolean).join(", ") || stop.location || "Adresse fehlt"; }
 
 function distanceKm(a: [number, number], b: [number, number]) {
   const radius = 6371;
@@ -79,6 +98,17 @@ function estimateDistance(positions: [number, number][]) {
   return Math.round(positions.slice(1).reduce((sum, point, index) => sum + distanceKm(positions[index], point), 0) * 10) / 10;
 }
 
+function getCurrentBrowserPosition(): Promise<[number, number] | null> {
+  if (!("geolocation" in navigator)) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => resolve([coords.latitude, coords.longitude]),
+      () => resolve(null),
+      { enableHighAccuracy: true, maximumAge: 30_000, timeout: 12_000 },
+    );
+  });
+}
+
 export function SlimTourScreen() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -88,6 +118,8 @@ export function SlimTourScreen() {
   const [startKm, setStartKm] = useState("");
   const [endKm, setEndKm] = useState("");
   const [selectedStop, setSelectedStop] = useState<SlimTourStop | null>(null);
+  const [delaySheetOpen, setDelaySheetOpen] = useState(false);
+  const [noShowStop, setNoShowStop] = useState<SlimTourStop | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const tourQuery = useQuery({
@@ -108,7 +140,7 @@ export function SlimTourScreen() {
           .neq("status", "cancelled")
           .order("tour_order", { ascending: true, nullsFirst: false })
           .order("time", { ascending: true }) as any,
-        supabase.from("daily_tours").select("id, status, total_distance_km").eq("provider_id", user.id).eq("tour_date", today).maybeSingle(),
+        (supabase.from("daily_tours") as any).select("id, status, total_distance_km, delay_minutes, delay_reason").eq("provider_id", user.id).eq("tour_date", today).maybeSingle(),
         supabase.from("business_settings").select("travel_cost_per_km, travel_cost_flat, vehicle_consumption_per_100km, vehicle_fuel_type").eq("user_id", user.id).maybeSingle(),
         supabase.from("provider_vehicles").select("id, name, price_per_km, travel_cost_flat, fuel_type, average_consumption").eq("provider_id", user.id).eq("is_primary", true).maybeSingle(),
         supabase.from("vehicle_logs").select("id, distance_km, fuel_cost, start_km, end_km").eq("provider_id", user.id).eq("log_date", today).maybeSingle(),
@@ -124,6 +156,7 @@ export function SlimTourScreen() {
         const horses = Array.isArray(row.horses) ? row.horses : row.horses ? [row.horses] : [];
         const horse = horses[0] ?? null;
         const client = Array.isArray(row.client) ? row.client[0] : row.client;
+        const ownerId = client?.id ?? horse?.owner_id ?? null;
         return {
           id: row.id,
           time: row.time,
@@ -136,15 +169,15 @@ export function SlimTourScreen() {
           applied_price: row.applied_price == null ? null : Number(row.applied_price),
           price: row.price == null ? null : Number(row.price),
           horses: horses.map((item: any) => ({ id: item.id, name: item.name, owner_id: item.owner_id })),
-          client: client
+          client: ownerId
             ? {
-                id: client.id,
-                full_name: client.full_name,
-                street: client.street,
-                zip: client.zip_code,
-                city: client.city,
-                geo_lat: row.appointment_lat ?? client.geo_lat ?? horse?.latitude ?? null,
-                geo_lng: row.appointment_lng ?? client.geo_lng ?? horse?.longitude ?? null,
+                id: ownerId,
+                full_name: client?.full_name ?? null,
+                street: client?.street ?? null,
+                zip: client?.zip_code ?? null,
+                city: client?.city ?? null,
+                geo_lat: row.appointment_lat ?? client?.geo_lat ?? horse?.latitude ?? null,
+                geo_lng: row.appointment_lng ?? client?.geo_lng ?? horse?.longitude ?? null,
               }
             : null,
         } satisfies SlimTourStop;
@@ -167,9 +200,14 @@ export function SlimTourScreen() {
     if (log?.end_km != null) setEndKm(String(log.end_km));
   }, [tourQuery.data?.vehicleLog]);
 
-  const routePositions = useMemo(() => orderedStops.filter(hasStopCoordinates).map((stop) => [stop.client!.geo_lat!, stop.client!.geo_lng!] as [number, number]), [orderedStops]);
+  const isActive = tourQuery.data?.dailyTour?.status === "active";
+  const currentDelay = Math.max(Number(tourQuery.data?.dailyTour?.delay_minutes || 0), 0);
+  const openStops = useMemo(() => orderedStops.filter((stop) => !isTourStopFinished(stop.status)), [orderedStops]);
+  const nextStop = openStops[0] ?? null;
+  const routeStops = isActive ? openStops : orderedStops;
+  const routePositions = useMemo(() => routeStops.filter(hasStopCoordinates).map((stop) => [stop.client!.geo_lat!, stop.client!.geo_lng!] as [number, number]), [routeStops]);
   const routeQuery = useQuery({
-    queryKey: ["slim-tour-route-unchained", user?.id, routePositions.map((point) => point.join(",")).join("|")],
+    queryKey: ["slim-tour-route-unchained", user?.id, isActive ? "active" : "planned", routePositions.map((point) => point.join(",")).join("|")],
     enabled: routePositions.length >= 2,
     queryFn: () => calculateRoute(routePositions, { optimize: false }),
     staleTime: 5 * 60 * 1000,
@@ -177,11 +215,8 @@ export function SlimTourScreen() {
 
   const routeLine = useMemo<[number, number][]>(() => {
     const coordinates = routeQuery.data?.geometry?.coordinates;
-    // Only render real ORS/VROOM road geometry. If routing is unavailable,
-    // keep the stop markers visible instead of drawing misleading straight lines.
     return coordinates?.length ? coordinates.map(([lng, lat]) => [lat, lng]) : [];
   }, [routeQuery.data?.geometry]);
-  const nextStop = orderedStops.find((stop) => stop.status !== "completed") ?? orderedStops[0] ?? null;
   const stats = useMemo(() => getSlimTourStats(orderedStops), [orderedStops]);
   const routeDistance = routeQuery.data?.distance ?? tourQuery.data?.dailyTour?.total_distance_km ?? estimateDistance(routePositions);
   const routeDuration = routeQuery.data?.duration ?? (routeDistance ? Math.round((routeDistance / 50) * 60) : null);
@@ -201,7 +236,6 @@ export function SlimTourScreen() {
     fuelCost: estimatedFuelCost,
   });
   const actualDistance = calculateActualOdometerDistance(startKm ? Number(startKm) : null, endKm ? Number(endKm) : null);
-  const isActive = tourQuery.data?.dailyTour?.status === "active";
   const mapsUrl = buildGoogleMapsRouteUrl(orderedStops);
   const liveEtaDestination = nextStop?.client?.geo_lat != null && nextStop?.client?.geo_lng != null
     ? [nextStop.client.geo_lat, nextStop.client.geo_lng] as [number, number]
@@ -209,17 +243,19 @@ export function SlimTourScreen() {
   const liveEta = useLiveTourEta({ enabled: isActive, destination: liveEtaDestination });
   const liveEtaText = !isActive
     ? "Tour starten für Live-Ankunft"
-    : liveEta.arrivalLabel
-      ? `Ankunft ca. ${liveEta.arrivalLabel} Uhr${liveEta.durationMinutes != null ? ` · ${liveEta.durationMinutes} Min.` : ""}`
-      : liveEta.locationState === "denied"
-        ? "Standortfreigabe fehlt – ETA nicht verfügbar"
-        : liveEta.locationState === "unsupported"
-          ? "Standort wird auf diesem Gerät nicht unterstützt"
-          : liveEta.locationState === "unavailable"
-            ? "Standort gerade nicht verfügbar"
-            : liveEta.routeError
-              ? "Fahrzeit konnte gerade nicht berechnet werden"
-              : "Live-Ankunft wird berechnet …";
+    : !nextStop
+      ? "Alle Stopps erledigt"
+      : liveEta.arrivalLabel
+        ? `Ankunft ca. ${liveEta.arrivalLabel} Uhr${liveEta.durationMinutes != null ? ` · ${liveEta.durationMinutes} Min.` : ""}`
+        : liveEta.locationState === "denied"
+          ? "Standortfreigabe fehlt – ETA nicht verfügbar"
+          : liveEta.locationState === "unsupported"
+            ? "Standort wird auf diesem Gerät nicht unterstützt"
+            : liveEta.locationState === "unavailable"
+              ? "Standort gerade nicht verfügbar"
+              : liveEta.routeError
+                ? "Fahrzeit konnte gerade nicht berechnet werden"
+                : "Live-Ankunft wird berechnet …";
 
   const persistOrder = useMutation({
     mutationFn: async (stops: SlimTourStop[]) => {
@@ -232,31 +268,146 @@ export function SlimTourScreen() {
 
   const optimizeTour = useMutation({
     mutationFn: async () => {
-      const result = await calculateRoute(routePositions, { optimize: true });
+      const { finished, locked, candidates } = partitionStopsForReplan(orderedStops);
+      const geocodedCandidates = candidates.filter(hasStopCoordinates);
+      if (geocodedCandidates.length < 2) return orderedStops;
+
+      const currentPosition = await getCurrentBrowserPosition();
+      const lockedWithCoordinates = locked.find(hasStopCoordinates);
+      const explicitStart: [number, number] | null = currentPosition
+        ?? (lockedWithCoordinates
+          ? [lockedWithCoordinates.client!.geo_lat!, lockedWithCoordinates.client!.geo_lng!]
+          : null);
+      const candidatePositions = geocodedCandidates.map((stop) => [stop.client!.geo_lat!, stop.client!.geo_lng!] as [number, number]);
+      const planningPositions = explicitStart ? [explicitStart, ...candidatePositions] : candidatePositions;
+      const result = await calculateRoute(planningPositions, { optimize: true });
       if (!result) throw new Error("ROUTE_OPTIMIZATION_FAILED");
-      if (!result.optimized_order?.length || orderedStops.length < 3) return orderedStops;
-      const first = orderedStops[0];
-      const optimized = [first, ...result.optimized_order.map((index) => orderedStops[index]).filter(Boolean)];
-      const remaining = orderedStops.filter((stop) => !optimized.some((candidate) => candidate.id === stop.id));
-      return [...optimized, ...remaining];
+      if (!result.optimized_order?.length) return orderedStops;
+
+      const optimizedGeocoded = explicitStart
+        ? result.optimized_order.map((jobId) => geocodedCandidates[jobId - 1]).filter(Boolean)
+        : [geocodedCandidates[0], ...result.optimized_order.map((jobId) => geocodedCandidates[jobId]).filter(Boolean)];
+      const optimizedIds = new Set(optimizedGeocoded.map((stop) => stop.id));
+      const candidatesWithoutRoute = candidates.filter((stop) => !optimizedIds.has(stop.id));
+      return [...finished, ...locked, ...optimizedGeocoded, ...candidatesWithoutRoute];
     },
-    onSuccess: async (stops) => { setOrderedStops(stops); await persistOrder.mutateAsync(stops); void routeQuery.refetch(); },
+    onSuccess: async (stops) => {
+      setOrderedStops(stops);
+      await persistOrder.mutateAsync(stops);
+      void routeQuery.refetch();
+    },
   });
 
   const startTour = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error("AUTH_REQUIRED");
-      const { error } = await supabase.from("daily_tours").upsert({ provider_id: user.id, tour_date: today, status: "active", tour_active_since: new Date().toISOString(), tour_ended_at: null }, { onConflict: "provider_id,tour_date" });
+      const { error } = await supabase.from("daily_tours").upsert({
+        provider_id: user.id,
+        tour_date: today,
+        status: "active",
+        tour_active_since: new Date().toISOString(),
+        tour_ended_at: null,
+        delay_minutes: 0,
+        delay_reason: null,
+        delay_reported_at: null,
+        live_lat: null,
+        live_lng: null,
+        live_accuracy: null,
+        live_location_at: null,
+      } as any, { onConflict: "provider_id,tour_date" });
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] });
+      if (!user?.id) return;
+      const providerName = await resolveProviderDisplayName(user.id);
+      const sentCount = await notifyTodayClients(user.id, "tour_start", { providerName });
+      toast.success(sentCount > 0 ? `Tour gestartet · ${sentCount} Kunde${sentCount === 1 ? "" : "n"} informiert` : "Tour gestartet");
+    },
+    onError: () => toast.error("Tour konnte nicht gestartet werden"),
+  });
+
+  const reportDelay = useMutation({
+    mutationFn: async (delayMinutes: number) => {
+      if (!user?.id) throw new Error("AUTH_REQUIRED");
+      const { error } = await supabase.from("daily_tours").update({
+        delay_minutes: delayMinutes,
+        delay_reason: "Verzögerung im Tourablauf",
+        delay_reported_at: new Date().toISOString(),
+      } as any).eq("provider_id", user.id).eq("tour_date", today).eq("status", "active");
+      if (error) throw error;
+
+      const providerName = await resolveProviderDisplayName(user.id);
+      return notifyTodayClients(user.id, "delay", { delayMinutes, providerName });
+    },
+    onSuccess: async (sentCount, delayMinutes) => {
+      setDelaySheetOpen(false);
+      await queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] });
+      toast.success(`${delayMinutes} Min. Verspätung gespeichert${sentCount > 0 ? ` · ${sentCount} Kunde${sentCount === 1 ? "" : "n"} informiert` : ""}`);
+    },
+    onError: () => toast.error("Verspätung konnte nicht gespeichert werden"),
+  });
+
+  const clearDelay = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error("AUTH_REQUIRED");
+      const { error } = await supabase.from("daily_tours").update({
+        delay_minutes: 0,
+        delay_reason: null,
+        delay_reported_at: new Date().toISOString(),
+      } as any).eq("provider_id", user.id).eq("tour_date", today);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] });
+      toast.success("Verspätung aufgehoben");
+    },
+    onError: () => toast.error("Verspätung konnte nicht aufgehoben werden"),
+  });
+
+  const markNoShow = useMutation({
+    mutationFn: async ({ stop, notes }: { stop: SlimTourStop; notes: string }) => {
+      const { error } = await supabase.from("appointments").update({
+        status: "no_show",
+        completion_notes: notes.trim() || "Kunde nicht angetroffen",
+        completed_at: new Date().toISOString(),
+      }).eq("id", stop.id);
+      if (error) throw error;
+
+      if (stop.client?.id && user?.id) {
+        const providerName = await resolveProviderDisplayName(user.id);
+        await supabase.from("notifications").insert({
+          user_id: stop.client.id,
+          title: "Termin verpasst 😕",
+          message: `${providerName} war heute bei dir – leider warst du nicht da. Bitte melde dich für einen neuen Termin.`,
+          type: "no_show",
+          link: "/client-home",
+        });
+      }
+    },
+    onSuccess: async () => {
+      setNoShowStop(null);
+      await queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] });
+      toast.success("Als nicht angetroffen markiert");
+    },
+    onError: () => toast.error("Status konnte nicht gespeichert werden"),
   });
 
   const stopTour = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error("AUTH_REQUIRED");
       if (actualDistance.status === "invalid") throw new Error("INVALID_ODOMETER");
-      const { error } = await supabase.from("daily_tours").update({ status: "completed", tour_ended_at: new Date().toISOString(), total_distance_km: routeDistance }).eq("provider_id", user.id).eq("tour_date", today);
+      const { error } = await supabase.from("daily_tours").update({
+        status: "completed",
+        tour_ended_at: new Date().toISOString(),
+        total_distance_km: routeDistance,
+        delay_minutes: 0,
+        delay_reason: null,
+        live_lat: null,
+        live_lng: null,
+        live_accuracy: null,
+        live_location_at: null,
+      } as any).eq("provider_id", user.id).eq("tour_date", today);
       if (error) throw error;
 
       if (startKm || endKm) {
@@ -275,7 +426,11 @@ export function SlimTourScreen() {
         if (result.error) throw result.error;
       }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["slim-tour-unchained", user?.id, today] });
+      toast.success("Tour beendet");
+    },
+    onError: () => toast.error("Tour konnte nicht beendet werden"),
   });
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -283,6 +438,19 @@ export function SlimTourScreen() {
     if (!over || active.id === over.id) return;
     const oldIndex = orderedStops.findIndex((stop) => stop.id === active.id);
     const newIndex = orderedStops.findIndex((stop) => stop.id === over.id);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const activeStop = orderedStops[oldIndex];
+    const lockedIndex = orderedStops.findIndex((stop) => isTourStopLockedForReplan(stop.status));
+    if (isTourStopFinished(activeStop.status) || isTourStopLockedForReplan(activeStop.status)) {
+      toast.info("Erledigte oder gerade laufende Stopps bleiben an ihrer Position.");
+      return;
+    }
+    if (lockedIndex >= 0 && newIndex <= lockedIndex) {
+      toast.info("Der aktuelle Termin bleibt vorne. Du kannst nur die folgenden Stopps verschieben.");
+      return;
+    }
+
     const reordered = arrayMove(orderedStops, oldIndex, newIndex);
     setOrderedStops(reordered);
     persistOrder.mutate(reordered);
@@ -303,18 +471,42 @@ export function SlimTourScreen() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1">
-            <Button variant="outline" onClick={() => optimizeTour.mutate()} disabled={routePositions.length < 2 || optimizeTour.isPending}>
+            <Button variant="outline" onClick={() => optimizeTour.mutate()} disabled={openStops.filter((stop) => !isTourStopLockedForReplan(stop.status)).filter(hasStopCoordinates).length < 2 || optimizeTour.isPending}>
               <RotateCcw className={`h-4 w-4 ${optimizeTour.isPending ? "animate-spin" : ""}`} />
               Route planen
             </Button>
-            <HelpTip title="Route planen" description="HufManager sortiert deine Stopps sinnvoll und berechnet die Strecke. Du kannst die Reihenfolge danach trotzdem noch manuell aendern." />
+            <HelpTip title="Route planen" description="HufManager lässt einen bereits laufenden Termin fest stehen und optimiert nur die danach offenen Stopps. Als Start dient dein aktueller Standort, ersatzweise der aktuelle Stopp." />
           </div>
+          {isActive && (
+            <Button
+              variant="outline"
+              className={currentDelay > 0 ? "border-amber-500/50 text-amber-700 dark:text-amber-400" : ""}
+              onClick={() => setDelaySheetOpen(true)}
+              disabled={reportDelay.isPending}
+            >
+              <AlertTriangle className="h-4 w-4" />
+              {currentDelay > 0 ? `+${currentDelay} Min.` : "Verspätung"}
+            </Button>
+          )}
+          {isActive && currentDelay > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => clearDelay.mutate()} disabled={clearDelay.isPending} title="Verspätung aufheben">
+              <X className="h-4 w-4" />
+              Aufheben
+            </Button>
+          )}
           <Button onClick={() => isActive ? stopTour.mutate() : startTour.mutate()} disabled={!orderedStops.length || startTour.isPending || stopTour.isPending}>
             {isActive ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
             {isActive ? "Tour beenden" : "Tour starten"}
           </Button>
         </div>
       </header>
+
+      {isActive && currentDelay > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
+          <span><strong>Aktuelle Verspätung: +{currentDelay} Min.</strong> Offene Kunden sehen diese Verzögerung in ihrem Tourstatus.</span>
+        </div>
+      )}
 
       {!orderedStops.length ? (
         <section className="hm-card flex min-h-72 flex-col items-start justify-center p-6 sm:p-8"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-600"><Route className="h-6 w-6" /></div><h2 className="mt-5 text-xl font-semibold text-[var(--hm-text-primary)]">Heute sind noch keine Termine geplant.</h2><p className="mt-2 text-sm text-[var(--hm-text-secondary)]">Mit dem ersten Termin entsteht automatisch deine Tagesroute.</p><button className="hm-button-primary mt-5" onClick={() => navigate("/kalender?new=true")}>Termin hinzufügen</button></section>
@@ -326,31 +518,38 @@ export function SlimTourScreen() {
               <MapBadge icon={Route} value={routeDistance == null ? "Route offen" : `${routeDistance.toFixed(1)} km`} />
               <MapBadge icon={Clock3} value={routeDuration == null ? "Fahrzeit offen" : `${routeDuration} Min.`} />
               <MapBadge icon={MapPin} value={`${stats.geocodedStops}/${stats.totalStops} mit Geo`} />
+              {currentDelay > 0 && <MapBadge icon={AlertTriangle} value={`+${currentDelay} Min.`} />}
             </div>
             {routeQuery.isError && <div className="absolute bottom-4 left-4 right-4 z-[500] rounded-xl border border-orange-200 bg-white/95 p-3 text-sm text-slate-700 shadow-lg dark:border-orange-900/50 dark:bg-[#1D2128] dark:text-slate-200">Die Straßenroute konnte gerade nicht aktualisiert werden. Die Stopps bleiben sichtbar.</div>}
           </section>
 
           <aside className="flex min-h-0 flex-col border-t border-[var(--hm-border)] xl:border-l xl:border-t-0">
             <div className="border-b border-[var(--hm-border)] p-4">
-              <p className="text-sm font-medium text-orange-600">Nächster Stopp</p>
-              <h2 className="mt-1 truncate text-xl font-semibold text-[var(--hm-text-primary)]">{nextStop?.client?.full_name || "Kunde"}</h2>
-              <p className="mt-1 text-sm text-[var(--hm-text-secondary)]">{nextStop?.horses.map((horse) => horse.name).join(" · ") || "Pferd"} · {formatTime(nextStop?.time)}</p>
+              <p className="text-sm font-medium text-orange-600">{nextStop?.status === "in_progress" ? "Aktueller Stopp" : "Nächster Stopp"}</p>
+              <h2 className="mt-1 truncate text-xl font-semibold text-[var(--hm-text-primary)]">{nextStop?.client?.full_name || (stats.openStops === 0 ? "Alle Stopps erledigt" : "Kunde")}</h2>
+              <p className="mt-1 text-sm text-[var(--hm-text-secondary)]">{nextStop ? `${nextStop.horses.map((horse) => horse.name).join(" · ") || "Pferd"} · ${formatTime(nextStop.time)}` : "Die Tagesroute ist abgearbeitet."}</p>
               <div className="mt-2 flex items-center gap-1 text-xs text-[var(--hm-text-secondary)]">
                 <Clock3 className={`h-3.5 w-3.5 text-orange-600 ${liveEta.isCalculating ? "animate-pulse" : ""}`} />
-                <span className={liveEta.arrivalLabel ? "font-semibold text-[var(--hm-text-primary)]" : ""}>{liveEtaText}</span>
-                <HelpTip title="Voraussichtliche Ankunft" description="Während einer aktiven Tour nutzt HufManager deinen aktuellen Gerätestandort und die echte Straßenfahrzeit zum nächsten Stopp. Der Standort wird für diese ETA im Browser verwendet und hier nicht als Tourverlauf gespeichert." />
+                <span className={liveEta.arrivalLabel ? "font-semibold text-[var(--hm-text-primary)]" : ""}>{nextStop?.status === "in_progress" ? "Du bist an diesem Stopp angekommen." : liveEtaText}</span>
+                <HelpTip title="Voraussichtliche Ankunft" description="Während einer aktiven Tour nutzt HufManager deinen aktuellen Gerätestandort und die echte Straßenfahrzeit zum nächsten offenen Stopp. Der Standort wird für diese ETA im Browser verwendet und hier nicht als Tourverlauf gespeichert." />
               </div>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button className="hm-button-primary" onClick={() => mapsUrl && window.open(mapsUrl, "_blank", "noopener,noreferrer")} disabled={!mapsUrl}><Navigation className="h-4 w-4" />Navigation</button>
                 <button className="hm-button-secondary" onClick={() => nextStop && setSelectedStop(nextStop)} disabled={!nextStop}>Termin öffnen</button>
               </div>
+              {nextStop && (
+                <button type="button" className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-[var(--hm-text-secondary)] hover:bg-amber-500/10 hover:text-amber-700" onClick={() => setNoShowStop(nextStop)}>
+                  <UserX className="h-4 w-4" />
+                  Nicht angetroffen
+                </button>
+              )}
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1">
                   <h3 className="text-base font-semibold text-[var(--hm-text-primary)]">Stop-Reihenfolge</h3>
-                  <HelpTip title="Stop-Reihenfolge" description="Die Reihenfolge wird beim Route planen automatisch berechnet. Ziehen musst du nur, wenn du bewusst einen Stopp anders anfahren moechtest." />
+                  <HelpTip title="Stop-Reihenfolge" description="Die Reihenfolge wird beim Route planen automatisch berechnet. Ein bereits laufender oder erledigter Stopp bleibt fest; die folgenden Stopps kannst du weiter verschieben." />
                 </div>
                 <span className="text-xs text-[var(--hm-text-secondary)]">Optional verschieben</span>
               </div>
@@ -380,13 +579,28 @@ export function SlimTourScreen() {
         </div>
       )}
 
+      <DelayReportSheet
+        open={delaySheetOpen}
+        onOpenChange={setDelaySheetOpen}
+        onConfirm={(minutes) => reportDelay.mutate(minutes)}
+        isSending={reportDelay.isPending}
+      />
+
+      <NoShowSheet
+        open={!!noShowStop}
+        onOpenChange={(open) => { if (!open) setNoShowStop(null); }}
+        onConfirm={(notes) => noShowStop && markNoShow.mutate({ stop: noShowStop, notes })}
+        isSending={markNoShow.isPending}
+        clientName={noShowStop?.client?.full_name || noShowStop?.horses[0]?.name || undefined}
+      />
+
       {selectedStop && (
         <AppointmentCompletionDialog
           open
           onClose={() => setSelectedStop(null)}
           appointmentId={selectedStop.id}
           horseName={selectedStop.horses.map((horse) => horse.name).join(", ") || "Pferd"}
-          onCompleted={() => { setSelectedStop(null); void tourQuery.refetch(); navigate("/home/finanzen"); }}
+          onCompleted={() => { setSelectedStop(null); void tourQuery.refetch(); }}
         />
       )}
     </div>
@@ -408,7 +622,7 @@ function SlimRouteMap({ stops, routeLine, selectedId, currentPosition }: { stops
         </CircleMarker>
       )}
       {stops.map((stop, index) => hasStopCoordinates(stop) ? (
-        <CircleMarker key={stop.id} center={[stop.client!.geo_lat!, stop.client!.geo_lng!]} radius={selectedId === stop.id ? 14 : 11} pathOptions={{ color: "#FFFFFF", weight: 3, fillColor: stop.status === "completed" ? "#5d625f" : "#FF6A00", fillOpacity: 1 }}>
+        <CircleMarker key={stop.id} center={[stop.client!.geo_lat!, stop.client!.geo_lng!]} radius={selectedId === stop.id ? 14 : 11} pathOptions={{ color: "#FFFFFF", weight: 3, fillColor: isTourStopFinished(stop.status) ? "#5d625f" : "#FF6A00", fillOpacity: 1 }}>
           <Popup><div className="min-w-40"><strong>{index + 1}. {stop.client?.full_name || "Kunde"}</strong><div>{stop.horses.map((horse) => horse.name).join(", ")}</div><div>{formatTime(stop.time)} Uhr</div></div></Popup>
         </CircleMarker>
       ) : null)}
@@ -424,12 +638,13 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
 
 function SortableStop({ stop, index, onOpen }: { stop: SlimTourStop; index: number; onOpen: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: stop.id });
+  const isPinned = isTourStopFinished(stop.status) || isTourStopLockedForReplan(stop.status);
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className={`flex items-center gap-2 rounded-xl border border-[var(--hm-border)] bg-[var(--hm-surface)] p-2 ${isDragging ? "z-10 shadow-xl" : ""}`}>
-      <button type="button" {...attributes} {...listeners} className="flex h-9 w-8 cursor-grab items-center justify-center rounded-lg text-[var(--hm-text-secondary)] hover:bg-orange-500/10 hover:text-orange-600" aria-label="Stopp verschieben"><GripVertical className="h-4 w-4" /></button>
+      <button type="button" {...attributes} {...listeners} disabled={isPinned} className="flex h-9 w-8 cursor-grab items-center justify-center rounded-lg text-[var(--hm-text-secondary)] hover:bg-orange-500/10 hover:text-orange-600 disabled:cursor-default disabled:opacity-35" aria-label={isPinned ? "Stopp ist fixiert" : "Stopp verschieben"}><GripVertical className="h-4 w-4" /></button>
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-600 text-xs font-bold text-white">{index + 1}</span>
       <button type="button" onClick={onOpen} className="min-w-0 flex-1 py-1 text-left"><span className="block truncate text-sm font-semibold text-[var(--hm-text-primary)]">{stop.client?.full_name || "Kunde"}</span><span className="block truncate text-xs text-[var(--hm-text-secondary)]">{formatTime(stop.time)} · {stop.horses.map((horse) => horse.name).join(" + ") || stop.service_type}</span></button>
-      {stop.status === "completed" ? <CheckCircle2 className="h-4 w-4 text-orange-600" /> : <ArrowRight className="h-4 w-4 text-[var(--hm-text-secondary)]" />}
+      {isTourStopFinished(stop.status) ? <CheckCircle2 className="h-4 w-4 text-orange-600" /> : <ArrowRight className="h-4 w-4 text-[var(--hm-text-secondary)]" />}
     </div>
   );
 }

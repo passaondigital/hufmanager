@@ -1,26 +1,15 @@
-import { useLocation } from "react-router-dom";
-import { DayCockpit } from "@/components/day-cockpit";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { SlimTourScreen } from "@/components/slim/SlimTourScreen";
+import { TourArrivalControl } from "@/components/slim/TourArrivalControl";
+import { TourLiveEditControl } from "@/components/slim/TourLiveEditControl";
 import { TourQuickGuide } from "@/components/slim/TourQuickGuide";
 
-const TourPage = () => {
-  const location = useLocation();
-
-  if (location.pathname === "/home/tour") {
-    return (
-      <>
-        <TourQuickGuide />
-        <SlimTourScreen />
-      </>
-    );
-  }
-
-  return (
-    <ProtectedRoute allowedRoles={["provider", "admin"]}>
-      <DayCockpit />
-    </ProtectedRoute>
-  );
-};
+const TourPage = () => (
+  <>
+    <TourQuickGuide />
+    <TourArrivalControl />
+    <TourLiveEditControl />
+    <SlimTourScreen />
+  </>
+);
 
 export default TourPage;

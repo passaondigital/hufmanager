@@ -1,53 +1,88 @@
+import { FLAVOR_CONFIG } from "@/config/appFlavor";
+
+/**
+ * Einziger sichtbarer Startzustand der App.
+ *
+ * Wichtig: Auth-, Rollen-, Profil- und Produktpruefungen duerfen im Hintergrund
+ * mehrere Schritte haben, fuer den Nutzer bleibt die Darstellung aber stabil.
+ * Im HufManager wird Hufi nur als Maskottchen verwendet – nicht als eigenes
+ * Produkt bzw. Assistenten-Claim.
+ */
 export function AuthLoadingScreen() {
+  const appName = FLAVOR_CONFIG.appName || "HufManager";
+
   return (
-    <div style={{
-      minHeight: "100dvh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      background: "#FFFFFF",
-      flexDirection: "column",
-      gap: 0,
-    }}>
+    <div
+      data-testid="app-startup-screen"
+      style={{
+        minHeight: "100dvh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#FFFFFF",
+        flexDirection: "column",
+      }}
+    >
       <style>{`
-        @keyframes hufi-breath { 0%,100%{transform:scale(1);opacity:0.92} 50%{transform:scale(1.06);opacity:1} }
-        @keyframes hufi-bar {
-          0%   { transform: scaleY(0.2); }
-          50%  { transform: scaleY(1); }
-          100% { transform: scaleY(0.2); }
+        @keyframes hm-startup-breath {
+          0%, 100% { transform: scale(1); opacity: 0.94; }
+          50% { transform: scale(1.035); opacity: 1; }
         }
-        .hufi-bar { animation: hufi-bar 1.4s ease-in-out infinite alternate; transform-origin: center; }
+        @keyframes hm-startup-dot {
+          0%, 100% { transform: translateY(0); opacity: 0.35; }
+          50% { transform: translateY(-3px); opacity: 1; }
+        }
       `}</style>
 
-      <div style={{ animation: "hufi-breath 2.8s ease-in-out infinite", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div
+        style={{
+          width: 132,
+          height: 132,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          animation: "hm-startup-breath 2.4s ease-in-out infinite",
+        }}
+      >
         <img
           src="/hufi-splash.webp"
-          alt="Hufi"
-          style={{ width: 130, height: 130, objectFit: "contain" }}
+          alt={`${appName} Maskottchen`}
+          style={{ width: 126, height: 126, objectFit: "contain" }}
         />
       </div>
 
-      <div style={{ fontSize: 22, fontWeight: 800, color: "#1A1A1A", letterSpacing: "-0.02em", marginTop: 24, marginBottom: 4 }}>
-        Hufi
-      </div>
-      <div style={{ fontSize: 12, color: "#9CA3AF", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 32 }}>
-        Dein proaktiver Mitarbeiter
+      <div
+        style={{
+          fontSize: 24,
+          fontWeight: 800,
+          color: "#1A1A1A",
+          letterSpacing: "-0.025em",
+          marginTop: 18,
+        }}
+      >
+        {appName}
       </div>
 
-      {/* Wave bars */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, height: 28 }}>
-        {[0.5, 0.8, 1, 0.7, 0.9, 0.6, 1].map((h, i) => (
-          <div
+      <div
+        aria-label="Wird geladen"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          height: 24,
+          marginTop: 18,
+        }}
+      >
+        {[0, 1, 2].map((i) => (
+          <span
             key={i}
-            className="hufi-bar"
             style={{
-              width: 4,
-              height: `${Math.round(h * 100)}%`,
-              borderRadius: 99,
+              width: 6,
+              height: 6,
+              borderRadius: 999,
               background: "#F97316",
-              opacity: 0.7 + h * 0.3,
-              animationDelay: `${i * 0.12}s`,
-              animationDuration: `${1.2 + (i % 3) * 0.2}s`,
+              animation: "hm-startup-dot 1.1s ease-in-out infinite",
+              animationDelay: `${i * 0.16}s`,
             }}
           />
         ))}

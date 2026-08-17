@@ -1,11 +1,12 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
 
 /**
- * Welcome page – now simply redirects to /home where the OnboardingAssistant
- * takes over for real (non-demo) accounts with onboarding_completed = false.
+ * Welcome page – redirects to the correct authenticated start page.
+ * While that decision happens, keep the same branded startup screen instead
+ * of flashing a separate spinner between auth and the dashboard.
  */
 export default function Welcome() {
   const { user, role } = useAuth();
@@ -17,9 +18,5 @@ export default function Welcome() {
     navigate(dest, { replace: true });
   }, [user, role, navigate]);
 
-  return (
-    <div className="min-h-[100dvh] flex items-center justify-center bg-background">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
+  return <AuthLoadingScreen />;
 }

@@ -24,6 +24,7 @@ import { HorseIntervalReminderWidget } from "@/components/client/HorseIntervalRe
 import { HorseTransferReceive } from "@/components/client/HorseTransferReceive";
 import { ServiceOrderList } from "@/components/client/ServiceOrderList";
 import { ConnectedProviderCard } from "@/components/client/ConnectedProviderCard";
+import { ProviderTourStatusWidget } from "@/components/client/ProviderTourStatusWidget";
 import { PendingConnectionRequests } from "@/components/network/PendingConnectionRequests";
 import { MyConnectionRequests } from "@/components/network/MyConnectionRequests";
 import { ConnectionSearch } from "@/components/network/ConnectionSearch";
@@ -333,6 +334,8 @@ export default function ClientHome() {
             name={profile?.full_name}
             subtitle="Dein Pferdeplaner auf einen Blick"
           >
+            {user && <ProviderTourStatusWidget userId={user.id} />}
+
             {/* Next Appointment */}
             {user && (
               <NextAppointmentCard
