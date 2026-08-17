@@ -6,9 +6,32 @@ import { ACTIVE_FLAVOR } from '@/config/appFlavor';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+function removeSupabaseAuthTokens(storage: Storage) {
+  Object.keys(storage)
+    .filter((key) => key.startsWith('sb-') && key.endsWith('-auth-token'))
+    .forEach((key) => storage.removeItem(key));
+}
+
+// HufManager-Regel:
+// - echter App-Einstieg ueber /, /auth oder /login => Anmeldung verlangen
+// - Reload innerhalb geschuetzter Arbeitsseiten (/home, /tour, ...) => Session behalten
+//
+// Wichtig: Die Bereinigung passiert VOR createClient(), damit Supabase keine alte
+// Session erst kurz wiederherstellt und den Auth-Screen danach ins Dashboard
+// weiterleitet. HufiApp bleibt davon unberuehrt.
+if (ACTIVE_FLAVOR === 'hufmanager' && typeof window !== 'undefined') {
+  const entryPath = window.location.pathname.replace(/\/+$/, '') || '/';
+  const requiresFreshLogin = entryPath === '/' || entryPath === '/auth' || entryPath === '/login';
+
+  if (requiresFreshLogin) {
+    removeSupabaseAuthTokens(sessionStorage);
+    removeSupabaseAuthTokens(localStorage);
+  }
+}
+
 // HufManager: Session nur fuer die aktuelle Browser-Sitzung behalten.
-// Dadurch bleibt ein Reload waehrend der Arbeit moeglich, aber nach Schliessen
-// des Tabs/Browsers wird beim naechsten Start wieder eine Anmeldung verlangt.
+// Dadurch bleiben Reloads waehrend der Arbeit moeglich. Ein bewusster neuer
+// App-Einstieg wird durch die Regel oben wieder zur Anmeldung gefuehrt.
 // HufiApp behaelt vorerst das bestehende persistente Verhalten.
 const authStorage = ACTIVE_FLAVOR === 'hufmanager' ? sessionStorage : localStorage;
 
