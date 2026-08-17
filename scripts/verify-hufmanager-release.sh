@@ -48,6 +48,16 @@ if ! grep -qF "ACTIVE_FLAVOR === 'hufmanager' ? sessionStorage : localStorage" s
   echo "❌ ABBRUCH: HufManager-Session ist nicht auf Browser-Sitzung begrenzt." >&2
   exit 1
 fi
+if ! grep -qF 'removeSupabaseAuthTokens(sessionStorage)' src/integrations/supabase/client.ts \
+  || ! grep -qF 'removeSupabaseAuthTokens(localStorage)' src/integrations/supabase/client.ts; then
+  echo "❌ ABBRUCH: Frischer HufManager-Einstieg bereinigt alte Supabase-Sessions nicht vollständig." >&2
+  exit 1
+fi
+if ! grep -qF "entryPath === '/auth'" src/integrations/supabase/client.ts \
+  || ! grep -qF "entryPath === '/login'" src/integrations/supabase/client.ts; then
+  echo "❌ ABBRUCH: /auth bzw. /login erzwingen keinen frischen HufManager-Login." >&2
+  exit 1
+fi
 if ! grep -qF '<AuthLoadingScreen />' src/pages/Welcome.tsx; then
   echo "❌ ABBRUCH: Welcome-Redirect verwendet wieder einen separaten Loader." >&2
   exit 1
