@@ -62,40 +62,40 @@ function PwaInstallCard() {
 
   return (
     <div
-      className="mx-1 rounded-2xl border p-4"
+      className="mx-auto w-full max-w-2xl rounded-2xl border px-5 py-5 text-center shadow-sm sm:px-6"
       style={{
         background: isInstalled
           ? "#F0FDF4"
           : "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
-        borderColor: isInstalled ? "#BBF7D0" : "rgba(249,115,22,0.2)",
+        borderColor: isInstalled ? "#BBF7D0" : "rgba(249,115,22,0.35)",
       }}
     >
       {isInstalled ? (
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-green-100">
-            <Smartphone size={18} className="text-emerald-600" />
+        <div className="flex flex-col items-center justify-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-100">
+            <Smartphone size={22} className="text-emerald-600" />
           </div>
           <div>
-            <div className="text-sm font-bold text-emerald-600">App installiert</div>
-            <div className="mt-0.5 text-xs text-slate-500">
-              {FLAVOR_CONFIG.appName} läuft als Homescreen-App
+            <div className="text-lg font-bold text-emerald-700">HufManager ist installiert</div>
+            <div className="mt-1 text-sm text-slate-600">
+              Schnellzugriff direkt über deinen Startbildschirm
             </div>
           </div>
         </div>
       ) : isIOS ? (
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100">
-              <Smartphone size={18} className="text-orange-500" />
+        <div className="space-y-4">
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100">
+              <Smartphone size={22} className="text-orange-500" />
             </div>
             <div>
-              <div className="text-sm font-bold text-slate-900">App installieren</div>
-              <div className="mt-0.5 text-xs text-slate-500">
-                {FLAVOR_CONFIG.appName} zum Homescreen hinzufügen
+              <div className="text-lg font-bold text-slate-900">HufManager als App installieren</div>
+              <div className="mt-1 text-sm text-slate-600">
+                Schnellzugriff direkt vom Startbildschirm
               </div>
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="mx-auto max-w-md space-y-2 text-left">
             {[
               { icon: <Share size={14} />, text: 'Tippe auf "Teilen" in Safari' },
               { icon: "➕", text: '"Zum Home-Bildschirm" wählen' },
@@ -103,36 +103,39 @@ function PwaInstallCard() {
             ].map((step, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 rounded-xl border border-orange-100 bg-white/70 px-3 py-2"
+                className="flex items-center gap-3 rounded-xl border border-orange-100 bg-white/80 px-3 py-2.5"
               >
                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-orange-500 text-xs font-bold text-white">
                   {step.icon}
                 </div>
-                <span className="text-xs text-slate-700">{step.text}</span>
+                <span className="text-sm text-slate-700">{step.text}</span>
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100">
-            <Smartphone size={18} className="text-orange-500" />
+        <div className="flex flex-col items-center justify-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100">
+            <Smartphone size={22} className="text-orange-500" />
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-sm font-bold text-slate-900">App installieren</div>
-            <div className="mt-0.5 text-xs text-slate-500">
-              {canInstall
-                ? `${FLAVOR_CONFIG.appName} direkt auf diesem Gerät installieren`
-                : `${FLAVOR_CONFIG.appName} als App auf diesem Gerät nutzen`}
+          <div>
+            <div className="text-lg font-bold text-slate-900">HufManager als App installieren</div>
+            <div className="mt-1 text-sm text-slate-600">
+              Schnellzugriff direkt vom Startbildschirm
             </div>
           </div>
           <button
             type="button"
             onClick={canInstall ? promptInstall : handleFallbackInstall}
-            className="h-9 shrink-0 rounded-xl bg-orange-500 px-4 text-sm font-bold text-white hover:bg-orange-600"
+            className="mx-auto mt-2 h-12 min-w-[240px] rounded-xl bg-orange-500 px-6 text-base font-bold text-white shadow-md transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
           >
-            App installieren
+            Jetzt installieren
           </button>
+          {!canInstall && (
+            <p className="max-w-md text-xs leading-relaxed text-slate-500">
+              Falls der Browser keinen direkten Installationsdialog öffnet, zeigen wir dir die passende Browser-Anweisung.
+            </p>
+          )}
         </div>
       )}
     </div>
