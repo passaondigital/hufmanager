@@ -1,6 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { User, Briefcase, Mic, Shield, Smartphone, Share, Globe, MessageSquare, Scale, Calculator, Upload, LogOut, XCircle, Trash2, Loader2, Megaphone } from "lucide-react";
+import {
+  User,
+  Briefcase,
+  Mic,
+  Shield,
+  Smartphone,
+  Share,
+  Globe,
+  MessageSquare,
+  Scale,
+  Calculator,
+  Upload,
+  LogOut,
+  XCircle,
+  Trash2,
+  Loader2,
+  Megaphone,
+} from "lucide-react";
 import { useLogout } from "@/hooks/useLogout";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { HufiPermissionsSettings } from "@/components/consent/HufiPermissionsSettings";
@@ -10,8 +27,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { ACTIVE_FLAVOR, FLAVOR_CONFIG } from "@/config/appFlavor";
 import { toast } from "sonner";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 
@@ -26,10 +49,91 @@ const TAB_REDIRECTS: Record<string, string> = {
   steuer: "/management/steuer",
 };
 
+function PwaInstallCard() {
+  const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
+
+  if (!isInstalled && !isIOS && !canInstall) return null;
+
+  return (
+    <div
+      className="mx-1 rounded-2xl border p-4"
+      style={{
+        background: isInstalled
+          ? "#F0FDF4"
+          : "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
+        borderColor: isInstalled ? "#BBF7D0" : "rgba(249,115,22,0.2)",
+      }}
+    >
+      {isInstalled ? (
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-green-100">
+            <Smartphone size={18} className="text-emerald-600" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-emerald-600">App installiert</div>
+            <div className="mt-0.5 text-xs text-slate-500">
+              {FLAVOR_CONFIG.appName} läuft als Homescreen-App
+            </div>
+          </div>
+        </div>
+      ) : isIOS ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100">
+              <Smartphone size={18} className="text-orange-500" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-slate-900">App installieren</div>
+              <div className="mt-0.5 text-xs text-slate-500">
+                {FLAVOR_CONFIG.appName} zum Homescreen hinzufügen
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {[
+              { icon: <Share size={14} />, text: 'Tippe auf "Teilen" in Safari' },
+              { icon: "➕", text: '"Zum Home-Bildschirm" wählen' },
+              { icon: "✓", text: '"Hinzufügen" tippen' },
+            ].map((step, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 rounded-xl border border-orange-100 bg-white/70 px-3 py-2"
+              >
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-orange-500 text-xs font-bold text-white">
+                  {step.icon}
+                </div>
+                <span className="text-xs text-slate-700">{step.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-100">
+            <Smartphone size={18} className="text-orange-500" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-bold text-slate-900">App installieren</div>
+            <div className="mt-0.5 text-xs text-slate-500">
+              {FLAVOR_CONFIG.appName} direkt auf diesem Gerät installieren
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={promptInstall}
+            className="h-9 shrink-0 rounded-xl bg-orange-500 px-4 text-sm font-bold text-white hover:bg-orange-600"
+          >
+            Installieren
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ManagementHub() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { canInstall, isInstalled, isIOS, promptInstall } = usePWAInstall();
   const { user, role } = useAuth();
   const logout = useLogout();
   const isHufiApp = ACTIVE_FLAVOR === "hufiapp";
@@ -72,82 +176,15 @@ export default function ManagementHub() {
     <div className="space-y-6 animate-fade-in">
       <TileHubHeader icon="⚙️" title="Management" subtitle="Einstellungen & Verwaltung" />
 
-      {/* PWA Install Section */}
-      <div style={{
-        margin: "0 4px",
-        background: isInstalled ? "#F0FDF4" : "linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%)",
-        border: `1px solid ${isInstalled ? "#BBF7D0" : "rgba(249,115,22,0.2)"}`,
-        borderRadius: 20,
-        padding: "16px 18px",
-      }}>
-        {isInstalled ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#DCFCE7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Smartphone size={18} style={{ color: "#10B981" }} />
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#10B981" }}>App installiert</div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{FLAVOR_CONFIG.appName} läuft als Homescreen-App</div>
-            </div>
-          </div>
-        ) : isIOS ? (
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(249,115,22,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Smartphone size={18} style={{ color: "#F97316" }} />
-              </div>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>App installieren</div>
-                <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{FLAVOR_CONFIG.appName} zum Homescreen hinzufügen</div>
-              </div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {[
-                { icon: <Share size={14} />, text: 'Tippe auf "Teilen" in der Safari-Menüleiste' },
-                { icon: "➕", text: '"Zum Home-Bildschirm" wählen' },
-                { icon: "✓", text: '"Hinzufügen" tippen — fertig!' },
-              ].map((step, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "rgba(255,255,255,0.7)", borderRadius: 12, border: "1px solid rgba(249,115,22,0.1)" }}>
-                  <div style={{ width: 22, height: 22, borderRadius: 6, background: "#F97316", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11, fontWeight: 700 }}>
-                    {typeof step.icon === "string" ? step.icon : step.icon}
-                  </div>
-                  <span style={{ fontSize: 12, color: "#374151", lineHeight: 1.4 }}>{step.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : canInstall ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(249,115,22,0.12)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Smartphone size={18} style={{ color: "#F97316" }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#1A1A1A" }}>App installieren</div>
-              <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>{FLAVOR_CONFIG.appName} direkt auf diesem Gerät installieren</div>
-            </div>
-            <button
-              onClick={promptInstall}
-              style={{
-                height: 36, borderRadius: 12, background: "#F97316", border: "none",
-                color: "#FFFFFF", fontSize: 13, fontWeight: 700, padding: "0 16px",
-                cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
-              }}
-            >
-              Installieren
-            </button>
-          </div>
-        ) : null}
-      </div>
-
       <TileCategory title="Mein Account">
         <Tile
-          icon={<User className="w-10 h-10 text-primary" />}
+          icon={<User className="h-10 w-10 text-primary" />}
           title="Mein Profil"
           description="Profil, Zertifikate, Fotos, Kontaktdaten, Qualifikationen"
           onClick={() => navigate("/management/profil")}
         />
         <Tile
-          icon={<Shield className="w-10 h-10 text-primary" />}
+          icon={<Shield className="h-10 w-10 text-primary" />}
           title="Sicherheit"
           description="Passwort ändern, E-Mail-Adresse, Zwei-Faktor-Authentifizierung"
           onClick={() => navigate("/management/sicherheit")}
@@ -156,19 +193,19 @@ export default function ManagementHub() {
 
       <TileCategory title="Business">
         <Tile
-          icon={<Briefcase className="w-10 h-10 text-primary" />}
+          icon={<Briefcase className="h-10 w-10 text-primary" />}
           title="Business-Einstellungen"
           description="Steuer, MwSt, Rechnungen, Preisanzeige, Bankdaten"
           onClick={() => navigate("/management/business")}
         />
         <Tile
-          icon={<Globe className="w-10 h-10 text-primary" />}
+          icon={<Globe className="h-10 w-10 text-primary" />}
           title="Meine Website"
           description="Landingpage, Logo, Farben, Angebot, Impressum"
           onClick={() => navigate("/management/website")}
         />
         <Tile
-          icon={<MessageSquare className="w-10 h-10 text-primary" />}
+          icon={<MessageSquare className="h-10 w-10 text-primary" />}
           title="Kommunikation"
           description="E-Mail, WhatsApp, Benachrichtigungen, Erinnerungen"
           onClick={() => navigate("/management/kommunikation")}
@@ -177,26 +214,26 @@ export default function ManagementHub() {
 
       <TileCategory title="Recht & Steuer">
         <Tile
-          icon={<Scale className="w-10 h-10 text-primary" />}
+          icon={<Scale className="h-10 w-10 text-primary" />}
           title="Rechtliches"
           description="AGB, Datenschutz, Widerruf, Impressum"
           onClick={() => navigate("/management/rechtliches")}
         />
         <Tile
-          icon={<Calculator className="w-10 h-10 text-primary" />}
+          icon={<Calculator className="h-10 w-10 text-primary" />}
           title="Steuer"
           description="Steuernummer, MwSt, Kleinunternehmer, DATEV"
           onClick={() => navigate("/management/steuer")}
         />
         <Tile
-          icon={<Upload className="w-10 h-10 text-primary" />}
+          icon={<Upload className="h-10 w-10 text-primary" />}
           title="Abo & Lizenz"
           description="Aktueller Plan, Upgrade, Rechnungen, Kündigung"
           onClick={() => navigate("/management/abo")}
         />
         {isHufiApp && (
           <Tile
-            icon={<Mic className="w-10 h-10 text-primary" />}
+            icon={<Mic className="h-10 w-10 text-primary" />}
             title="Voice-Guthaben"
             description="Guthabenstand, Verlauf, Aufladen"
             onClick={() => navigate("/management/guthaben")}
@@ -206,99 +243,105 @@ export default function ManagementHub() {
 
       <TileCategory title="Daten & Tools">
         <Tile
-          icon={<Upload className="w-10 h-10 text-primary" />}
+          icon={<Upload className="h-10 w-10 text-primary" />}
           title="Import Center"
           description="Daten importieren aus Excel, CSV, anderen Apps"
           onClick={() => navigate("/management/import")}
         />
         <Tile
-          icon={<Megaphone className="w-10 h-10 text-primary" />}
+          icon={<Megaphone className="h-10 w-10 text-primary" />}
           title="Botschafter werden"
           description="Provision verdienen, Empfehlungslinks, Werbemittel"
           onClick={() => navigate("/management/botschafter")}
         />
       </TileCategory>
 
-      {/* Hufi-spezifische Voice-/KI-Berechtigungen gehoeren nur in HufiApp. */}
       {isHufiApp && (
         <div className="px-1">
           <HufiPermissionsSettings userId={user?.id ?? ""} role={role} />
         </div>
       )}
 
-      {/* Abmelden */}
       <div className="px-1 pb-2">
         <button
-          onClick={async () => { await logout(); }}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/5 active:bg-destructive/10 transition-colors text-sm font-medium"
+          onClick={async () => {
+            await logout();
+          }}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 px-4 py-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/5 active:bg-destructive/10"
         >
           <LogOut className="h-4 w-4" />
           Abmelden
         </button>
       </div>
 
-      {/* Danger Zone: Abo kündigen + Account löschen */}
-      <div className="px-1 pb-4 space-y-2">
+      {/* Installationsfunktion bewusst direkt unter Abmelden. */}
+      <PwaInstallCard />
+
+      <div className="space-y-2 px-1 pb-4">
         <button
           onClick={() => setCancelDialogOpen(true)}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-border text-muted-foreground hover:bg-muted/50 transition-colors text-sm font-medium"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted/50"
         >
           <XCircle className="h-4 w-4" />
           Abo kündigen
         </button>
         <button
           onClick={() => setDeleteDialogOpen(true)}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-destructive/30 text-destructive hover:bg-destructive/5 active:bg-destructive/10 transition-colors text-sm font-medium"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 px-4 py-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/5 active:bg-destructive/10"
         >
           <Trash2 className="h-4 w-4" />
           Account und alle Daten löschen
         </button>
       </div>
 
-      {/* Abo kündigen — Bestätigung */}
       <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Abo kündigen?</AlertDialogTitle>
             <AlertDialogDescription>
               Dein Abo läuft bis zum Ende des aktuellen Abrechnungszeitraums weiter.
-              {isHufiApp && <> Bestehendes Voice-Guthaben bleibt bis zum Ablaufdatum nutzbar.</>}
-              {" "}Du wirst jetzt zum CopeCart-Kundenportal weitergeleitet, wo du die
-              Kündigung selbst abschließt.
+              {isHufiApp && <> Bestehendes Voice-Guthaben bleibt bis zum Ablaufdatum nutzbar.</>}{" "}
+              Du wirst jetzt zum CopeCart-Kundenportal weitergeleitet, wo du die Kündigung selbst abschließt.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancelConfirm}>
-              Weiter zu CopeCart
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleCancelConfirm}>Weiter zu CopeCart</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Account löschen — doppelte Bestätigung */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteConfirmText(""); }}>
+      <AlertDialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) setDeleteConfirmText("");
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Bist du sicher?</AlertDialogTitle>
             <AlertDialogDescription>
-              ALLE Daten werden unwiderruflich gelöscht: Pferde, Kunden, Termine,
-              Rechnungen, Einstellungen. Diese Aktion kann nicht rückgängig gemacht
-              werden.
-              <br /><br />
+              ALLE Daten werden unwiderruflich gelöscht: Pferde, Kunden, Termine, Rechnungen, Einstellungen.
+              Diese Aktion kann nicht rückgängig gemacht werden.
+              <br />
+              <br />
               Gib zur Bestätigung <strong>LÖSCHEN</strong> ein:
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Input
             value={deleteConfirmText}
-            onChange={(e) => setDeleteConfirmText(e.target.value)}
+            onChange={(event) => setDeleteConfirmText(event.target.value)}
             placeholder="LÖSCHEN"
             autoFocus
           />
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Abbrechen</AlertDialogCancel>
             <AlertDialogAction
-              onClick={(e) => { e.preventDefault(); handleDeleteAccount(); }}
+              onClick={(event) => {
+                event.preventDefault();
+                handleDeleteAccount();
+              }}
               disabled={deleteConfirmText !== "LÖSCHEN" || deleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
