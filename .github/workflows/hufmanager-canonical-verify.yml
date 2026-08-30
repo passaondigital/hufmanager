@@ -1,0 +1,61 @@
+name: HufManager canonical verify (no deploy)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/hufmanager-canonical-verify.yml"
+      - "docs/quarantine/migrations/**"
+      - "docs/release/HUFMANAGER_**"
+      - "package.json"
+      - "package-lock.json"
+      - "release/hufmanager/**"
+      - "scripts/**hufmanager**"
+      - "scripts/check-layers.mjs"
+      - "src/**"
+      - "supabase/config.toml"
+      - "supabase/functions/get-client-tour-status/**"
+      - "supabase/functions/get-route/**"
+      - "supabase/migrations/**"
+      - "supabase/postconditions/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hufmanager-canonical-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: TypeScript, tests, gates, build, provenance
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Public, deliberately non-production CI values. The gate verifies only
+      # that the selected build-time configuration reaches the bundle.
+      VITE_SUPABASE_URL: https://ci-placeholder.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder_not_for_runtime_000000
+      VITE_APP_FLAVOR: hufmanager
+    steps:
+      - name: Checkout full canonical ancestry
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Run non-deploying HufManager verification
+        run: npm run verify:hufmanager:canonical
+
+      - name: Preserve immutable verification artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hufmanager-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7

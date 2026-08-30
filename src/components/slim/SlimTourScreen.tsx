@@ -514,13 +514,13 @@ export function SlimTourScreen() {
         <div className="grid min-h-[calc(100vh-11rem)] overflow-hidden rounded-2xl border border-[var(--hm-border)] bg-[var(--hm-surface)] shadow-[var(--hm-shadow-card)] xl:grid-cols-[minmax(0,1fr)_23rem]">
           <section className="relative min-h-[31rem] overflow-hidden xl:min-h-full">
             <SlimRouteMap stops={orderedStops} routeLine={routeLine} selectedId={nextStop?.id ?? null} currentPosition={liveEta.position} />
-            <div className="pointer-events-none absolute left-3 top-3 z-[500] flex flex-wrap gap-2 sm:left-4 sm:top-4">
+            <div className="pointer-events-none absolute left-3 top-3 z-tour flex flex-wrap gap-2 sm:left-4 sm:top-4">
               <MapBadge icon={Route} value={routeDistance == null ? "Route offen" : `${routeDistance.toFixed(1)} km`} />
               <MapBadge icon={Clock3} value={routeDuration == null ? "Fahrzeit offen" : `${routeDuration} Min.`} />
               <MapBadge icon={MapPin} value={`${stats.geocodedStops}/${stats.totalStops} mit Geo`} />
               {currentDelay > 0 && <MapBadge icon={AlertTriangle} value={`+${currentDelay} Min.`} />}
             </div>
-            {routeQuery.isError && <div className="absolute bottom-4 left-4 right-4 z-[500] rounded-xl border border-orange-200 bg-white/95 p-3 text-sm text-slate-700 shadow-lg dark:border-orange-900/50 dark:bg-[#1D2128] dark:text-slate-200">Die Straßenroute konnte gerade nicht aktualisiert werden. Die Stopps bleiben sichtbar.</div>}
+            {routeQuery.isError && <div className="absolute bottom-4 left-4 right-4 z-tour rounded-xl border border-orange-200 bg-white/95 p-3 text-sm text-slate-700 shadow-lg dark:border-orange-900/50 dark:bg-[#1D2128] dark:text-slate-200">Die Straßenroute konnte gerade nicht aktualisiert werden. Die Stopps bleiben sichtbar.</div>}
           </section>
 
           <aside className="flex min-h-0 flex-col border-t border-[var(--hm-border)] xl:border-l xl:border-t-0">

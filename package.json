@@ -9,9 +9,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:hufmanager:canonical": "bash scripts/build-hufmanager-canonical.sh",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "lint:hufmanager": "node scripts/lint-hufmanager-scope.mjs",
     "check:layers": "node scripts/check-layers.mjs",
+    "check:migrations:hufmanager": "node scripts/check-hufmanager-migration-baseline.mjs",
+    "scan:secrets:hufmanager": "node scripts/scan-hufmanager-secrets.mjs",
+    "typecheck": "tsc --noEmit",
+    "verify:hufmanager:canonical": "bash scripts/verify-hufmanager-release.sh",
     "preview": "vite preview",
     "test": "vitest run"
   },
