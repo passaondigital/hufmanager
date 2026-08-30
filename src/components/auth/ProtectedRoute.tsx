@@ -3,9 +3,9 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PaymentBlockedScreen } from "@/components/subscription/PaymentBlockedScreen";
-import { Loader2 } from "lucide-react";
 import { LimitedAccessState } from "@/components/auth/LimitedAccessState";
 import { ProductChoiceGate } from "@/components/auth/ProductChoiceGate";
+import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,11 +13,7 @@ interface ProtectedRouteProps {
 }
 
 function RouteLoader() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
+  return <AuthLoadingScreen />;
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {

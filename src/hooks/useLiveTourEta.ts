@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { calculateRoute } from "@/lib/routeService";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 type LatLng = [number, number];
 type LocationState = "idle" | "locating" | "ready" | "denied" | "unavailable" | "unsupported";
@@ -11,8 +13,10 @@ interface UseLiveTourEtaOptions {
 }
 
 export function useLiveTourEta({ enabled, destination }: UseLiveTourEtaOptions) {
+  const { user } = useAuth();
   const [position, setPosition] = useState<LatLng | null>(null);
   const [locationState, setLocationState] = useState<LocationState>("idle");
+  const lastPublishedAtRef = useRef(0);
 
   useEffect(() => {
     if (!enabled || !destination) {
@@ -31,6 +35,25 @@ export function useLiveTourEta({ enabled, destination }: UseLiveTourEtaOptions) 
       ({ coords }) => {
         setPosition([coords.latitude, coords.longitude]);
         setLocationState("ready");
+
+        const now = Date.now();
+        if (user?.id && now - lastPublishedAtRef.current >= 30_000) {
+          lastPublishedAtRef.current = now;
+          void supabase
+            .from("daily_tours")
+            .update({
+              live_lat: coords.latitude,
+              live_lng: coords.longitude,
+              live_accuracy: coords.accuracy,
+              live_location_at: new Date(now).toISOString(),
+            } as any)
+            .eq("provider_id", user.id)
+            .eq("status", "active")
+            .is("tour_ended_at", null)
+            .then(({ error }) => {
+              if (error) console.warn("Live tour position could not be published", { code: error.code });
+            });
+        }
       },
       (error) => {
         setPosition(null);
@@ -44,7 +67,27 @@ export function useLiveTourEta({ enabled, destination }: UseLiveTourEtaOptions) 
     );
 
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [enabled, destination?.[0], destination?.[1]]);
+  }, [enabled, destination?.[0], destination?.[1], user?.id]);
+
+  // Remove the ephemeral position when the tour is no longer active. This is
+  // intentionally not a breadcrumb/history log: one current point is kept.
+  useEffect(() => {
+    if (enabled || !user?.id) return;
+    lastPublishedAtRef.current = 0;
+    void supabase
+      .from("daily_tours")
+      .update({
+        live_lat: null,
+        live_lng: null,
+        live_accuracy: null,
+        live_location_at: null,
+      } as any)
+      .eq("provider_id", user.id)
+      .not("live_location_at", "is", null)
+      .then(({ error }) => {
+        if (error) console.warn("Live tour position could not be cleared", { code: error.code });
+      });
+  }, [enabled, user?.id]);
 
   const stablePosition = useMemo<LatLng | null>(() => {
     if (!position) return null;

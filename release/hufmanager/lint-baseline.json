@@ -1,0 +1,59 @@
+{
+  "baseCommit": "dd7d7faaddc6d10dc6b15d08449986ecaf93d56f",
+  "scope": [
+    "src/components/auth/AuthLoadingScreen.tsx",
+    "src/components/auth/ProductChoiceGate.tsx",
+    "src/components/auth/ProtectedRoute.tsx",
+    "src/components/client/ClientAppLayout.tsx",
+    "src/components/client/ProviderTourStatusWidget.tsx",
+    "src/components/slim/HufManagerSlimShell.tsx",
+    "src/components/slim/SlimTourScreen.tsx",
+    "src/components/slim/TourArrivalControl.tsx",
+    "src/components/slim/TourLiveEditControl.tsx",
+    "src/components/slim/slimTourUtils.test.ts",
+    "src/components/slim/slimTourUtils.ts",
+    "src/components/ui/select.tsx",
+    "src/hooks/useLiveTourEta.ts",
+    "src/integrations/supabase/client.ts",
+    "src/lib/pushNotificationService.ts",
+    "src/main.tsx",
+    "src/pages/Auth.tsx",
+    "src/pages/ClientHome.tsx",
+    "src/pages/ManagementHub.tsx",
+    "src/pages/Tour.tsx",
+    "src/pages/Welcome.tsx",
+    "supabase/functions/get-client-tour-status/index.ts",
+    "supabase/functions/get-route/index.ts"
+  ],
+  "allowances": {
+    "src/components/slim/SlimTourScreen.tsx": {
+      "2:@typescript-eslint/no-explicit-any": 9
+    },
+    "src/components/slim/TourArrivalControl.tsx": {
+      "2:@typescript-eslint/no-explicit-any": 7
+    },
+    "src/components/slim/TourLiveEditControl.tsx": {
+      "2:@typescript-eslint/no-explicit-any": 2,
+      "1:react-hooks/exhaustive-deps": 1
+    },
+    "src/hooks/useLiveTourEta.ts": {
+      "2:@typescript-eslint/no-explicit-any": 2,
+      "1:react-hooks/exhaustive-deps": 4
+    },
+    "src/lib/pushNotificationService.ts": {
+      "2:@typescript-eslint/no-explicit-any": 1
+    },
+    "src/pages/Auth.tsx": {
+      "2:@typescript-eslint/no-explicit-any": 3
+    },
+    "src/pages/ClientHome.tsx": {
+      "1:react-hooks/exhaustive-deps": 1
+    },
+    "supabase/functions/get-client-tour-status/index.ts": {
+      "2:@typescript-eslint/no-explicit-any": 8
+    },
+    "supabase/functions/get-route/index.ts": {
+      "2:@typescript-eslint/no-explicit-any": 10
+    }
+  }
+}

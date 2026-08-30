@@ -60,7 +60,7 @@ else
   fail "Whisper STT (5000/transcribe) — HTTP $WHISPER_CODE"
 fi
 
-OLLAMA_SECRET="05399052e9855534c69b1a3389071d35ae5ca4c6"
+OLLAMA_SECRET="${HUFI_OLLAMA_PROXY_SECRET:-}"
 
 echo ""
 echo "▶ nginx Proxys (HTTPS)"
@@ -73,25 +73,36 @@ else
   fail "Ollama-Proxy NICHT gesichert (HTTP $OLLAMA_NO_SECRET ohne Secret)"
 fi
 
-# Ollama mit Secret → muss 200 sein
-check_http "Ollama-Proxy mit Secret" \
-  "https://127.0.0.1/api/ollama/api/tags" \
-  -k -H "Host: hufiapp.de" -H "x-ollama-secret: $OLLAMA_SECRET"
+# Der authentifizierte Test läuft nur mit einer zur Laufzeit injizierten
+# SecretRef. Der Schlüssel darf nicht im Repository oder in Logs stehen.
+if [[ -n "$OLLAMA_SECRET" ]]; then
+  check_http "Ollama-Proxy mit Secret" \
+    "https://127.0.0.1/api/ollama/api/tags" \
+    -k -H "Host: hufiapp.de" -H "x-ollama-secret: $OLLAMA_SECRET"
+else
+  warn "Ollama-Proxy mit Secret — übersprungen (HUFI_OLLAMA_PROXY_SECRET nicht gesetzt)"
+fi
 
 check_http "TTS via nginx HTTPS" \
   "https://127.0.0.1/api/local-tts" -k -H "Host: hufiapp.de" -X POST
 
 echo ""
-echo "▶ Ollama Chat Test (mit Secret)"
-CHAT_CODE=$(curl -s -k -o /tmp/hufi_chat_test.txt -w "%{http_code}" \
-  -H "Host: hufiapp.de" \
-  -H "Content-Type: application/json" \
-  -H "x-ollama-secret: $OLLAMA_SECRET" \
-  https://127.0.0.1/api/ollama/api/chat \
-  -d '{"model":"hufiai-fast","messages":[{"role":"user","content":"Antworte nur mit: OK"}],"stream":false}' 2>/dev/null || echo "000")
+echo "▶ Ollama Chat Test (mit SecretRef)"
+if [[ -n "$OLLAMA_SECRET" ]]; then
+  CHAT_CODE=$(curl -s -k -o /tmp/hufi_chat_test.txt -w "%{http_code}" \
+    -H "Host: hufiapp.de" \
+    -H "Content-Type: application/json" \
+    -H "x-ollama-secret: $OLLAMA_SECRET" \
+    https://127.0.0.1/api/ollama/api/chat \
+    -d '{"model":"hufiai-fast","messages":[{"role":"user","content":"Antworte nur mit: OK"}],"stream":false}' 2>/dev/null || echo "000")
+elif [[ -z "$OLLAMA_SECRET" ]]; then
+  CHAT_CODE="SKIP"
+fi
 
-if [[ "$CHAT_CODE" == "200" ]]; then
-  RESPONSE=$(cat /tmp/hufi_chat_test.txt | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('message',{}).get('content','?')[:40])" 2>/dev/null || echo "?")
+if [[ "$CHAT_CODE" == "SKIP" ]]; then
+  warn "Ollama Chat — übersprungen (SecretRef nicht gesetzt)"
+elif [[ "$CHAT_CODE" == "200" ]]; then
+  RESPONSE=$(python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('message',{}).get('content','?')[:40])" < /tmp/hufi_chat_test.txt 2>/dev/null || echo "?")
   ok "Ollama Chat — Antwort: $RESPONSE"
 else
   fail "Ollama Chat — HTTP $CHAT_CODE"

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useProductMembership } from "@/hooks/useProductMembership";
 import type { ProductKey } from "@/lib/product-membership";
+import { AuthLoadingScreen } from "@/components/auth/AuthLoadingScreen";
 
 interface ProductChoiceGateProps {
   userId: string;
@@ -15,17 +16,11 @@ export function ProductChoiceGate({ userId, onReady, children }: ProductChoiceGa
   const { resolution, loading, error, saveChoice } = useProductMembership(userId);
   const [savingProduct, setSavingProduct] = useState<ProductKey | null>(null);
 
+  // Produktpruefung ist Teil des Startup-Lifecycles. Kein eigener sichtbarer
+  // Zwischenbildschirm mehr: Auth/Rolle/Profil/Produkt bleiben fuer den Nutzer
+  // ein einziger stabiler Startzustand.
   if (loading && resolution === "resolving") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center px-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-6 text-center">
-            <div className="mx-auto mb-4 h-10 w-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-            <p className="text-sm text-muted-foreground">Produktzugang wird geprüft...</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    return <AuthLoadingScreen />;
   }
 
   if (resolution === "unavailable" || resolution === "active") {
