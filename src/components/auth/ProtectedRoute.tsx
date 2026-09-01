@@ -76,6 +76,15 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <LimitedAccessState onSignOut={signOut} />;
   }
 
+  // Mission Control is an administration surface, not a product membership.
+  // Keep admins out of HufManager/HufiApp product-choice and subscription gates.
+  if (role === "admin") {
+    if (allowedRoles && !allowedRoles.includes("admin")) {
+      return <Navigate to="/admin/mission-control" replace />;
+    }
+    return <>{children}</>;
+  }
+
   return (
     <ProductChoiceGate userId={user.id} onReady={(readyChildren) => readyChildren}>
       <ResolvedProtectedRoute role={role} allowedRoles={allowedRoles}>{children}</ResolvedProtectedRoute>
@@ -104,9 +113,6 @@ function ResolvedProtectedRoute({ children, allowedRoles, role }: ProtectedRoute
     // Redirect based on role
     if (role === "client") {
       return <Navigate to="/client-home" replace />;
-    }
-    if (role === "admin") {
-      return <Navigate to="/admin/mission-control" replace />;
     }
     if (role === "employee") {
       return <Navigate to="/employee" replace />;
