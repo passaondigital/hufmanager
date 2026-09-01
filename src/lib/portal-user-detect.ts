@@ -33,7 +33,7 @@ export function getPostLoginPath(
   }
 
   const roleToPath: Record<string, string> = {
-    admin: "/home",
+    admin: "/admin/mission-control",
     provider: "/home",
     employee: "/employee",
     partner: "/partner-home",
