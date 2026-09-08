@@ -141,10 +141,14 @@ serve(async (req: Request): Promise<Response> => {
   try {
     const rawBody = await req.text();
     const receivedSignature = req.headers.get("x-copecart-signature") ?? "";
-    const sharedSecret = Deno.env.get("COPECART_IPN_PASSWORD");
+    // Keep HufiDataCore isolated from the legacy HufManager CopeCart webhook.
+    // During rollout we fall back to the legacy secret so deployment is safe
+    // before COPECART_DATACORE_SECRET is created in the Supabase dashboard.
+    const sharedSecret = Deno.env.get("COPECART_DATACORE_SECRET")
+      || Deno.env.get("COPECART_IPN_PASSWORD");
 
     if (!sharedSecret) {
-      console.error("[hufi-data-core][copecart] COPECART_IPN_PASSWORD missing");
+      console.error("[hufi-data-core][copecart] no CopeCart DataCore secret configured");
       return errorResponse(500, "Server configuration error");
     }
 
