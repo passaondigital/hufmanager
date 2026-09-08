@@ -41,8 +41,14 @@ serve(async (req: Request) => {
 
     // Auth check - must be admin or service_role
     const authHeader = req.headers.get("Authorization");
-    if (authHeader && !authHeader.includes(supabaseServiceKey)) {
-      const token = authHeader.replace("Bearer ", "");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    if (token !== supabaseServiceKey) {
       const { data: { user }, error: authError } = await supabase.auth.getUser(token);
       if (authError || !user) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {

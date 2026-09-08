@@ -10,7 +10,28 @@
 BEGIN;
 
 DO $$
+DECLARE
+  handle_new_user_definition text;
 BEGIN
+  SELECT pg_get_functiondef(p.oid)
+  INTO handle_new_user_definition
+  FROM pg_proc p
+  JOIN pg_namespace n ON n.oid = p.pronamespace
+  WHERE n.nspname = 'public' AND p.proname = 'handle_new_user';
+
+  IF handle_new_user_definition IS NULL THEN
+    RAISE EXCEPTION 'FAIL: handle_new_user is missing';
+  END IF;
+
+  IF handle_new_user_definition ~* 'requested_role[[:space:]]*=[[:space:]]*''admin'''
+     OR handle_new_user_definition ~* 'requested_role[[:space:]]*IN[^;]*''admin''' THEN
+    RAISE EXCEPTION 'FAIL: handle_new_user still permits admin from raw_user_meta_data';
+  END IF;
+
+  IF handle_new_user_definition NOT ILIKE '%raw_app_meta_data%role%' THEN
+    RAISE EXCEPTION 'FAIL: handle_new_user has no trusted raw_app_meta_data role path';
+  END IF;
+
   IF has_function_privilege('anon', 'public.search_horse_by_readable_id(text)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: anon can execute search_horse_by_readable_id';
   END IF;

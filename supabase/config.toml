@@ -118,7 +118,7 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.admin-notifications]
-verify_jwt = false
+verify_jwt = true
 
 [functions.send-admin-invoice]
 verify_jwt = true
@@ -127,10 +127,10 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.auto-generate-invoices]
-verify_jwt = false
+verify_jwt = true
 
 [functions.onboard-provider]
-verify_jwt = false
+verify_jwt = true
 
 [functions.legal-change-reminders]
 verify_jwt = false

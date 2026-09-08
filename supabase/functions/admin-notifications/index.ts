@@ -127,10 +127,19 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // For database webhooks, verify service role key
-    if (authHeader) {
+    // Database webhooks use the service role. Direct callers must be a real
+    // authenticated admin; an absent header or the public anon key is never
+    // sufficient for an admin notification/mail relay.
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    {
       const token = authHeader.replace("Bearer ", "");
-      if (token !== supabaseServiceKey && token !== Deno.env.get("SUPABASE_ANON_KEY")) {
+      if (token !== supabaseServiceKey) {
         // Validate JWT if it's not the service key
         const supabase = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
           global: { headers: { Authorization: authHeader } },
@@ -139,6 +148,19 @@ serve(async (req) => {
         if (error || !data?.user) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const { data: adminRole, error: roleError } = await createClient(supabaseUrl, supabaseServiceKey)
+          .from("user_roles")
+          .select("user_id")
+          .eq("user_id", data.user.id)
+          .eq("role", "admin")
+          .maybeSingle();
+        if (roleError || !adminRole) {
+          return new Response(JSON.stringify({ error: "Admin required" }), {
+            status: 403,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }

@@ -178,6 +178,35 @@ Expected breaking impact:
 | --- | --- | --- |
 | `anon_security_definer_function_executable` | PRODUCTION_REQUIRED | Default PUBLIC execute on SECURITY DEFINER can bypass RLS |
 | `authenticated_security_definer_function_executable` | PRODUCTION_REQUIRED | Authenticated users still must pass relationship/product checks |
+
+## Lokaler P0-Block 2026-09-08
+
+Im Repo vorbereitet und lokal statisch geprüft, **nicht auf Production angewendet**:
+
+- `handle_new_user` akzeptiert `admin`, `employee` und `partner` nur noch aus
+  vertrauenswürdigem `raw_app_meta_data`; frei manipulierbares
+  `raw_user_meta_data` kann keine Admin-Rolle erzeugen.
+- `admin-notifications`, `auto-generate-invoices` und `onboard-provider` sind
+  in `supabase/config.toml` auf `verify_jwt = true` gestellt.
+- Die drei Edge Functions verweigern fehlende Authentifizierung; direkte
+  Benutzeraufrufe benötigen zusätzlich die Admin-Rolle, Service-Role-Aufrufe
+  bleiben für interne Scheduler/Webhooks möglich.
+- Der lokale negative Test prüft zusätzlich den Auth-Trigger und die
+  privilegierten RPC-Ausführungsrechte.
+
+Verifikation:
+
+| Check | Ergebnis |
+| --- | --- |
+| `git diff --check` | PASS |
+| `npm run check:layers` | PASS |
+| `npm run scan:secrets:hufmanager` | PASS |
+| `supabase db lint --local` | BLOCKED: kein lokaler Postgres-Container erreichbar |
+| Live- oder Production-Migration | NICHT AUSGEFÜHRT |
+
+Offen vor Production: Migration in einer kontrollierten Datenbank anwenden,
+SQL-Negativtests mit echten Rollen ausführen, Edge-Function-Deploy separat
+prüfen und die Scheduler/Webhook-Aufrufer gegen die neue JWT-Grenze verifizieren.
 | Leaked password protection disabled | RECOMMENDED | Auth hardening for production; enable after confirming Auth settings and user impact |
 | `pg_net` extension in public schema | NEEDS_REVIEW | Extension placement should be verified; moving can impact existing jobs/functions |
 
