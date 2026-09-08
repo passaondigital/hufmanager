@@ -102,6 +102,13 @@ HufManager Slim ist ein eigenstaendiges, schlankes HufManager-Produkt. Dieser Re
 - Der Slim-Fokus bleibt mobil.
 - Kritische Eingaben sollten nicht still verschwinden.
 - Auto-Save/Draft-/Retry-Verhalten ist dort relevant, wo Dokumentation und Fotos unterwegs entstehen.
+- `useFormDraft` speichert jetzt ein versioniertes Envelope mit Route,
+  Datensatz, Schritt, Tab und Sektion; Schlüssel können über `userId`
+  benutzerspezifisch isoliert werden.
+- `visibilitychange` und `pagehide` schreiben den letzten Zustand vor
+  Android-Suspend/Backgrounding. Löschen erfolgt weiterhin nur über
+  `clearDraft` nach erfolgreichem Save oder `discardDraft` nach ausdrücklichem
+  Verwerfen.
 
 ## NOTIFICATIONS
 
