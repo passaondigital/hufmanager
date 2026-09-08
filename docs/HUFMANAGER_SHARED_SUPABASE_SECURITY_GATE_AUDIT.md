@@ -274,10 +274,23 @@ Live tests still required:
 ### P0 Correction Pass 2026-09-08
 
 - `get_admin_auth_metadata()` wurde mit der tatsächlich vorhandenen No-Arg-Signatur in den Grant- und Negativtests erfasst; eine historische UUID-Überladung wird, falls vorhanden, ebenfalls geprüft.
-- Für die im P0-Gate behandelten Funktionen werden PUBLIC, anon und authenticated explizit entzogen oder gewährt; service_role wird für die vorgesehenen internen/privilegierten RPCs explizit geprüft.
+- Grant-Klassifikation: Trigger-/Helper-Funktionen A (kein direkter Grant), Admin-RPCs B (`admin_repair_user_role`, `get_admin_auth_metadata`), ownership-geprüfte Auth-RPCs C (Cascade/Delete, EQID-Suche, Invoice-RPC), service_role D als expliziter interner Grant. Bei B/C ist `authenticated` nur der Transportzugriff; die Funktion selbst muss `auth.uid()` serverseitig prüfen.
+- Für die im P0-Gate behandelten Funktionen werden PUBLIC, anon, authenticated und service_role explizit geprüft. Die Negativtests verlangen bei den B/C-Funktionen daher keinen widersprüchlichen Authenticated-REVOKE mehr, sondern prüfen zusätzlich die Auth-/Ownership-Guards im Funktionsbody.
 - `create_invoice_with_items(jsonb,jsonb)` erzwingt Provider-/Client-/Pferd-Zugehörigkeit, positive Mengen, nichtnegative Preise, serverseitige Positionssummen und atomaren Rollback.
 - Direkte negative RPC-Tests für fremde IDs, manipulierte Summen und negative Werte liegen in `scripts/invoice-atomicity-negative-tests.sql`.
 - Lokale DB-/Live-Grants konnten in diesem Lauf nicht ausgeführt werden: Docker/Local Postgres war nicht erreichbar. Production bleibt unverändert; die Migration ist nur vorbereitet.
+
+| Function | PUBLIC | anon | authenticated | service_role | Body Auth Check | Begründung |
+|---|---:|---:|---:|---:|---|---|
+| `handle_new_user()` | Nein | Nein | Nein | Nein | Auth-Trigger | Kein direkter RPC |
+| `generate_random_id(text)` | Nein | Nein | Nein | Nein | Trigger/helper | Kein direkter RPC |
+| `admin_repair_user_role(uuid,text,uuid,text)` | Nein | Nein | Ja | Ja | `is_admin(auth.uid())` | Admin-RPC, UI benötigt Authenticated-Transport |
+| `delete_client_cascade(uuid)` | Nein | Nein | Ja | Ja | Provider-Zugriff auf Client | Ownership-/Provider-RPC |
+| `delete_provider_cascade(uuid)` | Nein | Nein | Ja | Ja | Selbstlöschung oder Admin | Ownership-/Admin-RPC |
+| `delete_horse_safe(uuid)` | Nein | Nein | Ja | Ja | Owner/Provider-Zugriff | Ownership-/Provider-RPC |
+| `get_admin_auth_metadata()` | Nein | Nein | Ja | Ja | `is_admin(auth.uid())` | Admin-RPC |
+| `search_horse_by_readable_id(text)` | Nein | Nein | Ja | Ja | Owner/Provider/Partner/Admin | Beziehungsgeprüfte Suche |
+| `create_invoice_with_items(jsonb,jsonb)` | Nein | Nein | Ja | Ja | Auth + Provider/Tenant/Integrität | Atomarer Business-RPC |
 
 Status: `BLOCKED`
 

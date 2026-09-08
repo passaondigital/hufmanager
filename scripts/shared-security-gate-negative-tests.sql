@@ -42,6 +42,9 @@ BEGIN
   IF NOT has_function_privilege('authenticated', 'public.search_horse_by_readable_id(text)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: authenticated cannot execute hardened search_horse_by_readable_id';
   END IF;
+  IF NOT has_function_privilege('service_role', 'public.search_horse_by_readable_id(text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: service_role cannot execute search_horse_by_readable_id';
+  END IF;
 
   IF has_function_privilege('anon', 'public.get_user_role(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: anon can execute get_user_role';
@@ -51,32 +54,73 @@ BEGIN
     RAISE EXCEPTION 'FAIL: anon can execute admin_repair_user_role';
   END IF;
 
-  IF has_function_privilege('authenticated', 'public.admin_repair_user_role(uuid,text,uuid,text)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'FAIL: authenticated can execute admin_repair_user_role';
+  IF NOT has_function_privilege('authenticated', 'public.admin_repair_user_role(uuid,text,uuid,text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated cannot reach admin_repair_user_role RPC';
   END IF;
 
   IF has_function_privilege('anon', 'public.delete_client_cascade(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: anon can execute delete_client_cascade';
   END IF;
 
-  IF has_function_privilege('authenticated', 'public.delete_client_cascade(uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'FAIL: authenticated can execute delete_client_cascade';
+  IF NOT has_function_privilege('authenticated', 'public.delete_client_cascade(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated cannot reach delete_client_cascade RPC';
   END IF;
 
   IF has_function_privilege('anon', 'public.delete_provider_cascade(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: anon can execute delete_provider_cascade';
   END IF;
 
-  IF has_function_privilege('authenticated', 'public.delete_provider_cascade(uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'FAIL: authenticated can execute delete_provider_cascade';
+  IF NOT has_function_privilege('authenticated', 'public.delete_provider_cascade(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated cannot reach delete_provider_cascade RPC';
   END IF;
 
   IF has_function_privilege('anon', 'public.delete_horse_safe(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: anon can execute delete_horse_safe';
   END IF;
 
-  IF has_function_privilege('authenticated', 'public.delete_horse_safe(uuid)', 'EXECUTE') THEN
-    RAISE EXCEPTION 'FAIL: authenticated can execute delete_horse_safe';
+  IF NOT has_function_privilege('authenticated', 'public.delete_horse_safe(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated cannot reach delete_horse_safe RPC';
+  END IF;
+  IF NOT has_function_privilege('service_role', 'public.admin_repair_user_role(uuid,text,uuid,text)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.delete_client_cascade(uuid)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.delete_provider_cascade(uuid)', 'EXECUTE')
+     OR NOT has_function_privilege('service_role', 'public.delete_horse_safe(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: service_role grant missing for privileged RPC';
+  END IF;
+
+  -- EXECUTE is intentionally present for the authenticated RPC clients above;
+  -- the security boundary is the function body. These source assertions make
+  -- the grant model and the fail-closed body requirement agree.
+  IF (SELECT pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.oid = 'public.admin_repair_user_role(uuid,text,uuid,text)'::regprocedure)
+      NOT ILIKE '%is_admin%' OR
+     (SELECT pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.oid = 'public.admin_repair_user_role(uuid,text,uuid,text)'::regprocedure)
+      NOT ILIKE '%auth.uid()%' THEN
+    RAISE EXCEPTION 'FAIL: admin_repair_user_role has no auth.uid admin check';
+  END IF;
+  IF (SELECT pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.oid = 'public.delete_client_cascade(uuid)'::regprocedure)
+      NOT ILIKE '%auth.uid()%' THEN
+    RAISE EXCEPTION 'FAIL: delete_client_cascade has no caller check';
+  END IF;
+  IF (SELECT pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.oid = 'public.delete_provider_cascade(uuid)'::regprocedure)
+      NOT ILIKE '%auth.uid()%' THEN
+    RAISE EXCEPTION 'FAIL: delete_provider_cascade has no caller check';
+  END IF;
+  IF (SELECT pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.oid = 'public.delete_horse_safe(uuid)'::regprocedure)
+      NOT ILIKE '%auth.uid()%' THEN
+    RAISE EXCEPTION 'FAIL: delete_horse_safe has no caller check';
+  END IF;
+  IF (SELECT pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.oid = 'public.get_admin_auth_metadata()'::regprocedure)
+      NOT ILIKE '%is_admin%' OR
+     (SELECT pg_get_functiondef(p.oid) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+      WHERE n.nspname = 'public' AND p.oid = 'public.create_invoice_with_items(jsonb,jsonb)'::regprocedure)
+      NOT ILIKE '%auth.uid()%' THEN
+    RAISE EXCEPTION 'FAIL: admin metadata or invoice RPC body guard is missing';
   END IF;
 
   IF has_function_privilege('anon', 'public.get_horse_medical_data(uuid)', 'EXECUTE') THEN

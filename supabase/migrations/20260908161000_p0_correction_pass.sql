@@ -196,6 +196,17 @@ BEGIN
 END;
 $$;
 
+-- Function classes:
+--   A trigger/helper: no direct caller grant (handle_new_user, ID generators,
+--     trigger guards, random-id helper).
+--   B admin-only authenticated API: the role may invoke the RPC, but the body
+--     must authorize auth.uid() as admin (repair and auth metadata).
+--   C ownership-checked authenticated API: the body must authorize the caller
+--     against the target entity (cascade/delete, horse search, invoice RPC).
+--   D service_role/internal: service_role is granted explicitly where an
+--     internal caller needs the function; this is not a substitute for body
+--     authorization when auth.uid() is required.
+--
 -- Exact signatures matter: the live function is get_admin_auth_metadata() with
 -- no argument. The uuid overload is revoked too if a historical deployment
 -- still has it; no overload is silently skipped.
