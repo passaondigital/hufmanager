@@ -570,26 +570,35 @@ export function CreateInvoiceModal({
         finalInvoiceNumber = await generateNextNumber();
       }
       
-      // Step 2: Create the invoice
-      const { data: insertedInvoice, error: invoiceError } = await supabase
-        .from("invoices")
-        .insert({
-          client_id: formData.client_id,
-          provider_id: user?.id,
-          horse_id: formData.horse_id || null,
-          invoice_number: finalInvoiceNumber,
-          issue_date: formData.issue_date,
-          due_date: formData.due_date || null,
-          total_amount: calculatedTotal,
-          status: formData.status,
-          payment_method: formData.payment_method || null,
-          customer_type: formData.customer_type,
-          notes: formData.notes || null,
-          signature_url: signatureDataUrl,
-          payment_status: paymentStatus,
-        })
-        .select()
-        .single();
+      // Header + all positions are written atomically on the server. A failed
+      // position insert must never leave an incomplete invoice behind.
+      const { data: insertedInvoice, error: invoiceError } = await supabase.rpc(
+        "create_invoice_with_items",
+        {
+          p_invoice: {
+            client_id: formData.client_id,
+            provider_id: user?.id,
+            horse_id: formData.horse_id || null,
+            invoice_number: finalInvoiceNumber,
+            issue_date: formData.issue_date,
+            due_date: formData.due_date || null,
+            total_amount: calculatedTotal,
+            status: formData.status,
+            payment_method: formData.payment_method || null,
+            customer_type: formData.customer_type,
+            notes: formData.notes || null,
+            signature_url: signatureDataUrl,
+            payment_status: paymentStatus,
+          },
+          p_items: lineItems.map(item => ({
+            inventory_item_id: item.inventory_item_id,
+            title: item.title,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.quantity * item.unit_price,
+          })),
+        },
+      );
 
       if (invoiceError) {
         throw new Error(`Rechnung erstellen fehlgeschlagen: ${invoiceError.message}`);
@@ -604,30 +613,6 @@ export function CreateInvoiceModal({
           .from("invoices")
           .update({ payment_link: fullPaymentLink })
           .eq("id", insertedInvoice.id);
-      }
-
-      // Step 2: Create invoice_items for each line item
-      const invoiceItemsToInsert = lineItems.map(item => ({
-        invoice_id: insertedInvoice.id,
-        inventory_item_id: item.inventory_item_id,
-        title: item.title,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.quantity * item.unit_price,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from("invoice_items")
-        .insert(invoiceItemsToInsert);
-
-      if (itemsError) {
-        console.error("Failed to insert invoice items:", itemsError);
-        // Don't throw - invoice was created, just log the error
-        toast({
-          title: "Warnung",
-          description: "Rechnung erstellt, aber Positionen konnten nicht gespeichert werden.",
-          variant: "destructive",
-        });
       }
 
       // Step 3: Deduct stock for each line item with inventory_item_id

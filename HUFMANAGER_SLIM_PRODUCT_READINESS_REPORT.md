@@ -85,6 +85,11 @@ HufManager Slim ist ein eigenstaendiges, schlankes HufManager-Produkt. Dieser Re
 
 - Kund*innen-Rechnungen sind ein eigener Geschäftsfall und dürfen nicht mit SaaS-Billing vermischt werden.
 - Die bestehende Rechnungslogik im Produkt bleibt davon getrennt.
+- Der zentrale UI-Erzeugungspfad schreibt Rechnungskopf und Positionen jetzt
+  über `create_invoice_with_items` in einer DB-Transaktion. Ein Fehler beim
+  Positionen-Insert rollt den Kopf mit zurück.
+- Lagerabzug bleibt bis zum separaten Inventory-Atomicity-Block ein eigener
+  Folgepfad und ist deshalb noch kein vollständiger Race-Condition-Nachweis.
 
 ## ONBOARDING
 
