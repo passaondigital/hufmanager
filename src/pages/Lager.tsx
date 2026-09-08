@@ -58,6 +58,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { SuppliersTab, PurchasingTab, RecipesTab } from "@/components/lager";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 interface GlobalProduct {
   id: string;
@@ -93,14 +94,19 @@ export default function Lager() {
   const [inventorySearch, setInventorySearch] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
-  const [editFormData, setEditFormData] = useState({
+  const emptyEditFormData = {
     current_stock: 0,
     price_sell: "",
     price_purchase: "",
     tax_rate: "19",
     min_stock: 0,
     notes: "",
-  });
+  };
+  const { value: editFormData, setValue: setEditFormData, hasDraft: hasInventoryDraft, clearDraft: clearInventoryDraft, discardDraft: discardInventoryDraft } = useFormDraft(
+    `inventory-${editingItem?.id || "new"}`,
+    emptyEditFormData,
+    { userId: user?.id, route: "/lager", tab: "inventory", section: "inventory-form" },
+  );
 
   // Fetch global products (catalog)
   const { data: catalogProducts = [], isLoading: catalogLoading } = useQuery({
@@ -180,6 +186,7 @@ export default function Lager() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["inventory-items"] });
       toast.success("Lagerbestand aktualisiert");
+      clearInventoryDraft();
       setEditDialogOpen(false);
     },
     onError: (error) => {
@@ -858,6 +865,7 @@ export default function Lager() {
                 <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
                   Abbrechen
                 </Button>
+                {hasInventoryDraft && <Button variant="ghost" onClick={() => { discardInventoryDraft(); setEditDialogOpen(false); }}>Entwurf verwerfen</Button>}
                 <Button
                   onClick={handleSaveEdit}
                   disabled={updateInventoryMutation.isPending}

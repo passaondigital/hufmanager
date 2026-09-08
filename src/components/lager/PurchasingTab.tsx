@@ -36,6 +36,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useFormDraft } from "@/hooks/useFormDraft";
 import { subWeeks, format, parseISO, differenceInDays } from "date-fns";
 
 interface InventoryItem {
@@ -90,7 +91,13 @@ interface OrderSuggestion {
 export function PurchasingTab() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [selectedSupplier, setSelectedSupplier] = useState<string>("");
+  const { value: purchaseContext, setValue: setPurchaseContext } = useFormDraft(
+    "purchase-order-context",
+    { selectedSupplier: "" },
+    { userId: user?.id, route: "/lager", tab: "purchasing", section: "purchase-order" },
+  );
+  const selectedSupplier = purchaseContext.selectedSupplier;
+  const setSelectedSupplier = (selectedSupplier: string) => setPurchaseContext({ selectedSupplier });
   const [showSuggestions, setShowSuggestions] = useState(true);
 
   // Fetch ALL inventory items

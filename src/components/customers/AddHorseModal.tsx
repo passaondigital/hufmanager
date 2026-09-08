@@ -23,6 +23,8 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useFormDraft } from "@/hooks/useFormDraft";
 import { LocationPicker } from "@/components/LocationPicker";
 import { z } from "zod";
 import { 
@@ -63,8 +65,9 @@ interface Props {
 }
 
 export function AddHorseModal({ customerId, customerName, open, onClose }: Props) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({
+  const emptyForm = {
     name: "",
     equineType: "horse",
     breed: "",
@@ -80,7 +83,12 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
     holding_type: "",
     usage_type: "",
     height_cm: "",
-  });
+  };
+  const { value: form, setValue: setForm, hasDraft, clearDraft, discardDraft } = useFormDraft(
+    `new-horse-${customerId || "unassigned"}`,
+    emptyForm,
+    { userId: user?.id, route: "/home/kunden", recordId: customerId || undefined, step: 1, section: "horse" },
+  );
 
   const resetForm = () => {
     setForm({
@@ -129,6 +137,7 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
         title: "Pferd angelegt",
         description: `${form.name} wurde erfolgreich erstellt.`,
       });
+      clearDraft();
       resetForm();
       onClose();
     },
@@ -395,6 +404,7 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
           <Button variant="outline" onClick={onClose}>
             Abbrechen
           </Button>
+          {hasDraft && <Button variant="ghost" onClick={() => { discardDraft(); onClose(); }}>Entwurf verwerfen</Button>}
           <Button onClick={handleSubmit} disabled={createHorse.isPending}>
             {createHorse.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Pferd anlegen

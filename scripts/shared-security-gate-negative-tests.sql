@@ -51,16 +51,32 @@ BEGIN
     RAISE EXCEPTION 'FAIL: anon can execute admin_repair_user_role';
   END IF;
 
+  IF has_function_privilege('authenticated', 'public.admin_repair_user_role(uuid,text,uuid,text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated can execute admin_repair_user_role';
+  END IF;
+
   IF has_function_privilege('anon', 'public.delete_client_cascade(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: anon can execute delete_client_cascade';
+  END IF;
+
+  IF has_function_privilege('authenticated', 'public.delete_client_cascade(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated can execute delete_client_cascade';
   END IF;
 
   IF has_function_privilege('anon', 'public.delete_provider_cascade(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: anon can execute delete_provider_cascade';
   END IF;
 
+  IF has_function_privilege('authenticated', 'public.delete_provider_cascade(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated can execute delete_provider_cascade';
+  END IF;
+
   IF has_function_privilege('anon', 'public.delete_horse_safe(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: anon can execute delete_horse_safe';
+  END IF;
+
+  IF has_function_privilege('authenticated', 'public.delete_horse_safe(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated can execute delete_horse_safe';
   END IF;
 
   IF has_function_privilege('anon', 'public.get_horse_medical_data(uuid)', 'EXECUTE') THEN
@@ -93,6 +109,42 @@ BEGIN
 
   IF has_function_privilege('authenticated', 'public.protect_lifetime_accounts()', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: authenticated can directly execute protect_lifetime_accounts trigger function';
+  END IF;
+  IF has_function_privilege('service_role', 'public.handle_new_user()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: service_role can directly execute handle_new_user trigger function';
+  END IF;
+  IF has_function_privilege('service_role', 'public.generate_random_id(text)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: service_role can directly execute generate_random_id';
+  END IF;
+
+  -- The live admin metadata function has no argument. Test the exact
+  -- signature and also reject the historical uuid overload when present.
+  IF has_function_privilege('anon', 'public.get_admin_auth_metadata()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: anon can execute get_admin_auth_metadata()';
+  END IF;
+  IF NOT has_function_privilege('authenticated', 'public.get_admin_auth_metadata()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated cannot execute get_admin_auth_metadata()';
+  END IF;
+  IF to_regprocedure('public.get_admin_auth_metadata(uuid)') IS NOT NULL
+     AND has_function_privilege('anon', 'public.get_admin_auth_metadata(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: anon can execute get_admin_auth_metadata(uuid)';
+  END IF;
+  IF to_regprocedure('public.get_admin_auth_metadata(uuid)') IS NOT NULL
+     AND has_function_privilege('authenticated', 'public.get_admin_auth_metadata(uuid)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated can execute get_admin_auth_metadata(uuid)';
+  END IF;
+
+  IF has_function_privilege('anon', 'public.create_invoice_with_items(jsonb,jsonb)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: anon can execute create_invoice_with_items';
+  END IF;
+  IF NOT has_function_privilege('authenticated', 'public.create_invoice_with_items(jsonb,jsonb)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: authenticated cannot execute create_invoice_with_items';
+  END IF;
+  IF NOT has_function_privilege('service_role', 'public.create_invoice_with_items(jsonb,jsonb)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: service_role cannot execute create_invoice_with_items';
+  END IF;
+  IF NOT has_function_privilege('service_role', 'public.get_admin_auth_metadata()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL: service_role cannot execute get_admin_auth_metadata()';
   END IF;
 
   IF NOT EXISTS (

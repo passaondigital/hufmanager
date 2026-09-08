@@ -68,6 +68,7 @@ import {
   LifecycleStatus
 } from "@/components/horse-detail/types";
 import { exportClientData } from "@/lib/customerExport";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 const Kunden = () => {
   const { user } = useAuth();
@@ -91,7 +92,7 @@ const Kunden = () => {
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [showInviteByEmailModal, setShowInviteByEmailModal] = useState(false);
   const [savingNewClient, setSavingNewClient] = useState(false);
-  const [newClient, setNewClient] = useState({
+  const emptyNewClient = {
     first_name: "",
     last_name: "",
     email: "",
@@ -99,7 +100,12 @@ const Kunden = () => {
     street: "",
     zip_code: "",
     city: "",
-  });
+  };
+  const { value: newClient, setValue: setNewClient, clearDraft: clearNewClientDraft } = useFormDraft(
+    "new-customer",
+    emptyNewClient,
+    { userId: user?.id, route: "/kunden", step: 1, section: "customer" },
+  );
 
   // Open modal when ?new=true
   useEffect(() => {
@@ -110,7 +116,7 @@ const Kunden = () => {
   }, [searchParams, setSearchParams]);
 
   const resetNewClientForm = () => {
-    setNewClient({ first_name: "", last_name: "", email: "", phone: "", street: "", zip_code: "", city: "" });
+    setNewClient(emptyNewClient);
   };
 
   const handleCreateNewClient = async () => {
@@ -165,6 +171,7 @@ const Kunden = () => {
       queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
       setShowNewClientModal(false);
       resetNewClientForm();
+      clearNewClientDraft();
     } catch (err: any) {
       console.error("Error creating client:", err);
       toast({ title: "Fehler beim Anlegen", description: err.message, variant: "destructive" });

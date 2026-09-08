@@ -32,6 +32,7 @@ import { z } from "zod";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { SignaturePad } from "@/components/signature/SignaturePad";
 import { useInvoiceNumber } from "@/hooks/useInvoiceNumber";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 // Haversine formula to calculate distance between two coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -137,7 +138,12 @@ export function CreateInvoiceModal({
   
   // Inventory state
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [lineItems, setLineItems] = useState<InvoiceLineItem[]>([]);
+  const emptyLineItems: InvoiceLineItem[] = [];
+  const { value: lineItems, setValue: setLineItems, hasDraft: hasLineItemsDraft, clearDraft: clearLineItemsDraft, discardDraft: discardLineItemsDraft } = useFormDraft(
+    "new-invoice-items",
+    emptyLineItems,
+    { userId: user?.id, route: "/rechnungen", step: 2, section: "line-items" },
+  );
   const [previewLoading, setPreviewLoading] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   
@@ -145,7 +151,7 @@ export function CreateInvoiceModal({
   const [providerPaymentSettings, setProviderPaymentSettings] = useState<ProviderPaymentSettings | null>(null);
   const [paymentProducts, setPaymentProducts] = useState<PaymentProduct[]>([]);
 
-  const [formData, setFormData] = useState({
+  const emptyFormData = {
     client_id: preSelectedClientId || "",
     horse_id: preSelectedHorseId || "",
     invoice_number: "",
@@ -155,7 +161,12 @@ export function CreateInvoiceModal({
     payment_method: "" as "" | "Überweisung" | "Bar" | "PayPal" | "CopeCart",
     customer_type: "privat" as "privat" | "gewerbe" | "kleinunternehmer",
     notes: "",
-  });
+  };
+  const { value: formData, setValue: setFormData, hasDraft: hasInvoiceDraft, clearDraft: clearInvoiceDraft, discardDraft: discardInvoiceDraft } = useFormDraft(
+    "new-invoice",
+    emptyFormData,
+    { userId: user?.id, route: "/rechnungen", step: 1, section: "invoice" },
+  );
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -684,6 +695,8 @@ export function CreateInvoiceModal({
       setShowTravelCost(false);
       setTravelKm("");
       setSignatureDataUrl(null);
+      clearInvoiceDraft();
+      clearLineItemsDraft();
 
       onSuccess();
       onClose();
@@ -1289,6 +1302,7 @@ export function CreateInvoiceModal({
               <Button type="button" variant="outline" onClick={onClose}>
                 Abbrechen
               </Button>
+              {(hasInvoiceDraft || hasLineItemsDraft) && <Button type="button" variant="ghost" onClick={() => { discardInvoiceDraft(); discardLineItemsDraft(); onClose(); }}>Entwurf verwerfen</Button>}
               <Button 
                 type="button" 
                 variant="secondary" 

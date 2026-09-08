@@ -39,6 +39,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { toast as sonnerToast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
 import { addWeeks, format } from "date-fns";
@@ -49,6 +50,7 @@ import { useServicePresets } from "@/hooks/useServicePresets";
 import { useProfessionConfig } from "@/hooks/useProfessionConfig";
 import { sendTypedPush, resolveProviderDisplayName } from "@/lib/pushNotificationService";
 import { HelpTip } from "@/components/ui/HelpTip";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 const appointmentSchema = z.object({
   horseIds: z.array(z.string()).min(1, "Bitte wählen Sie mindestens ein Pferd aus"),
@@ -98,6 +100,7 @@ export function AppointmentFormModal({
   preselectedHorseId,
 }: AppointmentFormModalProps) {
   const { user } = useAuth();
+  const location = useLocation();
   const professionConfig = useProfessionConfig();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -113,7 +116,7 @@ export function AppointmentFormModal({
   const [selectionMode, setSelectionMode] = useState<"horse" | "owner">("horse");
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>("");
 
-  const [formData, setFormData] = useState({
+  const emptyFormData = {
     horseIds: [] as string[],
     time: "09:00",
     serviceType: "Barhuf",
@@ -123,7 +126,12 @@ export function AppointmentFormModal({
     isSeriesAppointment: false,
     seriesCurrent: 1,
     seriesTotal: 5,
-  });
+  };
+  const { value: formData, setValue: setFormData, hasDraft, clearDraft, discardDraft } = useFormDraft(
+    `new-appointment-${selectedDate ? format(selectedDate, "yyyy-MM-dd") : "unscheduled"}`,
+    emptyFormData,
+    { userId: user?.id, route: location.pathname, step: 1, section: "appointment" },
+  );
 
   const { presets: servicePresets } = useServicePresets();
 
@@ -436,6 +444,7 @@ export function AppointmentFormModal({
 
       resetForm();
       onClose();
+      clearDraft();
     },
   });
 
@@ -1260,6 +1269,7 @@ export function AppointmentFormModal({
           <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
             Abbrechen
           </Button>
+          {hasDraft && <Button variant="ghost" onClick={() => { discardDraft(); onClose(); }} className="w-full sm:w-auto">Entwurf verwerfen</Button>}
           <Button
             onClick={handleSubmit}
             disabled={createAppointments.isPending || isUploading || formData.horseIds.length === 0}

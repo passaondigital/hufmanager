@@ -11,6 +11,7 @@ import { Loader2, Camera } from "lucide-react";
 import { z } from "zod";
 import { uploadFile, getStorageUrl } from "@/lib/storage";
 import { ensureUserProfile } from "@/lib/ensureProfile";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 // Validation schema
 const horseFormSchema = z.object({
@@ -46,7 +47,7 @@ export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHo
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({
+  const emptyForm = {
     name: '',
     nickname: '',
     breed: '',
@@ -55,7 +56,12 @@ export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHo
     color: '',
     usage: '',
     housing: '',
-  });
+  };
+  const { value: form, setValue: setForm, clearDraft } = useFormDraft(
+    `new-horse-${ownerId || "self"}`,
+    emptyForm,
+    { userId: ownerId, route: "/pferde", step: 1, section: "horse" },
+  );
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -202,6 +208,7 @@ export function CreateHorseModal({ open, onClose, onCreated, ownerId }: CreateHo
       });
       setPhotoUrl("");
       setPhotoPreview(null);
+      clearDraft();
     } catch (error: any) {
       toast({
         title: "Fehler beim Anlegen",

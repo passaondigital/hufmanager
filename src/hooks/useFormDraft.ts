@@ -60,14 +60,28 @@ export function useFormDraft<T>(key: string, defaultValue: T, options: FormDraft
   const [hasDraft, setHasDraft] = useState(() => initialEnvelope !== null);
   const latestValue = useRef(value);
   const latestMetadata = useRef(metadata);
+  const defaultValueRef = useRef(defaultValue);
+  const hydratedStorageKey = useRef(storageKey);
+
+  if (hydratedStorageKey.current !== storageKey) {
+    hydratedStorageKey.current = "";
+  }
 
   latestValue.current = value;
   latestMetadata.current = metadata;
+  defaultValueRef.current = defaultValue;
+
+  useEffect(() => {
+    const envelope = readEnvelope<T>(storageKey);
+    setValue(envelope?.value ?? defaultValueRef.current);
+    setHasDraft(envelope !== null);
+    hydratedStorageKey.current = storageKey;
+  }, [storageKey]);
 
   const persist = useCallback(() => {
-    if (!canUseStorage()) return;
+    if (!canUseStorage() || hydratedStorageKey.current !== storageKey) return;
     try {
-      if (JSON.stringify(latestValue.current) === JSON.stringify(defaultValue)) {
+      if (JSON.stringify(latestValue.current) === JSON.stringify(defaultValueRef.current)) {
         window.localStorage.removeItem(storageKey);
         setHasDraft(false);
         return;
@@ -83,17 +97,17 @@ export function useFormDraft<T>(key: string, defaultValue: T, options: FormDraft
     } catch {
       // Storage quota/private-mode errors must never break the form.
     }
-  }, [defaultValue, storageKey]);
+  }, [storageKey]);
 
   useEffect(() => persist(), [value, persist]);
 
   useEffect(() => {
     const flush = () => persist();
-    window.addEventListener("visibilitychange", flush);
+    document.addEventListener("visibilitychange", flush);
     window.addEventListener("pagehide", flush);
     return () => {
       flush();
-      window.removeEventListener("visibilitychange", flush);
+      document.removeEventListener("visibilitychange", flush);
       window.removeEventListener("pagehide", flush);
     };
   }, [persist]);
@@ -113,9 +127,9 @@ export function useFormDraft<T>(key: string, defaultValue: T, options: FormDraft
 
   const discardDraft = useCallback(() => {
     if (canUseStorage()) window.localStorage.removeItem(storageKey);
-    setValue(defaultValue);
+    setValue(defaultValueRef.current);
     setHasDraft(false);
-  }, [defaultValue, storageKey]);
+  }, [storageKey]);
 
   return { value, setValue, hasDraft, clearDraft, restoreDraft, discardDraft, persist };
 }

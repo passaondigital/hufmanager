@@ -32,6 +32,7 @@ import {
   Search,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 interface Supplier {
   id: string;
@@ -70,7 +71,11 @@ export function SuppliersTab() {
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-  const [formData, setFormData] = useState<SupplierFormData>(emptyFormData);
+  const { value: formData, setValue: setFormData, hasDraft, clearDraft, discardDraft } = useFormDraft(
+    `supplier-${editingSupplier?.id || "new"}`,
+    emptyFormData,
+    { userId: user?.id, route: "/lager", tab: "suppliers", section: "supplier-form" },
+  );
 
   // Fetch suppliers with open orders count
   const { data: suppliers = [], isLoading } = useQuery({
@@ -143,6 +148,7 @@ export function SuppliersTab() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["suppliers"] });
       toast.success(editingSupplier ? "Lieferant aktualisiert" : "Lieferant hinzugefügt");
+      clearDraft();
       handleCloseDialog();
     },
     onError: (error) => {
@@ -167,7 +173,7 @@ export function SuppliersTab() {
 
   const handleOpenCreate = () => {
     setEditingSupplier(null);
-    setFormData(emptyFormData);
+    if (!hasDraft) setFormData(emptyFormData);
     setDialogOpen(true);
   };
 
@@ -187,7 +193,6 @@ export function SuppliersTab() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingSupplier(null);
-    setFormData(emptyFormData);
   };
 
   const handleSave = () => {
@@ -383,6 +388,7 @@ export function SuppliersTab() {
             <Button variant="outline" onClick={handleCloseDialog}>
               Abbrechen
             </Button>
+            {hasDraft && <Button variant="ghost" onClick={() => { discardDraft(); handleCloseDialog(); }}>Entwurf verwerfen</Button>}
             <Button onClick={handleSave} disabled={saveMutation.isPending}>
               {saveMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Speichern

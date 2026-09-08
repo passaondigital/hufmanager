@@ -271,6 +271,14 @@ Live tests still required:
 
 ## Production Gate
 
+### P0 Correction Pass 2026-09-08
+
+- `get_admin_auth_metadata()` wurde mit der tatsächlich vorhandenen No-Arg-Signatur in den Grant- und Negativtests erfasst; eine historische UUID-Überladung wird, falls vorhanden, ebenfalls geprüft.
+- Für die im P0-Gate behandelten Funktionen werden PUBLIC, anon und authenticated explizit entzogen oder gewährt; service_role wird für die vorgesehenen internen/privilegierten RPCs explizit geprüft.
+- `create_invoice_with_items(jsonb,jsonb)` erzwingt Provider-/Client-/Pferd-Zugehörigkeit, positive Mengen, nichtnegative Preise, serverseitige Positionssummen und atomaren Rollback.
+- Direkte negative RPC-Tests für fremde IDs, manipulierte Summen und negative Werte liegen in `scripts/invoice-atomicity-negative-tests.sql`.
+- Lokale DB-/Live-Grants konnten in diesem Lauf nicht ausgeführt werden: Docker/Local Postgres war nicht erreichbar. Production bleibt unverändert; die Migration ist nur vorbereitet.
+
 Status: `BLOCKED`
 
 Required before production:

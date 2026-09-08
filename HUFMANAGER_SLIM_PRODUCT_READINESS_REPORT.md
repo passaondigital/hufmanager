@@ -115,6 +115,31 @@ HufManager Slim ist ein eigenstaendiges, schlankes HufManager-Produkt. Dieser Re
   `clearDraft` nach erfolgreichem Save oder `discardDraft` nach ausdrücklichem
   Verwerfen.
 
+### P0_CORRECTION_DRAFT_RESUME_MATRIX_2026_09_08
+
+Die gemeinsame Draft-Infrastruktur ist jetzt in den realen Pilotformularen
+verdrahtet. `visibilitychange` hängt auf `document`; `pagehide` bleibt als
+zusätzlicher Browser-/PWA-Fallback auf `window`. Die Wiederherstellung erfolgt
+über die formulargebundenen Werte selbst, nicht nur über Route-/Tab-/Step-
+Metadaten. Schließen/Abbrechen verwirft keinen Draft; dafür gibt es einen
+expliziten „Entwurf verwerfen“-Pfad. Der Persistenzschlüssel ist pro User
+isoliert.
+
+| Formular | Aktuelle State-Lösung | Draft integriert? | User-scoped? | Save löscht? | Verwerfen löscht? | Reload bestanden? | Background/Foreground bestanden? |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Kunde (Slim) | `useFormDraft`, Inline-Dialog | Ja | Ja | Ja | Ja | Nicht live verifiziert | Nicht live verifiziert |
+| Pferd (Slim) | `AddHorseModal` + `useFormDraft` | Ja | Ja | Ja | Ja | Nicht live verifiziert | Nicht live verifiziert |
+| Termin / Tour | `AppointmentFormModal` + `useFormDraft` | Ja | Ja | Ja | Ja | Nicht live verifiziert | Nicht live verifiziert |
+| Rechnung | Kopf + Positionen über zwei `useFormDraft`-Scopes | Ja | Ja | Ja | Ja | Nicht live verifiziert | Nicht live verifiziert |
+| Material | Lager-Editdialog + `useFormDraft` | Ja | Ja | Ja | Ja | Nicht live verifiziert | Nicht live verifiziert |
+| Lieferant | Lieferanten-Dialog + `useFormDraft` | Ja | Ja | Ja | Ja | Nicht live verifiziert | Nicht live verifiziert |
+| Einkauf | Serverseitiger Purchase-Order-Draft plus Supplier-Kontext-Draft | Teilweise; Kontext integriert | Ja | Server-Save | Bestehende Order-Löschung prüfen | Nicht live verifiziert | Nicht live verifiziert |
+
+Die Statuswerte „Nicht live verifiziert“ sind bewusst keine Bestanden-Aussage:
+Im Workspace ist kein ausführbarer Browser-/Playwright-Lauf verfügbar und die
+lokale Supabase-Instanz war nicht erreichbar. Die Matrix ist damit für die
+Implementierungsabdeckung vollständig, aber das mobile E2E-Gate bleibt offen.
+
 ## NOTIFICATIONS
 
 - Benachrichtigungs- und Reminder-Artefakte sind vorhanden.

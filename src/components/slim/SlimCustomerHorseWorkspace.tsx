@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { useFormDraft } from "@/hooks/useFormDraft";
 
 type Customer = {
   id: string;
@@ -65,7 +66,11 @@ export function SlimCustomerHorseWorkspace() {
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const [addHorseOpen, setAddHorseOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [newCustomer, setNewCustomer] = useState(emptyCustomer);
+  const { value: newCustomer, setValue: setNewCustomer, hasDraft: hasCustomerDraft, clearDraft: clearCustomerDraft, discardDraft: discardCustomerDraft } = useFormDraft(
+    "slim-new-customer",
+    emptyCustomer,
+    { userId: user?.id, route: "/home/kunden", step: 1, section: "customer" },
+  );
 
   const workspaceQuery = useQuery({
     queryKey: ["slim-customer-horse-workspace", user?.id],
@@ -141,6 +146,7 @@ export function SlimCustomerHorseWorkspace() {
       await supabase.from("contacts").insert({ provider_id: user.id, profile_id: id, full_name: fullName, email: newCustomer.email.trim() || null, phone: newCustomer.phone.trim() || null, category: "client" });
       setNewCustomerOpen(false);
       setNewCustomer(emptyCustomer);
+      clearCustomerDraft();
       setSelectedCustomerId(id);
       await queryClient.invalidateQueries({ queryKey: ["slim-customer-horse-workspace", user.id] });
       toast({ title: "Kunde angelegt", description: "Du kannst jetzt direkt ein Pferd hinzufügen." });
@@ -188,7 +194,7 @@ export function SlimCustomerHorseWorkspace() {
       )}
 
       <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
-        <DialogContent className="max-w-lg"><DialogHeader><DialogTitle>Neuen Kunden anlegen</DialogTitle></DialogHeader><div className="grid gap-4 sm:grid-cols-2"><Field label="Vorname" value={newCustomer.first_name} onChange={(value) => setNewCustomer((current) => ({ ...current, first_name: value }))} /><Field label="Nachname" value={newCustomer.last_name} onChange={(value) => setNewCustomer((current) => ({ ...current, last_name: value }))} /><Field label="E-Mail" value={newCustomer.email} onChange={(value) => setNewCustomer((current) => ({ ...current, email: value }))} /><Field label="Telefon" value={newCustomer.phone} onChange={(value) => setNewCustomer((current) => ({ ...current, phone: value }))} /><div className="sm:col-span-2"><Field label="Straße" value={newCustomer.street} onChange={(value) => setNewCustomer((current) => ({ ...current, street: value }))} /></div><Field label="PLZ" value={newCustomer.zip_code} onChange={(value) => setNewCustomer((current) => ({ ...current, zip_code: value }))} /><Field label="Ort" value={newCustomer.city} onChange={(value) => setNewCustomer((current) => ({ ...current, city: value }))} /></div><DialogFooter><Button variant="outline" onClick={() => setNewCustomerOpen(false)}>Abbrechen</Button><Button onClick={() => void createCustomer()} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin" />}Kunde anlegen</Button></DialogFooter></DialogContent>
+        <DialogContent className="max-w-lg"><DialogHeader><DialogTitle>Neuen Kunden anlegen</DialogTitle></DialogHeader><div className="grid gap-4 sm:grid-cols-2"><Field label="Vorname" value={newCustomer.first_name} onChange={(value) => setNewCustomer((current) => ({ ...current, first_name: value }))} /><Field label="Nachname" value={newCustomer.last_name} onChange={(value) => setNewCustomer((current) => ({ ...current, last_name: value }))} /><Field label="E-Mail" value={newCustomer.email} onChange={(value) => setNewCustomer((current) => ({ ...current, email: value }))} /><Field label="Telefon" value={newCustomer.phone} onChange={(value) => setNewCustomer((current) => ({ ...current, phone: value }))} /><div className="sm:col-span-2"><Field label="Straße" value={newCustomer.street} onChange={(value) => setNewCustomer((current) => ({ ...current, street: value }))} /></div><Field label="PLZ" value={newCustomer.zip_code} onChange={(value) => setNewCustomer((current) => ({ ...current, zip_code: value }))} /><Field label="Ort" value={newCustomer.city} onChange={(value) => setNewCustomer((current) => ({ ...current, city: value }))} /></div><DialogFooter><Button variant="outline" onClick={() => setNewCustomerOpen(false)}>Abbrechen</Button>{hasCustomerDraft && <Button variant="ghost" onClick={() => { discardCustomerDraft(); setNewCustomerOpen(false); }}>Entwurf verwerfen</Button>}<Button onClick={() => void createCustomer()} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin" />}Kunde anlegen</Button></DialogFooter></DialogContent>
       </Dialog>
 
       <AddHorseModal customerId={selectedCustomer?.id ?? null} customerName={selectedCustomer?.full_name ?? undefined} open={addHorseOpen} onClose={() => { setAddHorseOpen(false); void queryClient.invalidateQueries({ queryKey: ["slim-customer-horse-workspace", user?.id] }); }} />
