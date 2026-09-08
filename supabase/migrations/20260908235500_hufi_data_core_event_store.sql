@@ -90,6 +90,101 @@ REVOKE ALL ON TABLE public.hufi_data_state FROM anon, authenticated;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.hufi_data_events TO service_role;
 GRANT SELECT, INSERT, UPDATE ON TABLE public.hufi_data_state TO service_role;
 
+-- Latest-state writer. The WHERE clause prevents a delayed CopeCart retry from
+-- overwriting a newer cancellation/refund/payment state.
+CREATE OR REPLACE FUNCTION public.hufi_data_apply_state(
+  _source text,
+  _entity_type text,
+  _entity_id text,
+  _last_source_event_id text,
+  _last_event_type text,
+  _product_id text,
+  _order_id text,
+  _transaction_id text,
+  _subscription_id text,
+  _customer_email text,
+  _customer_name text,
+  _amount numeric,
+  _currency text,
+  _status text,
+  _is_test boolean,
+  _last_occurred_at timestamptz,
+  _last_received_at timestamptz,
+  _data jsonb
+)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  INSERT INTO public.hufi_data_state (
+    source,
+    entity_type,
+    entity_id,
+    last_source_event_id,
+    last_event_type,
+    product_id,
+    order_id,
+    transaction_id,
+    subscription_id,
+    customer_email,
+    customer_name,
+    amount,
+    currency,
+    status,
+    is_test,
+    last_occurred_at,
+    last_received_at,
+    data
+  ) VALUES (
+    _source,
+    _entity_type,
+    _entity_id,
+    _last_source_event_id,
+    _last_event_type,
+    _product_id,
+    _order_id,
+    _transaction_id,
+    _subscription_id,
+    _customer_email,
+    _customer_name,
+    _amount,
+    _currency,
+    _status,
+    COALESCE(_is_test, false),
+    COALESCE(_last_occurred_at, now()),
+    COALESCE(_last_received_at, now()),
+    COALESCE(_data, '{}'::jsonb)
+  )
+  ON CONFLICT (source, entity_type, entity_id)
+  DO UPDATE SET
+    last_source_event_id = EXCLUDED.last_source_event_id,
+    last_event_type = EXCLUDED.last_event_type,
+    product_id = EXCLUDED.product_id,
+    order_id = EXCLUDED.order_id,
+    transaction_id = EXCLUDED.transaction_id,
+    subscription_id = EXCLUDED.subscription_id,
+    customer_email = EXCLUDED.customer_email,
+    customer_name = EXCLUDED.customer_name,
+    amount = EXCLUDED.amount,
+    currency = EXCLUDED.currency,
+    status = EXCLUDED.status,
+    is_test = EXCLUDED.is_test,
+    last_occurred_at = EXCLUDED.last_occurred_at,
+    last_received_at = EXCLUDED.last_received_at,
+    data = EXCLUDED.data
+  WHERE EXCLUDED.last_occurred_at >= public.hufi_data_state.last_occurred_at;
+$$;
+
+REVOKE ALL ON FUNCTION public.hufi_data_apply_state(
+  text, text, text, text, text, text, text, text, text, text, text,
+  numeric, text, text, boolean, timestamptz, timestamptz, jsonb
+) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.hufi_data_apply_state(
+  text, text, text, text, text, text, text, text, text, text, text,
+  numeric, text, text, boolean, timestamptz, timestamptz, jsonb
+) TO service_role;
+
 COMMENT ON TABLE public.hufi_data_events IS
   'HufiDataCore append-only normalized events from external and internal systems.';
 COMMENT ON TABLE public.hufi_data_state IS
