@@ -935,8 +935,8 @@ export function CreateInvoiceModal({
 
   // Right column: Invoice Positions
   const renderInvoicePositions = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="min-w-0 space-y-4">
+      <div className="flex min-w-0 flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Label className="text-base font-semibold flex items-center gap-2">
           <Package className="h-4 w-4" />
           Rechnungspositionen
@@ -946,7 +946,7 @@ export function CreateInvoiceModal({
           variant="outline"
           size="sm"
           onClick={addEmptyLineItem}
-          className="gap-1"
+          className="w-full gap-1 sm:w-auto"
         >
           <Plus className="h-3 w-3" />
           Position hinzufügen
@@ -1283,7 +1283,7 @@ export function CreateInvoiceModal({
             {/* 2-Column Layout on Desktop */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
               {/* Left Column: Client & Details */}
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <h3 className="text-sm font-medium text-muted-foreground mb-4 hidden md:block">
                   Kunde & Details
                 </h3>
@@ -1291,7 +1291,7 @@ export function CreateInvoiceModal({
               </div>
 
               {/* Right Column: Invoice Positions */}
-              <div className="space-y-1">
+              <div className="min-w-0 space-y-1">
                 <h3 className="text-sm font-medium text-muted-foreground mb-4 hidden md:block">
                   Positionen & Betrag
                 </h3>
