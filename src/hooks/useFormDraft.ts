@@ -113,7 +113,10 @@ export function useFormDraft<T>(key: string, defaultValue: T, options: FormDraft
   }, [persist]);
 
   const clearDraft = useCallback(() => {
+    // Keep the unmount/pagehide flush from recreating a successfully saved draft.
+    latestValue.current = defaultValueRef.current;
     if (canUseStorage()) window.localStorage.removeItem(storageKey);
+    setValue(defaultValueRef.current);
     setHasDraft(false);
   }, [storageKey]);
 
@@ -126,6 +129,7 @@ export function useFormDraft<T>(key: string, defaultValue: T, options: FormDraft
   }, [storageKey]);
 
   const discardDraft = useCallback(() => {
+    latestValue.current = defaultValueRef.current;
     if (canUseStorage()) window.localStorage.removeItem(storageKey);
     setValue(defaultValueRef.current);
     setHasDraft(false);

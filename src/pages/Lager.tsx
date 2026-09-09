@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -102,9 +102,17 @@ export default function Lager() {
     min_stock: 0,
     notes: "",
   };
+  const inventoryEditDefault = useMemo(() => editingItem ? {
+    current_stock: editingItem.current_stock,
+    price_sell: editingItem.price_sell?.toString() || "",
+    price_purchase: editingItem.price_purchase?.toString() || "",
+    tax_rate: editingItem.tax_rate?.toString() || "19",
+    min_stock: editingItem.min_stock || 0,
+    notes: editingItem.notes || "",
+  } : emptyEditFormData, [editingItem]);
   const { value: editFormData, setValue: setEditFormData, hasDraft: hasInventoryDraft, clearDraft: clearInventoryDraft, discardDraft: discardInventoryDraft } = useFormDraft(
     `inventory-${editingItem?.id || "new"}`,
-    emptyEditFormData,
+    inventoryEditDefault,
     { userId: user?.id, route: "/lager", tab: "inventory", section: "inventory-form" },
   );
 
@@ -188,6 +196,7 @@ export default function Lager() {
       toast.success("Lagerbestand aktualisiert");
       clearInventoryDraft();
       setEditDialogOpen(false);
+      setEditingItem(null);
     },
     onError: (error) => {
       toast.error((error as Error).message);
@@ -211,15 +220,12 @@ export default function Lager() {
 
   const handleEditItem = (item: InventoryItem) => {
     setEditingItem(item);
-    setEditFormData({
-      current_stock: item.current_stock,
-      price_sell: item.price_sell?.toString() || "",
-      price_purchase: item.price_purchase?.toString() || "",
-      tax_rate: item.tax_rate?.toString() || "19",
-      min_stock: item.min_stock || 0,
-      notes: item.notes || "",
-    });
     setEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setEditingItem(null);
   };
 
   const handleSaveEdit = () => {
@@ -733,7 +739,7 @@ export default function Lager() {
       </Tabs>
 
       {/* Edit Inventory Item Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog open={editDialogOpen} onOpenChange={(open) => open ? setEditDialogOpen(true) : handleCloseEditDialog()}>
         <DialogContent className="w-[95vw] sm:max-w-xl md:max-w-2xl h-[92vh] sm:h-auto">
           <DialogHeader>
             <DialogTitle>Bestand bearbeiten</DialogTitle>
@@ -862,10 +868,10 @@ export default function Lager() {
               </div>
 
               <DialogFooter>
-                <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                <Button variant="outline" onClick={handleCloseEditDialog}>
                   Abbrechen
                 </Button>
-                {hasInventoryDraft && <Button variant="ghost" onClick={() => { discardInventoryDraft(); setEditDialogOpen(false); }}>Entwurf verwerfen</Button>}
+                {hasInventoryDraft && <Button variant="ghost" onClick={() => { discardInventoryDraft(); handleCloseEditDialog(); }}>Entwurf verwerfen</Button>}
                 <Button
                   onClick={handleSaveEdit}
                   disabled={updateInventoryMutation.isPending}
