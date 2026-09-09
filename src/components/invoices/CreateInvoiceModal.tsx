@@ -579,6 +579,9 @@ export function CreateInvoiceModal({
       let finalInvoiceNumber = formData.invoice_number;
       if (!finalInvoiceNumber) {
         finalInvoiceNumber = await generateNextNumber();
+        if (!finalInvoiceNumber) {
+          throw new Error("Rechnungsnummer konnte nicht vergeben werden");
+        }
       }
       
       // Header + all positions are written atomically on the server. A failed
