@@ -66,7 +66,7 @@ export function PWAInstallPrompt() {
                 </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleDismiss} className="h-8 w-8">
+            <Button variant="ghost" size="icon" onClick={handleDismiss} className="h-8 w-8" aria-label="Installationshinweis schließen">
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -146,7 +146,7 @@ export function PWAInstallPrompt() {
   // Mobile Banner (for iOS or Android with prompt)
   if (deviceType === 'mobile') {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-dialog p-4 bg-gradient-to-t from-background via-background to-transparent">
+      <div className="fixed above-bottom-nav left-0 right-0 z-dialog p-4 bg-gradient-to-t from-background via-background to-transparent">
         <div className="bg-card border border-border rounded-2xl p-4 shadow-2xl flex items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
             <Download className="h-6 w-6 text-primary" />
@@ -161,6 +161,7 @@ export function PWAInstallPrompt() {
               size="icon" 
               onClick={handleDismiss}
               className="h-9 w-9"
+              aria-label="Installationshinweis schließen"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -214,6 +215,7 @@ export function PWAInstallPrompt() {
               size="icon" 
               onClick={handleDismiss}
               className="h-6 w-6 -mt-1 -mr-1"
+              aria-label="Installationshinweis schließen"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -260,6 +262,7 @@ export function PWAInstallPrompt() {
             size="icon" 
             onClick={handleDismiss}
             className="h-6 w-6 -mt-1 -mr-1"
+            aria-label="Installationshinweis schließen"
           >
             <X className="h-3 w-3" />
           </Button>

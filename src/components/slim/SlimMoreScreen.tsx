@@ -9,6 +9,7 @@ import {
   LogOut,
   Monitor,
   Moon,
+  Package,
   ReceiptText,
   Settings,
   Sun,
@@ -31,6 +32,7 @@ const groups = [
   {
     title: "Betrieb",
     items: [
+      { label: "Material & Lager", description: "Bestand, Lieferanten und Einkauf verwalten", path: "/lager", icon: Package },
       { label: "Ausgaben & Belege", description: "Betriebskosten und Belege erfassen", path: "/ausgaben", icon: ReceiptText },
       { label: "Fuhrpark & Fahrtenbuch", description: "Fahrzeug, Kilometer und laufende Kosten", path: "/fuhrpark", icon: Car },
       { label: "Einstellungen", description: "Betrieb, Profil, Sicherheit und Kommunikation", path: "/management", icon: Settings },
