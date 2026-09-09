@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect, lazy, Suspense } from "react";
+import { useSearchParams } from "react-router-dom";
 import { format, startOfWeek, addMinutes, subMonths, addMonths, addDays, isSameDay, endOfWeek, eachDayOfInterval, getISODay } from "date-fns";
 import { de } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
@@ -271,6 +272,7 @@ function MobileDayList({
 // --- Main Calendar Component ---
 const Kalender = () => {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { colorMap: presetColors } = useServicePresets();
   const isMobile = useIsMobile();
@@ -284,6 +286,20 @@ const Kalender = () => {
   const [activeTab, setActiveTab] = useState<string>("calendar");
   const [icalToken, setIcalToken] = useState<string | null>(null);
   const [showStats, setShowStats] = useState(false);
+
+  useEffect(() => {
+    const requestedHorseId = searchParams.get("horseId");
+    if (searchParams.get("new") !== "true" && !requestedHorseId) return;
+
+    setSelectedDate(new Date());
+    setPreselectedHorseId(requestedHorseId);
+    setIsFormOpen(true);
+
+    const consumedParams = new URLSearchParams(searchParams);
+    consumedParams.delete("new");
+    consumedParams.delete("horseId");
+    setSearchParams(consumedParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Detail sheet state
   const [detailEvent, setDetailEvent] = useState<CalendarEvent | null>(null);

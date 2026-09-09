@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -77,6 +78,7 @@ interface Invoice {
 
 export default function Rechnungen() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -146,6 +148,15 @@ export default function Rechnungen() {
   useEffect(() => {
     fetchInvoices();
   }, [user]);
+
+  useEffect(() => {
+    if (searchParams.get("new") !== "true") return;
+
+    setShowCreateModal(true);
+    const consumedParams = new URLSearchParams(searchParams);
+    consumedParams.delete("new");
+    setSearchParams(consumedParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
