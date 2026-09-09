@@ -22,6 +22,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   AlertTriangle,
   ShoppingCart,
   Package,
@@ -34,6 +44,7 @@ import {
   Clock,
   BarChart3,
   CheckCircle2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useFormDraft } from "@/hooks/useFormDraft";
@@ -91,7 +102,7 @@ interface OrderSuggestion {
 export function PurchasingTab() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { value: purchaseContext, setValue: setPurchaseContext } = useFormDraft(
+  const { value: purchaseContext, setValue: setPurchaseContext, discardDraft: discardPurchaseContext } = useFormDraft(
     "purchase-order-context",
     { selectedSupplier: "" },
     { userId: user?.id, route: "/lager", tab: "purchasing", section: "purchase-order" },
@@ -99,6 +110,7 @@ export function PurchasingTab() {
   const selectedSupplier = purchaseContext.selectedSupplier;
   const setSelectedSupplier = (selectedSupplier: string) => setPurchaseContext({ selectedSupplier });
   const [showSuggestions, setShowSuggestions] = useState(true);
+  const [orderToDiscard, setOrderToDiscard] = useState<PurchaseOrder | null>(null);
 
   // Fetch ALL inventory items
   const { data: allInventoryItems = [], isLoading: loadingInventory } = useQuery({
@@ -403,6 +415,30 @@ export function PurchasingTab() {
     },
   });
 
+  const discardOrderMutation = useMutation({
+    mutationFn: async (order: PurchaseOrder) => {
+      const { error } = await supabase
+        .from("purchase_orders")
+        .delete()
+        .eq("id", order.id)
+        .eq("provider_id", user?.id || "")
+        .eq("status", "draft");
+      if (error) throw error;
+    },
+    onSuccess: (_data, order) => {
+      queryClient.invalidateQueries({ queryKey: ["purchase-orders-draft"] });
+      queryClient.invalidateQueries({ queryKey: ["purchase-order-items"] });
+      if (selectedSupplier === order.supplier_id) {
+        discardPurchaseContext();
+      }
+      setOrderToDiscard(null);
+      toast.success("Bestellentwurf verworfen");
+    },
+    onError: (error) => {
+      toast.error((error as Error).message);
+    },
+  });
+
   // Send order via email
   const handleSendOrder = (order: PurchaseOrder) => {
     const supplier = suppliers.find((s) => s.id === order.supplier_id);
@@ -697,13 +733,22 @@ export function PurchasingTab() {
                         {items.length} Artikel • {order.total_amount?.toFixed(2) || "0.00"} €
                       </p>
                     </div>
-                    <Button
-                      onClick={() => handleSendOrder(order)}
-                      disabled={!supplier?.email}
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      Per Email bestellen
-                    </Button>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setOrderToDiscard(order)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Entwurf verwerfen
+                      </Button>
+                      <Button
+                        onClick={() => handleSendOrder(order)}
+                        disabled={!supplier?.email}
+                      >
+                        <Mail className="h-4 w-4 mr-2" />
+                        Per Email bestellen
+                      </Button>
+                    </div>
                   </div>
                   <div className="text-sm space-y-1">
                     {items.map((item) => (
@@ -719,6 +764,26 @@ export function PurchasingTab() {
           </CardContent>
         </Card>
       )}
+
+      <AlertDialog open={!!orderToDiscard} onOpenChange={(open) => !open && setOrderToDiscard(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bestellentwurf verwerfen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Die Bestellung und alle enthaltenen Positionen werden dauerhaft entfernt.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => orderToDiscard && discardOrderMutation.mutate(orderToDiscard)}
+              disabled={discardOrderMutation.isPending}
+            >
+              Entwurf verwerfen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
