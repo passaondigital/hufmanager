@@ -204,8 +204,16 @@ BEGIN
 
   IF NOT EXISTS (
     SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'product_memberships_user_product_unique'
+    FROM pg_constraint constraint_row
+    WHERE constraint_row.conrelid = 'public.product_memberships'::regclass
+      AND constraint_row.contype = 'u'
+      AND (
+        SELECT array_agg(attribute_row.attname ORDER BY attribute_row.attname)
+        FROM unnest(constraint_row.conkey) AS constrained_column(attnum)
+        JOIN pg_attribute attribute_row
+          ON attribute_row.attrelid = constraint_row.conrelid
+         AND attribute_row.attnum = constrained_column.attnum
+      ) = ARRAY['product', 'user_id']::name[]
   ) THEN
     RAISE EXCEPTION 'FAIL: product_memberships UNIQUE(user_id, product) constraint is missing';
   END IF;

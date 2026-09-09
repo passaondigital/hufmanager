@@ -8,6 +8,11 @@
 \set ON_ERROR_STOP on
 BEGIN;
 SELECT set_config('request.jwt.claim.sub', :'provider_id', true);
+SELECT set_config('p0.provider_id', :'provider_id', true);
+SELECT set_config('p0.valid_client_id', :'valid_client_id', true);
+SELECT set_config('p0.foreign_client_id', :'foreign_client_id', true);
+SELECT set_config('p0.valid_horse_id', :'valid_horse_id', true);
+SELECT set_config('p0.foreign_horse_id', :'foreign_horse_id', true);
 
 DO $test$
 DECLARE
@@ -16,8 +21,8 @@ DECLARE
   succeeded boolean;
 BEGIN
   payload := jsonb_build_object(
-    'provider_id', :'provider_id',
-    'client_id', :'foreign_client_id',
+    'provider_id', current_setting('p0.provider_id'),
+    'client_id', current_setting('p0.foreign_client_id'),
     'invoice_number', test_number,
     'total_amount', 10
   );
@@ -35,9 +40,9 @@ BEGIN
   END IF;
 
   payload := jsonb_build_object(
-    'provider_id', :'provider_id',
-    'client_id', :'valid_client_id',
-    'horse_id', :'foreign_horse_id',
+    'provider_id', current_setting('p0.provider_id'),
+    'client_id', current_setting('p0.valid_client_id'),
+    'horse_id', current_setting('p0.foreign_horse_id'),
     'invoice_number', test_number,
     'total_amount', 10
   );
@@ -55,9 +60,9 @@ BEGIN
   END IF;
 
   payload := jsonb_build_object(
-    'provider_id', :'provider_id',
-    'client_id', :'valid_client_id',
-    'horse_id', :'valid_horse_id',
+    'provider_id', current_setting('p0.provider_id'),
+    'client_id', current_setting('p0.valid_client_id'),
+    'horse_id', current_setting('p0.valid_horse_id'),
     'invoice_number', test_number,
     'total_amount', 10
   );
