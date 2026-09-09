@@ -1281,10 +1281,10 @@ export function CreateInvoiceModal({
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden min-h-0">
           <div className="flex-1 overflow-y-auto pr-2 pb-4 [&_input]:text-base [&_textarea]:text-base [&_select]:text-base">
             {/* 2-Column Layout on Desktop */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
               {/* Left Column: Client & Details */}
               <div className="min-w-0 space-y-1">
-                <h3 className="text-sm font-medium text-muted-foreground mb-4 hidden md:block">
+                <h3 className="mb-4 hidden text-sm font-medium text-muted-foreground lg:block">
                   Kunde & Details
                 </h3>
                 {renderClientDetails()}
@@ -1292,7 +1292,7 @@ export function CreateInvoiceModal({
 
               {/* Right Column: Invoice Positions */}
               <div className="min-w-0 space-y-1">
-                <h3 className="text-sm font-medium text-muted-foreground mb-4 hidden md:block">
+                <h3 className="mb-4 hidden text-sm font-medium text-muted-foreground lg:block">
                   Positionen & Betrag
                 </h3>
                 {renderInvoicePositions()}
