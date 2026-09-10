@@ -31,8 +31,11 @@ export function DemoWelcomeModal({ role, open, onClose, onStartTour }: DemoWelco
   const config = demoTourConfigs[role];
 
   const handleStart = (mode: 'quick' | 'detailed') => {
-    if (!selectedTopic) return;
-    onStartTour(selectedTopic, mode);
+    // A tour is optional: starting without a topic uses the first topic as a
+    // sensible default instead of turning topic selection into a gate.
+    const topicId = selectedTopic ?? config.topics[0]?.id;
+    if (!topicId) return;
+    onStartTour(topicId, mode);
     onClose();
     setSelectedTopic(null);
   };
@@ -48,7 +51,7 @@ export function DemoWelcomeModal({ role, open, onClose, onStartTour }: DemoWelco
             </DialogTitle>
           </div>
           <DialogDescription>
-            Womit möchtest du starten? Wähle ein Thema und die Tour-Länge.
+            Womit möchtest du starten? Die Tour ist optional und kann jederzeit übersprungen werden.
           </DialogDescription>
         </DialogHeader>
 
@@ -69,7 +72,6 @@ export function DemoWelcomeModal({ role, open, onClose, onStartTour }: DemoWelco
           <Button
             variant="outline"
             className="flex-1 gap-2 h-12"
-            disabled={!selectedTopic}
             onClick={() => handleStart('quick')}
           >
             <Zap className="h-4 w-4 text-amber-500" />
@@ -80,7 +82,6 @@ export function DemoWelcomeModal({ role, open, onClose, onStartTour }: DemoWelco
           </Button>
           <Button
             className="flex-1 gap-2 h-12"
-            disabled={!selectedTopic}
             onClick={() => handleStart('detailed')}
           >
             <BookOpen className="h-4 w-4" />
@@ -90,6 +91,17 @@ export function DemoWelcomeModal({ role, open, onClose, onStartTour }: DemoWelco
             </div>
           </Button>
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full text-muted-foreground"
+          onClick={() => {
+            onClose();
+            setSelectedTopic(null);
+          }}
+        >
+          Später
+        </Button>
       </DialogContent>
     </Dialog>
   );
