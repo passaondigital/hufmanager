@@ -13,6 +13,24 @@ BEGIN
   IF NOT has_function_privilege('authenticated', 'public.generate_invoice_number(uuid)', 'EXECUTE') THEN
     RAISE EXCEPTION 'FAIL: authenticated cannot execute generate_invoice_number(uuid)';
   END IF;
+  IF EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'public.invoices'::regclass
+      AND contype = 'u'
+      AND pg_get_constraintdef(oid) = 'UNIQUE (invoice_number)'
+  ) THEN
+    RAISE EXCEPTION 'FAIL: invoice numbers are still globally unique';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'public.invoices'::regclass
+      AND contype = 'u'
+      AND pg_get_constraintdef(oid) = 'UNIQUE (provider_id, invoice_number)'
+  ) THEN
+    RAISE EXCEPTION 'FAIL: tenant-scoped invoice number uniqueness is missing';
+  END IF;
 END
 $test$;
 
