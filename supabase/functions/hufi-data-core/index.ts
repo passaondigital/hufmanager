@@ -8,14 +8,23 @@
 // time this function's source has been version-controlled locally. No
 // secret, no runtime ENV value, no customer data is contained in this file.
 //
-// PATCH (this recovery commit): everything below is the deployed v3 body
-// unchanged, except sanitizePayload() now also preserves is_cancelled_for
+// PATCH 1 (recovery commit): sanitizePayload() preserves is_cancelled_for
 // (CopeCart's period-end cancellation date evidence) when present and a
 // valid YYYY-MM-DD date. See the dedicated comment at that call site for
-// the missing/invalid-input strategy. The known RETRY_STATE_GAP (event
-// insert can succeed while the subsequent hufi_data_apply_state RPC fails,
-// and a retry then sees "duplicate" and skips state application) is left
-// exactly as deployed — a separate, later fix, not touched here.
+// the missing/invalid-input strategy.
+//
+// PATCH 2 (this commit, V2.4.3): the deployed v3 write flow -- a direct
+// upsert into hufi_data_events, then a SEPARATE hufi_data_apply_state RPC
+// call gated on "was the insert genuinely new" -- is replaced by exactly
+// ONE call to the atomic public.hufi_data_ingest_and_project_v1(...) RPC
+// (added on XXL-Staging in the prior migration). That two-step flow was
+// RETRY_STATE_GAP itself: if the state RPC failed after a successful
+// insert, a provider retry would see "duplicate" and skip state
+// application again, forever. The atomic RPC removes the "was this call's
+// insert the winner" branch entirely -- this Edge Function no longer
+// decides whether to apply state, it only maps the RPC's result code to
+// an HTTP response. See the atomic RPC's own migration for the full
+// event-immutability / collision / out-of-order contract it enforces.
 //
 // NO DEPLOY: this file is local source only. Applying it requires a
 // separate, explicitly authorized `supabase functions deploy` step.
@@ -237,43 +246,20 @@ serve(async (req: Request): Promise<Response> => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const eventRow = {
-      source: "copecart",
-      source_event_id: sourceEventId,
-      event_type: eventType,
-      event_category: eventCategory(eventType),
-      entity_type: entityType,
-      entity_id: entityId,
-      product_id: productId,
-      order_id: orderId,
-      transaction_id: transactionId,
-      subscription_id: subscriptionId,
-      customer_email: customerEmail,
-      customer_name: customerName,
-      amount,
-      currency,
-      status,
-      is_test: isTest,
-      occurred_at: occurredAt,
-      received_at: receivedAt.toISOString(),
-      payload_sha256: rawHash,
-      payload: safePayload,
-    };
-
-    const { data: inserted, error: eventError } = await supabase
-      .from("hufi_data_events")
-      .upsert(eventRow, { onConflict: "source,source_event_id", ignoreDuplicates: true })
-      .select("id");
-
-    if (eventError) return errorResponse(500, "Event persistence failed");
-
-    if (inserted && inserted.length > 0) {
-      const { error: stateError } = await supabase.rpc("hufi_data_apply_state", {
+    // Single atomic call: event persistence + state projection happen
+    // inside ONE database transaction, decided entirely by
+    // hufi_data_ingest_and_project_v1 itself -- this function does not
+    // (and must not) decide "insert was new, so also apply state" here
+    // anymore. That decision, and the event-immutability / NULL-safe
+    // collision check / out-of-order guard behind it, all live in the RPC.
+    const { data: ingestResult, error: ingestError } = await supabase
+      .rpc("hufi_data_ingest_and_project_v1", {
         _source: "copecart",
+        _source_event_id: sourceEventId,
+        _event_type: eventType,
+        _event_category: eventCategory(eventType),
         _entity_type: entityType,
         _entity_id: entityId,
-        _last_source_event_id: sourceEventId,
-        _last_event_type: eventType,
         _product_id: productId,
         _order_id: orderId,
         _transaction_id: transactionId,
@@ -284,14 +270,49 @@ serve(async (req: Request): Promise<Response> => {
         _currency: currency,
         _status: status,
         _is_test: isTest,
-        _last_occurred_at: occurredAt,
-        _last_received_at: receivedAt.toISOString(),
-        _data: safePayload,
+        _occurred_at: occurredAt,
+        _received_at: receivedAt.toISOString(),
+        _payload_sha256: rawHash,
+        _payload: safePayload,
       });
-      if (stateError) return errorResponse(500, "State persistence failed");
+
+    if (ingestError) {
+      console.error("[hufi-data-core][copecart] atomic ingest RPC failed", {
+        source_event_id: sourceEventId,
+        event_type: eventType,
+      });
+      return errorResponse(500, "Event ingestion failed");
     }
 
-    return okResponse();
+    const resultCode = (ingestResult as { result_code?: string } | null)?.result_code;
+
+    // Success set: the webhook was processed. A brand-new event, a repair
+    // of a previously-incomplete projection, an idempotent identical
+    // retry, and a legitimately out-of-order older event that correctly
+    // did NOT rewind current state are all a fachlich successful outcome
+    // for CopeCart's purposes -- none of them should be retried.
+    const SUCCESS_RESULT_CODES = new Set([
+      "APPLIED_NEW_EVENT",
+      "APPLIED_EXISTING_EVENT_REPAIR",
+      "ALREADY_APPLIED",
+      "OUT_OF_ORDER_STATE_UNCHANGED",
+    ]);
+
+    if (resultCode && SUCCESS_RESULT_CODES.has(resultCode)) {
+      return okResponse();
+    }
+
+    // EVENT_ID_COLLISION_MISMATCH / INVALID_INPUT / any unexpected result
+    // code: fail closed, never swallowed as OK. Log the technical minimum
+    // only -- source_event_id, event_type, result_code -- never
+    // customer_email, customer_name, or the payload.
+    console.error("[hufi-data-core][copecart] atomic ingest did not succeed", {
+      source_event_id: sourceEventId,
+      event_type: eventType,
+      result_code: resultCode ?? "unknown",
+    });
+    const statusCode = resultCode === "INVALID_INPUT" ? 400 : resultCode === "EVENT_ID_COLLISION_MISMATCH" ? 409 : 500;
+    return errorResponse(statusCode, "Event ingestion rejected");
   } catch (error) {
     console.error("[hufi-data-core][copecart] unexpected error", error instanceof Error ? error.message : String(error));
     return errorResponse(500, "Webhook processing failed");
