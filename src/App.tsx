@@ -12,6 +12,7 @@ import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { FLAVOR_CONFIG } from "@/config/appFlavor";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { HufmanagerSlimAccessGate } from "@/components/auth/HufmanagerSlimAccessGate";
 import { PasswordRecoveryRedirect } from "@/components/auth/PasswordRecoveryRedirect";
 import { CockpitFullscreenProvider } from "@/components/day-cockpit/CockpitFullscreenContext";
 import { MicArbiterProvider } from "@/hooks/useMicArbiter";
@@ -584,19 +585,23 @@ function AppContent({ queryClient }: { queryClient: QueryClient }) {
                 <HufManagerSlimShell />
               </ProtectedRoute>
             }>
-              <Route path="/home" element={<TodayScreen />} />
+              <Route path="/home" element={<HufmanagerSlimAccessGate><TodayScreen /></HufmanagerSlimAccessGate>} />
               <Route path="/home/tour" element={
-                <Tour />
+                <HufmanagerSlimAccessGate><Tour /></HufmanagerSlimAccessGate>
               } />
               <Route path="/home/kunden" element={
-                <SlimCustomerHorseWorkspace />
+                <HufmanagerSlimAccessGate><SlimCustomerHorseWorkspace /></HufmanagerSlimAccessGate>
               } />
               <Route path="/home/hufi-hufanalyse" element={
-                <SlimHoofAnalysisScreen />
+                <HufmanagerSlimAccessGate><SlimHoofAnalysisScreen /></HufmanagerSlimAccessGate>
               } />
               <Route path="/home/finanzen" element={
-                <SlimFinanceScreen />
+                <HufmanagerSlimAccessGate><SlimFinanceScreen /></HufmanagerSlimAccessGate>
               } />
+              {/* /home/mehr is intentionally NOT gated: it is this shell's
+                  own settings screen and contains the real logout button
+                  and the link to /management/abo (billing/reactivation) --
+                  see HufmanagerSlimAccessGate's own header comment. */}
               <Route path="/home/mehr" element={
                 <SlimMoreScreen />
               } />
