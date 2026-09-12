@@ -115,14 +115,44 @@ REVOKE ALL ON FUNCTION public.get_hufmanager_access_context_v1() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.get_hufmanager_access_context_v1() FROM anon;
 GRANT EXECUTE ON FUNCTION public.get_hufmanager_access_context_v1() TO authenticated;
 
--- Reusable RLS-oriented helper, mirroring has_role(_user_id, _role)'s
--- exact security posture (STABLE SECURITY DEFINER, fixed search_path,
--- takes the user id as a plain argument -- same pattern already reviewed
--- and live for has_role, not a new privilege model). Built now because
--- Phase 3/4 need it to exist; NOT yet wired into any provider-table RLS
--- policy in this migration -- that is Phase 9's own, separate, explicitly
--- scoped patch (see this task's final report for why it is deferred).
-CREATE OR REPLACE FUNCTION public.has_hufmanager_access_v1(_user_id uuid)
+-- Reusable RLS-oriented helper for the CURRENT authenticated user only.
+-- Deliberately takes NO argument (security review finding F3,
+-- 2026-09-12 -- see docs/HUFMANAGER_SLIM_ENTITLEMENT_SECURITY_REVIEW_2026-09-12.md):
+-- a `_user_id uuid` argument granted to `authenticated` made this a direct
+-- cross-account entitlement/billing-status oracle (any signed-in user
+-- could ask about any other UUID). Every RLS policy that needs this
+-- always evaluates it against the querying session anyway, so removing
+-- the parameter loses no real capability.
+CREATE OR REPLACE FUNCTION public.has_hufmanager_access_v1()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.product_entitlements
+     WHERE user_id = auth.uid()
+       AND product = 'HUFMANAGER'
+       AND plan = 'HUFMANAGER_SLIM'
+       AND (
+             status = 'ACTIVE'
+          OR (status = 'TRIAL_ACTIVE' AND (trial_ends_at IS NULL OR trial_ends_at >= now()))
+           )
+  )
+$$;
+
+REVOKE ALL ON FUNCTION public.has_hufmanager_access_v1() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.has_hufmanager_access_v1() FROM anon;
+GRANT EXECUTE ON FUNCTION public.has_hufmanager_access_v1() TO authenticated;
+
+-- Internal-only counterpart for the rare server-side case that
+-- legitimately needs another user's status (this migration set's own
+-- test harness, run as postgres/service_role, never as `authenticated`).
+-- Same REVOKE/GRANT posture as every other internal helper in this V1
+-- (writer, reconciler): PUBLIC/anon/authenticated excluded, service_role
+-- only. `_hm_` prefix marks it as internal, not a second public API.
+CREATE OR REPLACE FUNCTION public._hm_has_hufmanager_access_v1(_user_id uuid)
 RETURNS boolean
 LANGUAGE sql
 STABLE
@@ -141,6 +171,7 @@ AS $$
   )
 $$;
 
-REVOKE ALL ON FUNCTION public.has_hufmanager_access_v1(uuid) FROM PUBLIC;
-REVOKE ALL ON FUNCTION public.has_hufmanager_access_v1(uuid) FROM anon;
-GRANT EXECUTE ON FUNCTION public.has_hufmanager_access_v1(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public._hm_has_hufmanager_access_v1(uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public._hm_has_hufmanager_access_v1(uuid) FROM anon;
+REVOKE ALL ON FUNCTION public._hm_has_hufmanager_access_v1(uuid) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public._hm_has_hufmanager_access_v1(uuid) TO service_role;

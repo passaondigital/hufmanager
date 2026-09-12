@@ -34,7 +34,7 @@
 --
 -- Each restrictive check has the shape:
 --   NOT (<this row belongs to auth.uid() acting as its provider>)
---   OR public.has_hufmanager_access_v1(auth.uid())
+--   OR public.has_hufmanager_access_v1()
 --   OR public.is_admin(auth.uid())
 --   OR public.is_master_admin()
 -- i.e. "if I'm not the owning provider on this row, this restriction does
@@ -44,14 +44,29 @@
 -- bypasses billing state entirely, matching the existing admin-full-access
 -- policies already on these tables).
 --
+-- `has_hufmanager_access_v1()` takes no argument (security review finding
+-- F3, 2026-09-12 — see
+-- docs/HUFMANAGER_SLIM_ENTITLEMENT_SECURITY_REVIEW_2026-09-12.md): it
+-- always evaluates against the querying session (auth.uid()) internally,
+-- which is all an RLS policy ever needs — the original `(_user_id uuid)`
+-- signature, granted to `authenticated`, made it a direct cross-account
+-- entitlement/billing-status oracle.
+--
 -- public.horses has no provider_id column at all — the provider dimension
--- there is exclusively public.access_grants (provider_id, client_id). The
--- restrictive check below targets only rows reached via a provider's own
--- access_grant, never "Horse owner full access" (owner_id = auth.uid()),
--- since a true horse owner is never their own access_grants.provider_id
--- for the same client_id in practice, and even if they were, that grant
--- would have to name them as their own provider, which no existing
--- feature creates.
+-- there is public.access_grants (provider_id, client_id) OR
+-- profiles.created_by_provider_id (security review finding F2,
+-- 2026-09-12): every permissive policy on this table
+-- ("Providers can view/delete/insert client horses",
+-- provider_can_manage_client_horses()) grants provider access via EITHER
+-- path, independently — access_grants is not the only one. The original
+-- version of this migration checked access_grants only, which left the
+-- common "provider creates a client directly" flow (no access_grants row
+-- at all) completely ungated. The restrictive check below now targets
+-- rows reached via EITHER provider path, never "Horse owner full access"
+-- (owner_id = auth.uid()), since a true horse owner is never their own
+-- provider for the same client_id in practice, and even if they were,
+-- that relationship would have to name them as their own provider, which
+-- no existing feature creates.
 
 CREATE POLICY "hufmanager_slim_entitlement_gate_v1"
   ON public.contacts
@@ -60,7 +75,7 @@ CREATE POLICY "hufmanager_slim_entitlement_gate_v1"
   TO authenticated
   USING (
     provider_id IS DISTINCT FROM auth.uid()
-    OR public.has_hufmanager_access_v1(auth.uid())
+    OR public.has_hufmanager_access_v1()
     OR public.is_admin(auth.uid())
   );
 
@@ -71,7 +86,7 @@ CREATE POLICY "hufmanager_slim_entitlement_gate_v1"
   TO authenticated
   USING (
     provider_id IS DISTINCT FROM auth.uid()
-    OR public.has_hufmanager_access_v1(auth.uid())
+    OR public.has_hufmanager_access_v1()
     OR public.is_admin(auth.uid())
     OR public.is_master_admin()
   );
@@ -83,7 +98,7 @@ CREATE POLICY "hufmanager_slim_entitlement_gate_v1"
   TO authenticated
   USING (
     provider_id IS DISTINCT FROM auth.uid()
-    OR public.has_hufmanager_access_v1(auth.uid())
+    OR public.has_hufmanager_access_v1()
     OR public.is_admin(auth.uid())
     OR public.is_master_admin()
   );
@@ -95,7 +110,7 @@ CREATE POLICY "hufmanager_slim_entitlement_gate_v1"
   TO authenticated
   USING (
     provider_id IS DISTINCT FROM auth.uid()
-    OR public.has_hufmanager_access_v1(auth.uid())
+    OR public.has_hufmanager_access_v1()
     OR public.is_admin(auth.uid())
     OR public.is_master_admin()
   );
@@ -106,14 +121,21 @@ CREATE POLICY "hufmanager_slim_entitlement_gate_v1"
   FOR ALL
   TO authenticated
   USING (
-    NOT EXISTS (
-      SELECT 1 FROM public.access_grants ag
-       WHERE ag.client_id = horses.owner_id
-         AND ag.provider_id = auth.uid()
-         AND ag.is_active = true
-         AND ag.status = 'active'
+    NOT (
+      EXISTS (
+        SELECT 1 FROM public.access_grants ag
+         WHERE ag.client_id = horses.owner_id
+           AND ag.provider_id = auth.uid()
+           AND ag.is_active = true
+           AND ag.status = 'active'
+      )
+      OR EXISTS (
+        SELECT 1 FROM public.profiles p
+         WHERE p.id = horses.owner_id
+           AND p.created_by_provider_id = auth.uid()
+      )
     )
-    OR public.has_hufmanager_access_v1(auth.uid())
+    OR public.has_hufmanager_access_v1()
     OR public.is_admin(auth.uid())
   );
 
@@ -127,7 +149,7 @@ CREATE POLICY "hufmanager_slim_entitlement_gate_insert_v1"
   TO authenticated
   WITH CHECK (
     provider_id IS DISTINCT FROM auth.uid()
-    OR public.has_hufmanager_access_v1(auth.uid())
+    OR public.has_hufmanager_access_v1()
     OR public.is_admin(auth.uid())
   );
 
@@ -138,7 +160,7 @@ CREATE POLICY "hufmanager_slim_entitlement_gate_insert_v1"
   TO authenticated
   WITH CHECK (
     provider_id IS DISTINCT FROM auth.uid()
-    OR public.has_hufmanager_access_v1(auth.uid())
+    OR public.has_hufmanager_access_v1()
     OR public.is_admin(auth.uid())
     OR public.is_master_admin()
   );
@@ -150,7 +172,7 @@ CREATE POLICY "hufmanager_slim_entitlement_gate_insert_v1"
   TO authenticated
   WITH CHECK (
     provider_id IS DISTINCT FROM auth.uid()
-    OR public.has_hufmanager_access_v1(auth.uid())
+    OR public.has_hufmanager_access_v1()
     OR public.is_admin(auth.uid())
     OR public.is_master_admin()
   );
@@ -162,15 +184,16 @@ CREATE POLICY "hufmanager_slim_entitlement_gate_insert_v1"
   TO authenticated
   WITH CHECK (
     provider_id IS DISTINCT FROM auth.uid()
-    OR public.has_hufmanager_access_v1(auth.uid())
+    OR public.has_hufmanager_access_v1()
     OR public.is_admin(auth.uid())
     OR public.is_master_admin()
   );
 
--- "Provider can create horses for clients" WITH CHECK already allows
--- owner_id = auth.uid() (a client creating their own horse — never gated,
--- correctly) OR an active access_grant naming auth.uid() as provider (the
--- path this restriction targets).
+-- "Provider can create horses for clients" / "Providers can insert horses
+-- for granted clients" WITH CHECK already allow owner_id = auth.uid() (a
+-- client creating their own horse — never gated, correctly) OR either
+-- provider path (access_grants OR created_by_provider_id — the paths this
+-- restriction targets).
 CREATE POLICY "hufmanager_slim_entitlement_gate_insert_v1"
   ON public.horses
   AS RESTRICTIVE
@@ -178,13 +201,20 @@ CREATE POLICY "hufmanager_slim_entitlement_gate_insert_v1"
   TO authenticated
   WITH CHECK (
     owner_id = auth.uid()
-    OR NOT EXISTS (
-      SELECT 1 FROM public.access_grants ag
-       WHERE ag.client_id = horses.owner_id
-         AND ag.provider_id = auth.uid()
-         AND ag.is_active = true
-         AND ag.status = 'active'
+    OR NOT (
+      EXISTS (
+        SELECT 1 FROM public.access_grants ag
+         WHERE ag.client_id = horses.owner_id
+           AND ag.provider_id = auth.uid()
+           AND ag.is_active = true
+           AND ag.status = 'active'
+      )
+      OR EXISTS (
+        SELECT 1 FROM public.profiles p
+         WHERE p.id = horses.owner_id
+           AND p.created_by_provider_id = auth.uid()
+      )
     )
-    OR public.has_hufmanager_access_v1(auth.uid())
+    OR public.has_hufmanager_access_v1()
     OR public.is_admin(auth.uid())
   );

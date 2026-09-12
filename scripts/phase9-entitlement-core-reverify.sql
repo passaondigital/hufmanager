@@ -68,7 +68,7 @@ BEGIN
   IF v_row.status <> 'ACTIVE' OR v_row.billing_status <> 'VERIFIED_PAID' THEN
     RAISE EXCEPTION 'FAIL T1: expected ACTIVE/VERIFIED_PAID, got %/%', v_row.status, v_row.billing_status;
   END IF;
-  IF NOT public.has_hufmanager_access_v1(v_t1) THEN RAISE EXCEPTION 'FAIL T1: has_hufmanager_access_v1 false for ACTIVE'; END IF;
+  IF NOT public._hm_has_hufmanager_access_v1(v_t1) THEN RAISE EXCEPTION 'FAIL T1: has_hufmanager_access_v1 false for ACTIVE'; END IF;
   RAISE NOTICE 'PASS T1';
 
   -- ==== T2: same payment retried -> deduped, exactly 1 row ==============
@@ -228,7 +228,7 @@ BEGIN
   VALUES ('trial_started', v_t14, now(), 'copecart', 'evt_t14_trial', 'OBSERVED_EVENT', 'HUFMANAGER', 'HUFMANAGER_SLIM');
   SELECT * INTO v_row FROM public.product_entitlements WHERE user_id = v_t14;
   IF v_row.status <> 'TRIAL_ACTIVE' THEN RAISE EXCEPTION 'FAIL T14: expected TRIAL_ACTIVE, got %', v_row.status; END IF;
-  IF NOT public.has_hufmanager_access_v1(v_t14) THEN RAISE EXCEPTION 'FAIL T14: active trial must grant access'; END IF;
+  IF NOT public._hm_has_hufmanager_access_v1(v_t14) THEN RAISE EXCEPTION 'FAIL T14: active trial must grant access'; END IF;
   RAISE NOTICE 'PASS T14';
 
   -- ==== T15: trial window passed -> stored status unchanged, access denied
@@ -236,7 +236,7 @@ BEGIN
   VALUES ('trial_started', v_t15, now() - interval '20 days', 'copecart', 'evt_t15_trial', 'OBSERVED_EVENT', 'HUFMANAGER', 'HUFMANAGER_SLIM');
   SELECT * INTO v_row FROM public.product_entitlements WHERE user_id = v_t15;
   IF v_row.status <> 'TRIAL_ACTIVE' THEN RAISE EXCEPTION 'FAIL T15: stored status must stay TRIAL_ACTIVE (event-sourced), got %', v_row.status; END IF;
-  IF public.has_hufmanager_access_v1(v_t15) THEN RAISE EXCEPTION 'FAIL T15: expired trial must deny access'; END IF;
+  IF public._hm_has_hufmanager_access_v1(v_t15) THEN RAISE EXCEPTION 'FAIL T15: expired trial must deny access'; END IF;
   RAISE NOTICE 'PASS T15';
 
   -- ==== T16: real payment during/after trial -> converts to ACTIVE ======
