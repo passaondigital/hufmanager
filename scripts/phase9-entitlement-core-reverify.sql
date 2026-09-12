@@ -45,13 +45,18 @@ BEGIN
     (v_t24,'t24-core@hufi-test.local'),(v_t25,'t25-core@hufi-test.local')
   ) AS x(id, email);
 
+  -- ON CONFLICT: some environments' handle_new_user() trigger already
+  -- auto-inserts a stub public.profiles row on the auth.users insert above
+  -- (confirmed live on a real Production restore) -- an upsert works
+  -- either way, a plain INSERT does not.
   INSERT INTO public.profiles (id, full_name, email)
   SELECT id, 'Core Reverify ' || id, email FROM (VALUES
     (v_t1,'t1-core@hufi-test.local'),(v_t3,'t3-core@hufi-test.local'),(v_t4,'t4-core@hufi-test.local'),
     (v_t7,'t7-core@hufi-test.local'),(v_t11,'t11-core@hufi-test.local'),(v_t12,'t12-core@hufi-test.local'),
     (v_t14,'t14-core@hufi-test.local'),(v_t15,'t15-core@hufi-test.local'),(v_t17,'t17-core@hufi-test.local'),
     (v_t24,'t24-core@hufi-test.local'),(v_t25,'t25-core@hufi-test.local')
-  ) AS x(id, email);
+  ) AS x(id, email)
+  ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, email = EXCLUDED.email;
 
   -- ==== T1: real payment.made, is_test=false -> ACTIVE / VERIFIED_PAID ==
   v_res := public.hufi_data_ingest_and_project_v1(

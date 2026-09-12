@@ -31,13 +31,20 @@ BEGIN
     (v_client,   '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'phase9-client@hufi-test.local',   crypt('x', gen_salt('bf')), now(), '{}', '{}', now(), now()),
     (v_admin,    '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'phase9-admin@hufi-test.local',    crypt('x', gen_salt('bf')), now(), '{}', '{}', now(), now());
 
+  -- ON CONFLICT: some environments' handle_new_user() trigger already
+  -- auto-inserts a stub public.profiles row on the auth.users insert above
+  -- (confirmed live on a real Production restore, not on every local
+  -- staging bootstrap) -- an upsert works either way, a plain INSERT does
+  -- not.
   INSERT INTO public.profiles (id, full_name, email) VALUES
     (v_provider, 'Phase9 Test Provider', 'phase9-provider@hufi-test.local'),
     (v_client,   'Phase9 Test Client',   'phase9-client@hufi-test.local'),
-    (v_admin,    'Phase9 Test Admin',    'phase9-admin@hufi-test.local');
+    (v_admin,    'Phase9 Test Admin',    'phase9-admin@hufi-test.local')
+  ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, email = EXCLUDED.email;
 
   INSERT INTO public.user_roles (user_id, role) VALUES
-    (v_provider, 'provider'), (v_client, 'client'), (v_admin, 'admin');
+    (v_provider, 'provider'), (v_client, 'client'), (v_admin, 'admin')
+  ON CONFLICT (user_id, role) DO NOTHING;
 
   INSERT INTO public.horses (owner_id, name) VALUES (v_client, 'Phase9 Test Horse') RETURNING id INTO v_horse_id;
 
@@ -122,7 +129,7 @@ BEGIN
   -- Compatibility doc §4) actually depends on for these 2 tables, since
   -- they have no cross-account admin policy to fall back on.
   RESET ROLE;
-  INSERT INTO public.user_roles (user_id, role) VALUES (v_admin, 'provider');
+  INSERT INTO public.user_roles (user_id, role) VALUES (v_admin, 'provider') ON CONFLICT (user_id, role) DO NOTHING;
   INSERT INTO public.hoof_analyses (provider_id, horse_id) VALUES (v_admin, v_horse_id);
   INSERT INTO public.invoices (provider_id, client_id, total_amount) VALUES (v_admin, v_client, 1);
 

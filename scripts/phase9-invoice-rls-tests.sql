@@ -22,14 +22,20 @@ BEGIN
     (v_client, '00000000-0000-0000-0000-000000000000','authenticated','authenticated','phase9-inv-client@hufi-test.local', crypt('x', gen_salt('bf')), now(), '{}', '{}', now(), now()),
     (v_master_admin, '00000000-0000-0000-0000-000000000000','authenticated','authenticated', v_master_admin_email, crypt('x', gen_salt('bf')), now(), '{}', '{}', now(), now());
 
+  -- ON CONFLICT: some environments' handle_new_user() trigger already
+  -- auto-inserts a stub public.profiles row on the auth.users insert above
+  -- (confirmed live on a real Production restore) -- an upsert works
+  -- either way, a plain INSERT does not.
   INSERT INTO public.profiles (id, full_name, email) VALUES
     (v_provider, 'Inv Provider', 'phase9-inv-provider@hufi-test.local'),
     (v_foreign_provider, 'Inv Foreign Provider', 'phase9-inv-foreign@hufi-test.local'),
     (v_client, 'Inv Client', 'phase9-inv-client@hufi-test.local'),
-    (v_master_admin, 'Inv Master Admin', v_master_admin_email);
+    (v_master_admin, 'Inv Master Admin', v_master_admin_email)
+  ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, email = EXCLUDED.email;
 
   INSERT INTO public.user_roles (user_id, role) VALUES
-    (v_provider, 'provider'), (v_foreign_provider, 'provider'), (v_client, 'client');
+    (v_provider, 'provider'), (v_foreign_provider, 'provider'), (v_client, 'client')
+  ON CONFLICT (user_id, role) DO NOTHING;
 
   -- master_admins is keyed by email, not user_id (see is_master_admin()).
   INSERT INTO public.master_admins (email) VALUES (v_master_admin_email)

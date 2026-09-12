@@ -22,6 +22,10 @@ BEGIN
   SELECT id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'phase9-backfill-' || id || '@hufi-test.local', crypt('x', gen_salt('bf')), now(), '{}', '{}', now(), now()
   FROM (VALUES (v_paid),(v_manual),(v_trial),(v_ambiguous),(v_no_evidence),(v_suspended),(v_post_cutover)) AS t(id);
 
+  -- ON CONFLICT: some environments' handle_new_user() trigger already
+  -- auto-inserts a stub public.profiles row on the auth.users insert above
+  -- (confirmed live on a real Production restore) -- an upsert works
+  -- either way, a plain INSERT does not.
   INSERT INTO public.profiles (id, full_name, email, created_at, subscription_status, subscription_plan, plan_override, copecart_subscription_id, trial_started_at, trial_ends_at, is_suspended)
   VALUES
     (v_paid,       'Backfill Paid',       'p@hufi-test.local', v_cutover - interval '30 days', 'active',   'starter', NULL, 'sub_real_123', NULL, NULL, false),
@@ -30,10 +34,17 @@ BEGIN
     (v_ambiguous,  'Backfill Ambiguous',  'a@hufi-test.local', v_cutover - interval '30 days', 'active',   'starter', NULL, NULL, NULL, NULL, false),
     (v_no_evidence,'Backfill NoEvidence', 'n@hufi-test.local', v_cutover - interval '30 days', 'trialing', 'starter', 'copecart_starter', NULL, v_cutover - interval '200 days', v_cutover - interval '170 days', false),
     (v_suspended,  'Backfill Suspended',  's@hufi-test.local', v_cutover - interval '30 days', 'active',   'starter', NULL, NULL, NULL, NULL, true),
-    (v_post_cutover,'Backfill PostCutover','pc@hufi-test.local', v_cutover + interval '1 day', 'active',  'starter', NULL, NULL, NULL, NULL, false);
+    (v_post_cutover,'Backfill PostCutover','pc@hufi-test.local', v_cutover + interval '1 day', 'active',  'starter', NULL, NULL, NULL, NULL, false)
+  ON CONFLICT (id) DO UPDATE SET
+    full_name = EXCLUDED.full_name, email = EXCLUDED.email, created_at = EXCLUDED.created_at,
+    subscription_status = EXCLUDED.subscription_status, subscription_plan = EXCLUDED.subscription_plan,
+    plan_override = EXCLUDED.plan_override, copecart_subscription_id = EXCLUDED.copecart_subscription_id,
+    trial_started_at = EXCLUDED.trial_started_at, trial_ends_at = EXCLUDED.trial_ends_at,
+    is_suspended = EXCLUDED.is_suspended;
 
   INSERT INTO public.user_roles (user_id, role)
-  SELECT id, 'provider' FROM (VALUES (v_paid),(v_manual),(v_trial),(v_ambiguous),(v_no_evidence),(v_suspended),(v_post_cutover)) AS t(id);
+  SELECT id, 'provider' FROM (VALUES (v_paid),(v_manual),(v_trial),(v_ambiguous),(v_no_evidence),(v_suspended),(v_post_cutover)) AS t(id)
+  ON CONFLICT (user_id, role) DO NOTHING;
 
   -- ---- Dry run must not write anything -----------------------------------
   PERFORM * FROM public.hm_backfill_hufmanager_slim_legacy_entitlements_v1(v_cutover, true);
