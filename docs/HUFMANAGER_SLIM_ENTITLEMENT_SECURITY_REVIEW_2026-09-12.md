@@ -63,14 +63,45 @@ re-verified — see Finding 2.
 - **Fix**: `has_hufmanager_access_v1()` now takes no argument, always evaluates against `auth.uid()`, granted to `authenticated`. Every RLS call site (11 across `20260912051500`) updated to call it with no argument (behaviourally identical — they always passed `auth.uid()` anyway). Confirmed no frontend code calls this function directly (only `get_hufmanager_access_context_v1()`, unaffected). The rare legitimate server-side/test-harness need for an arbitrary-uuid lookup now goes through a new internal function, `public._hm_has_hufmanager_access_v1(_user_id uuid)` — `REVOKE ALL FROM PUBLIC/anon/authenticated`, `GRANT EXECUTE TO service_role` only, same posture as every other internal helper in this V1 (writer, reconciler).
 - **Evidence**: `scripts/phase9-security-remediation-tests.sql` F3-T1 through F3-T4c, all PASS: own-account query succeeds (T1); the old `(uuid)` signature no longer exists as a callable overload at all (T2); `anon` denied `EXECUTE` (T3); the internal helper still answers for an arbitrary uuid under sufficient privilege (T4) and is *not* reachable by `authenticated` (T4c).
 
-## Additional findings (discovered during fix verification, out of scope for this remediation)
+## Additional findings — CORRECTED after live Production verification (Block 2)
 
-Rehearsing the full Phase 9 test suite against a real Production restore for the first time (previous verification only ever ran against local dev/staging) surfaced that staging has drifted from Production on **pre-existing, Phase-9-unrelated** RLS policies — confirmed independent of anything in this fix (a RESTRICTIVE policy can only narrow what a PERMISSIVE policy already grants; these are all PERMISSIVE-side gaps):
+**Correction, 2026-09-12, Block 2:** the two items originally reported
+here ("horses has no owner-self-view policy on Production", "contacts
+has no admin cross-account view policy on Production") were **wrong**.
+Both policies ( `"Horse owner full access"` on `public.horses`,
+`"Admins can view all contacts"` on `public.contacts`) genuinely exist
+and work correctly on real Production — confirmed by running
+`scripts/phase9-rls-direct-api-adversarial-tests.sql` and
+`scripts/phase9-security-remediation-tests.sql` live against Production
+itself (wrapped in `BEGIN...ROLLBACK`, nothing committed): A3c, F2-T5 and
+A4a all now return the expected `1`, not `0`.
 
-1. `public.horses` has **no** permissive `SELECT` policy for `owner_id = auth.uid()` on Production (staging has one). A client currently cannot see their own horse via direct table/PostgREST access on Production at all. This also breaks `"Clients can view own horse appointments"` on `public.appointments` (its own `USING` clause queries `horses`, which is itself subject to this same gap) — one root cause, two symptoms.
-2. `public.contacts` has **no** `"Admins can view/manage all contacts"`-equivalent permissive policy on Production (staging has one). An `admin`-role account cannot view a contact belonging to a provider it doesn't own, on Production, today.
+**Root cause of the original wrong report**: the isolated restore used to
+verify F1/F2/F3 (`hm_rehearsal_secfix_20260912T1030Z`) was restored with
+`pg_restore -j 4` (4 parallel workers). `pg_restore`'s own summary line
+("273 errors ignored") was only spot-checked against a few expected,
+already-documented restore-target caveats (the `pg_cron` sequences, a
+few superuser-only event triggers) — it was not fully audited, and these
+two `CREATE POLICY` statements were silently among the ignored errors,
+most likely lost to a parallel-restore dependency race (`-j 4`), not a
+real absence on Production. Lesson for future rehearsals: either restore
+with `-j 1` for full fidelity, or fully grep the ignored-error list for
+every `CREATE POLICY`/`CREATE TABLE`/etc. statement before drawing any
+conclusion from what a restored copy does *not* show.
 
-Both are recorded as `INFO` (not failures) in `scripts/phase9-rls-direct-api-adversarial-tests.sql` (A3b/A3c/A4a) and `scripts/phase9-security-remediation-tests.sql` (F2-T5) with inline comments, so the suite reflects real Production behavior instead of a false assumption carried over from staging. **Not fixed here** — adding new customer/admin-facing permissive policies is a product decision outside this security remediation's authorized scope (entitlement/access-control only). Flagged for the release owner to decide on separately.
+**What is still correct from the original finding**: the *provider-side*
+half of Finding 2 — that Production's `"Provider can view/delete/create
+client horses"` policies check `access_grants` only, with no
+`created_by_provider_id` branch (unlike the local dev/staging instance)
+— is independently re-confirmed directly against live Production
+(`SELECT ... FROM pg_policies WHERE tablename='horses'`) and stands
+exactly as reported in Finding 2 above. Only the two *client/admin-view*
+items were false positives from the restore artifact.
+
+Net effect: there is no known pre-existing customer-horse-visibility or
+admin-contact-visibility gap on Production. `BLOCK2_PRECONDITION_TECH_DEBT`
+is retracted; nothing carries forward to Block 2/3 planning from this
+item.
 
 ## What was checked and found correct (no finding)
 
@@ -83,5 +114,5 @@ SECURITY_REVIEW=PASS
 F1_INVOICE_RPC_BYPASS=FIXED
 F2_HORSES_CREATED_BY_PROVIDER_BYPASS=FIXED
 F3_ACCESS_ORACLE=FIXED
-NONBLOCKING_WARN=2 (pre-existing, Phase-9-unrelated Production RLS gaps: horses client-self-view SELECT, contacts admin cross-account SELECT -- see "Additional findings")
+NONBLOCKING_WARN=0 (the 2 originally reported Production RLS gaps were retracted after live verification -- see "Additional findings — CORRECTED")
 ```
