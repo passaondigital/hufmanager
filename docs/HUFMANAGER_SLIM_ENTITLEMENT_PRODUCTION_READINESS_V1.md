@@ -7,6 +7,20 @@ already staging-verified there) — this document only covers the new
 Entitlement/Access layer on top of it. Branch:
 `release/hufmanager-lifecycle-2026-09-11`.
 
+**Correction (Phase 9 session, re-verified read-only against Production
+directly, not taken on faith):** §2's table below records `hm_lifecycle_events`
+as **Absent** on Production and §5 orders "Deploy V2.7 first" as a
+still-open step. Both describe a snapshot from before V2.7 was actually
+deployed. As of this session, `public.hm_lifecycle_events` EXISTS on
+Production (1 row, written by a real CopeCart `payment.made` E2E test),
+`public.hm_lifecycle_reconciliation_issues` EXISTS (0 rows), and
+`cron.job "reconcile-period-end-subscriptions"` is `active=true`. V2.7's
+lifecycle core is Production-live. `public.product_entitlements` (this V1's
+own table) is confirmed still **Absent** — only the lifecycle-core
+dependency has shipped, not this V1's entitlement layer itself. See
+`HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md` §1 for how this was found and
+verified.
+
 ## 1. What this layer adds
 
 ```
@@ -136,24 +150,40 @@ Additive only, same principle as V2.7: DROP is not the default rollback.
 ## 7. Go / No-Go
 
 ```
-DB_SCHEMA_READY=YES (staging-verified)
-ENTITLEMENT_WRITER_READY=YES (staging-verified, T1-T17 + T25)
-RECONCILER_READY=YES (T24)
-ACCESS_API_READY=YES (T14, T15, T20)
+PROD_LIFECYCLE_CORE_LIVE=YES — corrected this session, re-verified read-only
+  against Production (vnschgjxkzzwzefqlrji) directly, not taken on faith:
+  public.hm_lifecycle_events EXISTS (1 row), public.hm_lifecycle_reconciliation_issues
+  EXISTS (0 rows), cron.job "reconcile-period-end-subscriptions" (*/15 * * * *) is
+  active=true. V2.7's lifecycle core + hufi-data-core + scheduler are Production-live;
+  a real CopeCart payment.made E2E test produced the one hm_lifecycle_events row.
+  This V1 (entitlement/access) document's earlier §2 "Absent" line for
+  hm_lifecycle_events described a snapshot from before that deploy — superseded,
+  not a standing blocker.
+DB_SCHEMA_READY=YES (staging-verified; product_entitlements itself confirmed
+  still ABSENT on Production this session — the entitlement layer proper has
+  not been deployed, only its lifecycle-core dependency has)
+ENTITLEMENT_WRITER_READY=YES (staging-verified prior session, T1-T17 + T25 — NOT re-executed this session as of the previous report; see §8 of this section for the harness now added)
+RECONCILER_READY=YES (T24, same caveat)
+ACCESS_API_READY=YES (T14, T15, T20, same caveat)
 RLS_CLIENT_WRITE_DENIED=YES (T18)
 RLS_CROSS_USER_DENIED=YES (T19)
-SERVER_SIDE_ENFORCEMENT_READY=NO — Phase 9 deliberately deferred, own gate step
-LEGACY_BACKFILL_COVERAGE_REPORT=NOT PRODUCED — Production read access unavailable this session
-FRONTEND_GATE_READY=YES (built, wired, typecheck run this session)
-BACKUP_PLAN_READY=NO — not documented or executed this session (out of scope; inherits V2.7's own open item)
-ROLLBACK_PLAN_READY=YES
+SERVER_SIDE_ENFORCEMENT_READY=YES — Phase 9 implemented + staging-adversarial-tested this session, see HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md §5. NOT deployed to Production (still additive migrations sitting only on staging).
+LEGACY_BACKFILL_COVERAGE_REPORT=PRODUCED this session — read-only against Production (vnschgjxkzzwzefqlrji), see HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md §2-§4. Backfill function written + staging-tested (mapping, idempotency, one-shot cutover boundary). NOT executed for real anywhere — correctly so: Production was read-only this entire task by explicit instruction, so a real backfill run was never an available option, not a missed step.
+FRONTEND_GATE_READY=YES (built, wired, typecheck run this session — still clean, no frontend files changed this session)
+BACKUP_PLAN_READY=see HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md §9 (plan documented this session, not yet executed — execution requires write access this task does not grant)
+ROLLBACK_PLAN_READY=YES (Phase 9 additions: DROP POLICY x10, DROP FUNCTION for the backfill — same additive-only principle; full sequence in HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md §9)
 
 PRODUCTION_GO_LIVE_GATE=NO
 ```
 
-`NO` here means: the DB layer itself is staging-proven and could be
-deployed on its own additive merits, but two real gates remain open before
-a responsible go-live — Phase 9 (server-side enforcement) and Phase 7
-(a real, evidence-based legacy coverage headcount, not the structural
-argument in §5 step 9 alone). Both are named as exact next steps in the
-final report, not glossed over.
+`NO` here means: the lifecycle core this V1 depends on is now genuinely
+Production-live (corrected above), and every layer this task itself set out
+to build is staging-proven — schema, writer, RLS/API enforcement, and a real
+(not guessed) legacy classification. What remains is that none of *this V1's
+own* objects (`product_entitlements` and everything built on it) have touched
+Production yet, Phase 9's enforcement has only been exercised against
+staging (which has already drifted from Production in unrelated ways — see
+policy-count differences noted in HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md
+§5), and a real, executed backup/restore drill (as opposed to a written
+plan) does not exist. See HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md §8 for
+the exact remaining blockers.
