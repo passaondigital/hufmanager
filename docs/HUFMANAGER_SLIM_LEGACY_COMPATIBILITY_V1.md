@@ -299,10 +299,59 @@ row read and `has_hufmanager_access_v1()` call both still succeed.
   is now covered by `phase9-invoice-rls-tests.sql`.
 - No Production deploy order/runbook update was needed for the sequence
   itself — Phase 9 slots in at the production readiness doc's existing §5
-  step 10 unchanged. §9 below is the concrete backup/rollback plan for
-  that eventual deploy, written this session, not yet executed.
+  step 10 unchanged. §9 below is the concrete backup/rollback plan; its
+  own PRE step (fresh backup + isolated restore drill) has since been
+  performed for real — see §9a. The DEPLOY step itself has not.
 
-## 9. Production backup + deploy + rollback plan (written this session, NOT executed)
+## 9. Production backup + deploy + rollback plan
+
+### 9a. Backup/restore drill — performed for real, this session (follow-up)
+
+`FINAL_PRE_ENTITLEMENT_BACKUP_GATE=PASS`. Fresh `pg_dump -Fc` of Production
+taken (`/home/administrator/prod-db-backup-pre-entitlement/20260912T063224Z/`,
+`chmod 700`/`600`), sha256-verified, `pg_restore --list` clean (4438 TOC
+entries). Restored into an isolated, newly-created local database
+(`hm_restore_entitlement_gate_20260912T063224Z`, dropped again after
+validation — never Production, never the existing staging database).
+Every named table's row count, all 5 named function definitions' md5,
+and the RLS/policy count on all 5 protection-surface tables matched
+Production **exactly**, byte-for-byte on the function hashes. Zero
+invalid indexes, zero duplicate lifecycle/CopeCart keys, zero open
+reconciliation issues, zero unexplained NOT VALID constraints (the one
+found, `realtime.messages_payload_exclusive`, is pre-existing on
+Production itself, confirmed by querying Production directly, and is a
+Supabase Realtime-internal object unrelated to any HufManager data).
+
+One real, non-obvious finding: `pg_cron`'s `CREATE EXTENSION` is
+single-database-locked (`cron.database_name` in `postgresql.conf`,
+configured to `"postgres"` on this cluster) — it refuses to install into
+an isolated database with a different name. The dump's own TOC does
+contain `cron.job`'s `TABLE DATA` (confirmed via `pg_restore --list`
+before attempting the restore), so the backup itself is not missing
+anything; only *restoring* it into an arbitrarily-named isolated target
+is structurally blocked by pg_cron's own design. Per this task's own
+instruction, this is documented as a restore-target caveat, not a backup
+failure — a separate, independent `scheduler-baseline.txt` (jobname,
+schedule, command, active, captured directly from Production) sits
+alongside the dump in the same directory for exactly this reason. Runbook
+implication for a real future disaster restore: re-verify the scheduler
+job separately afterward — do not assume pg_cron state round-trips
+through a restore just because the rest of the database did.
+
+`hufi-data-core`'s Edge Function rollback anchor (the v3 source +
+bundle hash documented in `HUFMANAGER_LIFECYCLE_PRODUCTION_READINESS_V2.7.md`
+§8) was confirmed present/retrievable this session by reading Production's
+deployed function metadata (read-only, no deploy) — currently live is
+version 5 (`hufi-data-core`, `ACTIVE`), which is the expected forward
+state; the v3 anchor is the documented rollback *target*, not expected to
+match the current live version.
+
+Post-check (after dropping the temporary restore database): every count,
+every function hash, `product_entitlements` absence, and the cron job's
+schedule/active flag were re-read from Production and matched the
+pre-check exactly. Zero Production writes this entire drill.
+
+### 9b. Deploy + rollback plan (written this session, NOT executed)
 
 Production baseline as of this session (re-verified read-only, not
 assumed — see §1 correction and the entitlement readiness doc's own

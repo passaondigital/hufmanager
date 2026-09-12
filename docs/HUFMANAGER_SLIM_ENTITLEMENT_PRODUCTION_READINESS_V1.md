@@ -170,7 +170,7 @@ RLS_CROSS_USER_DENIED=YES (T19)
 SERVER_SIDE_ENFORCEMENT_READY=YES — Phase 9 implemented + staging-adversarial-tested this session, see HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md §5. NOT deployed to Production (still additive migrations sitting only on staging).
 LEGACY_BACKFILL_COVERAGE_REPORT=PRODUCED this session — read-only against Production (vnschgjxkzzwzefqlrji), see HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md §2-§4. Backfill function written + staging-tested (mapping, idempotency, one-shot cutover boundary). NOT executed for real anywhere — correctly so: Production was read-only this entire task by explicit instruction, so a real backfill run was never an available option, not a missed step.
 FRONTEND_GATE_READY=YES (built, wired, typecheck run this session — still clean, no frontend files changed this session)
-BACKUP_PLAN_READY=see HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md §9 (plan documented this session, not yet executed — execution requires write access this task does not grant)
+BACKUP_PLAN_READY=YES — fresh Production backup + isolated restore drill performed for real (follow-up session), PASS on every check; see HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md §9a. Deploy/rollback sequence itself (§9b) still not executed.
 ROLLBACK_PLAN_READY=YES (Phase 9 additions: DROP POLICY x10, DROP FUNCTION for the backfill — same additive-only principle; full sequence in HUFMANAGER_SLIM_LEGACY_COMPATIBILITY_V1.md §9)
 
 PRODUCTION_GO_LIVE_GATE=NO
