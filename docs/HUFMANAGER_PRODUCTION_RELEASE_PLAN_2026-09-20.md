@@ -346,7 +346,7 @@ psql "$PROD_DB_URL" -c "select name, created_at from vault.secrets order by name
 | Gate | Prüfung | Ergebnis Stand 2026-09-20 |
 |---|---|---|
 | **GATE 1** Backup erfolgreich | A–G aus §7 vorhanden, Dump-Datei > 0 Byte, `pg_restore --list` lesbar | ⏳ offen (beim Deploy) |
-| **GATE 2** Production Project ID bestätigt | `vnschgjxkzzwzefqlrji` = „HufManager", `ACTIVE_HEALTHY` | ⚠️ bestätigt über den Supabase-MCP mit explizitem `project_id` — siehe Hinweis unten |
+| **GATE 2** Production Project ID bestätigt | `vnschgjxkzzwzefqlrji` = „HufManager", Org `lizhktkyzcthvflwydnm`, `eu-central-1`, `ACTIVE_HEALTHY`, DB-Host `db.vnschgjxkzzwzefqlrji.supabase.co` | ✅ **extern verifiziert** über die verbundene Supabase-Management-Integration (2026-09-20) |
 | **GATE 3** keine Staging-URL in Production-Konfig | Bundle-Scan: 0 Treffer `hufmanager-staging` / `huficloud`; Prod-URL in 7 Chunks | ✅ bestätigt am Precheck-Build |
 | **GATE 4** Vault/Env-Preconditions | Autoflow-Secrets bewusst `MISSING` → Autoflow bleibt inaktiv; Entscheidung dokumentiert | ✅ bewertet |
 | **GATE 5** Migrationen eindeutig | 9 Migrationen, keine davon in Production, Reihenfolge fixiert | ✅ bestätigt |
@@ -357,15 +357,8 @@ psql "$PROD_DB_URL" -c "select name, created_at from vault.secrets order by name
 
 **Ein FAIL an einem Gate bedeutet: DEPLOYMENT STOP.**
 
-> **Hinweis zu GATE 2 (MCP-Falle aus `CLAUDE.md`):** Alle Production-Abfragen dieses Plans liefen über den Supabase-MCP mit explizit gesetztem `project_id=vnschgjxkzzwzefqlrji`. `CLAUDE.md` warnt, dass der MCP nicht zuverlässig auf PROD zeigt, und verlangt für PROD die Management API oder die CLI mit explizitem Projekt. Unter `~/.supabase/access-token` liegt kein Token, die vorgeschriebene Gegenprobe war deshalb nicht möglich.
-> Indizien, dass die Abfragen tatsächlich PROD trafen: Projektname „HufManager", Host `db.vnschgjxkzzwzefqlrji.supabase.co`, Migrationshistorie endet passend bei `20260911191418`, Edge-Function-Entrypoints zeigen auf echte Deploy-Pfade (`/home/pascaladmin/hufmanager-hybrid-release/…`, `/root/hufmanager_v25/production/…`), und die lokale Staging-DB besitzt die neuen RPCs, die in dieser Abfrage als fehlend gemeldet wurden.
-> **Vor dem Deploy trotzdem einmal per Management API gegenprüfen:**
-> ```bash
-> curl -s -X POST https://api.supabase.com/v1/projects/vnschgjxkzzwzefqlrji/database/query \
->   -H "Authorization: Bearer <Token>" -H "Content-Type: application/json" \
->   -d '{"query":"select max(version) from supabase_migrations.schema_migrations","read_only":true}'
-> ```
-> Erwartung: `20260911191418`. Weicht der Wert ab, gilt STOP-Bedingung 3.
+> **GATE 2 — extern verifiziert (2026-09-20):** Die Production-Projekt-Identität wurde über die verbundene Supabase-Management-Integration unabhängig bestätigt: `PROJECT_NAME=HufManager`, `PROJECT_ID=vnschgjxkzzwzefqlrji`, `ORGANIZATION_ID=lizhktkyzcthvflwydnm`, `REGION=eu-central-1`, `STATUS=ACTIVE_HEALTHY`, `DATABASE_HOST=db.vnschgjxkzzwzefqlrji.supabase.co`. Ein lokaler `~/.supabase/access-token` ist zum Schliessen dieses Gates nicht mehr erforderlich.
+> Unmittelbar vor dem Deploy bleibt nur noch der Migrationsstand zu bestaetigen — Erwartung `20260911191418`. Weicht der Wert ab, gilt STOP-Bedingung 3.
 
 ---
 
@@ -619,6 +612,52 @@ select count(*) from public.profiles p
 ```
 
 Weitere bekannte, nicht release-blockierende Funde aus dem Browser-E2E (Parkplatz): Quick-Setup-Wizard schaltet beim Schritt „Business-Name" nicht weiter (Ausweg „Überspringen"), Doppelklick auf „Pferd anlegen" erzeugt eine Dublette, Invite-Fehlermeldungen zeigen technischen Text statt Klartext, Kunden-E-Mail wird nicht validiert, Finanz-KPI „Offen" zeigt 0,00 €.
+
+---
+
+## 14.1 Security-Preflight (2026-09-20, read-only)
+
+Der laut `CLAUDE.md` vor jedem PROD-Deploy vorgeschriebene Security-Review wurde durchgeführt — eng auf den Release-Scope, kein Altlasten-Audit. **Ergebnis: PASS, keine neuen P0/P1.**
+
+**Release-RPCs.** Alle neu erstellten oder ersetzten Funktionen sind `SECURITY DEFINER` mit festem `SET search_path = public`. Rechtevergabe:
+
+| Funktion | EXECUTE |
+|---|---|
+| `create_invoice_with_items_for_provider` | nur `service_role` (REVOKE von PUBLIC/anon/authenticated) |
+| `create_pending_client_invite_v1`, `bind_…`, `invalidate_…` | nur `service_role` |
+| `create_invited_customer_with_contact` | nur `service_role` |
+| `_hm_normalize_email`, `_hm_expire_pending_client_invites`, `_hm_has_active_pending_client_invite`, `_autoflow_trigger_endpoint` | vollständig revoked, kein GRANT |
+| `create_customer_with_contact` | `authenticated` + `service_role` — **einzige client-aufrufbare Release-RPC** |
+
+`create_customer_with_contact` wurde im Detail geprüft: `auth.uid()` ist Pflicht (`Authentication required`), `has_role(actor,'provider')` ist Pflicht, und `created_by_provider_id` wie `contacts.provider_id` werden **aus `auth.uid()`** gesetzt, nie aus einem Parameter. Sie legt ausschliesslich ein neues Profil mit frischer UUID an, kann also keinen fremden Datensatz erreichen oder verändern. Tenant-Spoofing ist ausgeschlossen.
+
+**Trigger-Funktionen** (`handle_new_user`, `auto_assign_client_to_provider`, `autoflow_on_appointment_completed/_signed`) geben `trigger` zurück. PostgreSQL verbietet den Direktaufruf, PostgREST exponiert solche Funktionen nicht. `CREATE OR REPLACE` erhält bestehende Grants — der Release lockert hier nichts.
+
+**Edge Functions.** Alle drei authentisieren sich selbst, unabhängig von `verify_jwt`:
+
+| Function | Auth im Code |
+|---|---|
+| `invite-client-with-password` | `Authorization` Pflicht → `auth.getUser()` → Rolle `provider` → Pro-Abo → anschliessend tenant-gebundener Pending-Invite-Vertrag |
+| `autoflow-auto-invoice` | Bearer-Token muss **exakt** dem Service-Role-Key entsprechen, sonst 401 — nur der DB-Trigger (Vault) kann aufrufen |
+| `hufi-agent` | Bearer Pflicht → `auth.getUser()` mit dem Aufrufer-Token → 401 bei ungültig |
+
+Daraus folgt für den Deploy: `verify_jwt=false` ist bei `autoflow-auto-invoice` **fachlich notwendig** (ein Service-Key ist kein User-JWT) und bei `invite-client-with-password`/`hufi-agent` der heutige, funktionierende Vertrag. Beim CLI-Deploy dürfen die beiden letzteren nicht unbeabsichtigt auf `true` kippen — `config.toml` enthält für sie keinen Eintrag, der CLI-Default wäre `true`. **Empfehlung: mit `--no-verify-jwt` deployen.** Sicherheitsrisiko entsteht in keiner der beiden Richtungen, da die Auth im Code liegt; ein Wechsel auf `true` wäre ein reines Funktionsrisiko.
+
+**Supabase Security Advisor (read-only abgefragt):** 0 Findings auf `ERROR`-Level. Alle 5 Kategorien sind `INFO`/`WARN` und sämtlich **pre-existing**, keine davon vom Release eingeführt:
+
+| Finding | Bewertung |
+|---|---|
+| `rls_enabled_no_policy` (4 Tabellen) | **intentional service-only.** Verifiziert: RLS an, 0 Policies **und** null Tabellenrechte für `anon`/`authenticated` — doppelt fail-closed. Kein Client benötigt sie |
+| `extension_in_public` (pg_net) | **deferred hardening.** `anon`/`authenticated` haben zwar USAGE auf `net` und INSERT auf `net.http_request_queue`, aber PostgREST exponiert nachweislich nur `public, graphql_public` (`PGRST106: Only the following schemas are exposed: public, graphql_public`). Vom Client nicht erreichbar |
+| `anon_security_definer_function_executable` (149) | **pre-existing legacy.** Der Release fügt **keine** anon-aufrufbare Funktion hinzu |
+| `authenticated_security_definer_function_executable` (155) | **pre-existing legacy.** Der Release fügt genau **eine** hinzu: `create_customer_with_contact` (oben geprüft) |
+| `auth_leaked_password_protection` | **deferred hardening.** Auth-Plattformeinstellung, ohne Release-Bezug |
+
+Stichprobe an der bestehenden, client-aufrufbaren `create_invoice_with_items` (anon hat EXECUTE): Sie bricht bei `auth.uid() IS NULL` ab, erzwingt `provider_id = auth.uid()` und prüft das Entitlement — die weite Grant ist damit nicht ausnutzbar. Genau dieses Muster erklärt, warum die Advisor-Zahlen hoch sind, ohne dass eine Lücke besteht.
+
+**Nicht verändert:** kein `GRANT`, `REVOKE`, `ALTER`, `CREATE POLICY`, keine Migration, kein Function-Deploy, keine Auth-Einstellung.
+
+**Zurückgestelltes Hardening (nach dem Release, nicht jetzt):** Grants auf `net` für `anon`/`authenticated` entziehen · Leaked Password Protection aktivieren · EXECUTE-Grants der 149/155 Legacy-`SECURITY DEFINER`-Funktionen systematisch auf `service_role` eingrenzen · verwaiste `public.profiles`-Zeilen bereinigen (bekannter P1).
 
 ---
 

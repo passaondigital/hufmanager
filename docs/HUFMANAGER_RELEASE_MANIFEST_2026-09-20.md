@@ -198,6 +198,34 @@ PARKPLATZ  Kunden-E-Mail wird nicht validiert
 PARKPLATZ  Finanz-KPI "Offen" zeigt 0,00 EUR trotz offener Rechnung
 ```
 
+## SECURITY_PREFLIGHT (2026-09-20, read-only, Release-Scope)
+
+```
+SECURITY_PREFLIGHT=PASS
+RELEASE_SCOPE_SECURITY=PASS
+RELEASE_RPC_PERMISSIONS=PASS     # alle Release-RPCs SECURITY DEFINER + fixer search_path;
+                                 # nur create_customer_with_contact ist authenticated-aufrufbar
+                                 # (auth.uid()-Pflicht, provider-Rolle, Tenant aus auth.uid())
+RELEASE_EDGE_AUTH=PASS           # alle drei Functions authentisieren sich selbst
+TENANT_ISOLATION=PASS
+SERVICE_ROLE_EXPOSURE=NO
+CLIENT_SECRET_EXPOSURE=NO
+ADVISOR_ERROR_LEVEL_FINDINGS=0
+
+RLS_NO_POLICY_FINDINGS=INTENTIONAL_SERVICE_ONLY=YES fuer alle vier Tabellen
+  (RLS an, 0 Policies, KEINE Tabellenrechte fuer anon/authenticated -> doppelt fail-closed)
+SECURITY_DEFINER_ADVISOR_FINDINGS=deferred legacy (149 anon / 155 authenticated, pre-existing);
+  Release fuegt 0 anon- und genau 1 authenticated-aufrufbare Funktion hinzu
+PG_NET_PUBLIC=DEFERRED_HARDENING  # PostgREST exponiert nur public, graphql_public -> net nicht erreichbar
+LEAKED_PASSWORD_PROTECTION=DEFERRED_HARDENING
+NEW_P0_FINDINGS=none
+NEW_P1_FINDINGS=none
+
+EDGE_DEPLOY_VERIFY_JWT_NOTE=invite-client-with-password und hufi-agent mit --no-verify-jwt
+  deployen, um den bestehenden Custom-Auth-Vertrag (prod=false) zu erhalten;
+  autoflow-auto-invoice braucht false zwingend (Service-Key ist kein User-JWT)
+```
+
 ## ROLLBACK_ARTIFACTS_REQUIRED
 
 ```
@@ -226,7 +254,7 @@ ROLLBACK_ORDER=Frontend -> Edge Functions -> Datenbank (DB nur bei Datenschaden)
 ```
 GATE_0_WORKTREE_COMMITTED=PASS      # RC-Commit 110dffc5e41461a332f9574f9decf014259faadb, Worktree sauber
 GATE_1_BACKUP=OPEN                  # beim Deploy
-GATE_2_PROJECT_ID=PASS              # vnschgjxkzzwzefqlrji = HufManager, ACTIVE_HEALTHY
+GATE_2_PROJECT_ID=PASS              # extern verifiziert: HufManager / vnschgjxkzzwzefqlrji / org lizhktkyzcthvflwydnm / eu-central-1 / ACTIVE_HEALTHY
 GATE_3_NO_STAGING_URL=PASS          # 0 Treffer im Precheck-Bundle
 GATE_4_VAULT_PRECONDITIONS=PASS     # bewusste Entscheidung dokumentiert
 GATE_5_MIGRATIONS_IDENTIFIED=PASS   # 9 Migrationen, Reihenfolge fixiert
