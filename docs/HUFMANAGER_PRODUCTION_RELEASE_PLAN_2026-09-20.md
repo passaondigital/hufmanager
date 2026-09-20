@@ -405,43 +405,67 @@ psql "$PROD_DB_URL" -c "select name, created_at from vault.secrets order by name
 
  7. FUNCTION VERIFICATION (§10.2)
 
- 8. FRONTEND BUILD
-    VITE_APP_FLAVOR=hufmanager \
-    VITE_SUPABASE_URL=https://vnschgjxkzzwzefqlrji.supabase.co \
-    VITE_SUPABASE_PUBLISHABLE_KEY=<prod key> \
-    bash scripts/build-hufmanager-canonical.sh     -> HUFMANAGER_BUILD=PASS
+ 8. FRONTEND PROBELAUF
+    ./deploy.sh hufmanager --dry-run
+    -> baut aus sauberem Worktree, durchläuft alle Gates,
+       schaltet den Symlink NICHT um
 
- 9. FRONTEND VERIFICATION vor dem Austausch
-    bash scripts/verify-hufmanager-release.sh      (prüft den Kandidaten, deployt nicht)
-    zusätzlich die Bundle-Gates aus §10.3
+ 9. FRONTEND DEPLOYMENT
+    ./deploy.sh hufmanager
+    -> Release-Verzeichnis, Verifikation, atomarer current-Switch,
+       Smoke-Test, bei Fehlschlag automatischer Symlink-Rollback
 
-10. FRONTEND DEPLOYMENT  -> siehe §9.1, Entscheidung erforderlich
+10. (entfällt — Schritt 9 deployt und verifiziert in einem Lauf)
 
 11. PRODUCTION BROWSER SMOKE (§12)
 
 12. MONITORING (§13) -> Release abgeschlossen
 ```
 
-### 9.1 ⚠️ Offene Entscheidung: Deploy-Weg für den HufManager-Webroot
+### 9.1 Deploy-Weg für den HufManager-Webroot — entschieden
 
-`CLAUDE.md` legt verbindlich fest: *„Frontend: ausschließlich `./deploy.sh`"* und *„nie von Hand rsyncen"*. `./deploy.sh` deployt jedoch **HufiApp** nach `/var/www/hufiapps/v25` (`DEST="$WEBROOT/v25/"`) und **nicht** den HufManager-Webroot `/srv/hufi/business/hufmanager/app`. Für HufManager existiert stattdessen eine eigene Toolchain:
+**Entscheidung (Pascal, 2026-09-20):** `./deploy.sh hufmanager` — Build des eingefrorenen RC → Release-Verzeichnis → prüfen → `current`-Symlink atomar umschalten. Rollback = Symlink zurück.
 
-| Skript | Zweck |
+Damit bleibt die CLAUDE.md-Regel („Frontend: ausschließlich `./deploy.sh`", „nie von Hand rsyncen") gültig, jetzt auch für HufManager. `./deploy.sh` ohne Argument deployt unverändert HufiApp nach `/var/www/hufiapps/v25`; das HufManager-Ziel liegt isoliert in `scripts/deploy-hufmanager.sh`.
+
+**Kommandos**
+
+```bash
+./deploy.sh hufmanager --dry-run    # baut + prüft vollständig, schaltet NICHT um
+./deploy.sh hufmanager              # Deploy des aktuellen HEAD (= RC-Commit)
+./deploy.sh hufmanager --ref 110dffc5e414   # expliziter Stand
+./deploy.sh hufmanager --list       # Releases und Symlinks anzeigen
+./deploy.sh hufmanager --rollback   # current -> previous, atomar
+```
+
+**Zielstruktur unter `/srv/hufi/business/hufmanager/`**
+
+```
+releases/<commit>/     unveränderliche Build-Artefakte + RELEASE_INFO
+current  -> releases/<commit>     kanonischer Zeiger, wird atomar umgelegt
+previous -> releases/<commit>     Ziel des Rollbacks
+app      -> current               Pfad, den nginx ausliefert
+```
+
+`app` bleibt der von nginx ausgelieferte Pfad (`root /srv/hufi/business/hufmanager/app;`) — **die nginx-Konfiguration muss nicht angefasst und nicht neu geladen werden.** Beim ersten Lauf stellt das Skript einmalig um: das heutige echte Verzeichnis `app/` wird nach `releases/legacy-app-<ts>/` verschoben, `previous` zeigt darauf, danach existieren nur noch Symlinks. Der Alt-Stand bleibt damit als sofortiges Rollback-Ziel erhalten und wird von der Aufräumlogik nie automatisch gelöscht.
+
+**Was das Skript vor dem Umschalten erzwingt**
+
+| Gate | Verhalten bei Verstoß |
 |---|---|
-| `scripts/build-hufmanager-canonical.sh` | Build + Provenance, **kein** Deployment |
-| `scripts/verify-hufmanager-release.sh` | Release-Kandidat prüfen, bevor Webroots angefasst werden, **kein** Deployment |
-| `scripts/create-isolated-release.sh --target-root PATH [--apply]` | legt ein atomar finalisiertes Release-Verzeichnis unter `PATH/releases/NAME` an, ändert **niemals** Webroot oder Symlink |
-| `scripts/rollback-isolated-release.sh` | Rollback, ausdrücklich nur innerhalb eines `/tmp`-Testroots |
+| `.env.hufmanager` vorhanden, `VITE_SUPABASE_URL` + `VITE_SUPABASE_PUBLISHABLE_KEY` gesetzt | Abbruch |
+| URL ist **keine** Staging-/Localhost-Adresse (`huficloud`, `hufmanager-staging`, `localhost`, `127.0.0.1`, `:54321`) | Abbruch |
+| Build aus **sauberem git-Worktree** auf dem angegebenen Commit (unkommittierte Änderungen im Hauptbaum sind irrelevant) | — |
+| Supabase-Host im Bundle | Abbruch, nichts deployed |
+| Supabase-Key-Fingerprint im Bundle | Abbruch, nichts deployed |
+| Keine Staging-Adresse im Bundle | Abbruch, nichts deployed |
+| Secret-Scan (`service_role`, private keys) | Abbruch, nichts deployed |
+| `index.html` + nicht-leeres `assets/` im fertigen Release | Abbruch vor dem Umschalten |
+| Smoke-Test gegen `https://app.hufmanager.de/` | **automatischer Symlink-Rollback** auf `previous` |
 
-Der heutige Production-Webroot ist ein **normales Verzeichnis**, kein `current`-Symlink — die Isolated-Release-Struktur ist dort also noch nicht eingerichtet.
+Der Release wird in einem Staging-Verzeichnis aufgebaut und erst per `mv -T` (rename) nach `releases/<commit>/` finalisiert — ein abgebrochener Lauf hinterlässt damit kein halbes Release. Das Umschalten selbst geht ebenfalls über `rename()` auf einen danebengelegten Symlink, ist also atomar; es gibt keinen Moment, in dem der Webroot leer oder halb ausgetauscht ist.
 
-**Vor dem Deploy von Pascal zu entscheiden (eine der drei Optionen):**
-
-1. **Isolated Release + Symlink-Umstellung** — sauberste Variante: `create-isolated-release.sh --target-root /srv/hufi/business/hufmanager --apply`, danach `app` einmalig auf einen `releases/<name>`-Symlink umstellen. Erfordert eine einmalige nginx-/Struktur-Anpassung.
-2. **`deploy.sh` um ein HufManager-Ziel erweitern** — macht den vorgeschriebenen Weg auch für HufManager gültig, ist aber eine Skriptänderung vor dem Release.
-3. **Dokumentierter, einmaliger `rsync`** — `rsync -a --delete dist/ /srv/hufi/business/hufmanager/app/` mit vorherigem Webroot-Backup (§7 E). Weicht von der CLAUDE.md-Regel ab und muss deshalb ausdrücklich freigegeben werden.
-
-Dieser Plan schreibt bewusst **keine** der drei Optionen vor. Ohne Entscheidung: **kein Frontend-Deploy.**
+Ein erneuter Deploy desselben Commits kollidiert nicht: existiert `releases/<commit>` bereits, hängt das Skript einen UTC-Zeitstempel an. Bestehende Release-Verzeichnisse werden nie überschrieben.
 
 **Warum diese Reihenfolge zwingend ist:** Die neue `invite-client-with-password` ruft `create_pending_client_invite_v1` und `create_invited_customer_with_contact` auf. Beide existieren in Production noch nicht. Ein Function-Deploy vor den Migrationen macht jede Einladung sofort funktionsunfähig. Umgekehrt ist die Migration ohne neue Function unkritisch (§4, Rückwärtskompatibilität).
 
@@ -536,9 +560,9 @@ drop function if exists public.create_customer_with_contact(jsonb,jsonb);
 | Feld | Inhalt |
 |---|---|
 | `TRIGGER_FOR_ROLLBACK` | Weißer Screen, `/auth` lädt nicht, `createClient`-Fehler, PDF/Rechnung im Browser fehlerhaft |
-| `ROLLBACK_ACTION` | `rsync -a --delete "$RELDIR/webroot/app-before/" /srv/hufi/business/hufmanager/app/` — danach Hard-Reload, ggf. Service-Worker-Cache invalidieren |
-| `ROLLBACK_ARTIFACT` | `$RELDIR/webroot/app-before/` (17 MB, Stand 2026-09-12 11:39) |
-| `EXPECTED_RECOVERY` | < 2 Minuten, kein Datenverlust. Frontend-Rollback ist von DB und Functions unabhängig durchführbar |
+| `ROLLBACK_ACTION` | `./deploy.sh hufmanager --rollback` — schaltet `current` atomar auf `previous` zurück. Danach Hard-Reload, ggf. Service-Worker-Cache invalidieren. Bei Smoke-Test-Fehlschlag passiert das bereits automatisch |
+| `ROLLBACK_ARTIFACT` | `previous`-Symlink → beim ersten Deploy `releases/legacy-app-<ts>/` (der heutige Webroot, 17 MB, Stand 2026-09-12 11:39), danach jeweils das vorherige Release. Zusätzlich die unabhängige Kopie `$RELDIR/webroot/app-before/` aus §7 E |
+| `EXPECTED_RECOVERY` | Sekunden (ein `rename()`), kein Datenverlust. Frontend-Rollback ist von DB und Functions unabhängig durchführbar |
 
 **Reihenfolge im Ernstfall:** zuerst Frontend (schnellster sichtbarer Effekt), dann Functions, DB nur wenn Daten betroffen sind.
 

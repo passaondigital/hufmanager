@@ -49,16 +49,21 @@ EDGE_DEPLOY_DEPENDENCY=Migrationen 1..9 muessen vor dem Function-Deploy abgeschl
 ## FRONTEND_BUILD_COMMAND
 
 ```
-VITE_APP_FLAVOR=hufmanager \
-VITE_SUPABASE_URL=https://vnschgjxkzzwzefqlrji.supabase.co \
-VITE_SUPABASE_PUBLISHABLE_KEY=<prod publishable key> \
-bash scripts/build-hufmanager-canonical.sh
+./deploy.sh hufmanager --dry-run     # baut + prueft vollstaendig, schaltet nicht um
+./deploy.sh hufmanager               # Deploy des aktuellen HEAD (= RC-Commit)
+./deploy.sh hufmanager --ref <commit>
+./deploy.sh hufmanager --list
+./deploy.sh hufmanager --rollback    # current -> previous, atomar
 ```
 
 ```
-FRONTEND_BUILD_PRECONDITION=erfuellt — git diff und git diff --cached sauber seit dem RC-Commit
-FRONTEND_VERIFY_COMMAND=bash scripts/verify-hufmanager-release.sh
-FRONTEND_DEPLOY_COMMAND=OFFEN — Entscheidung erforderlich, siehe Release-Plan §9.1 (Isolated Release + Symlink | deploy.sh um HufManager-Ziel erweitern | freigegebener einmaliger rsync). CLAUDE.md verbietet Hand-rsync, ./deploy.sh zielt auf HufiApp, nicht auf den HufManager-Webroot.
+FRONTEND_DEPLOY_DECISION=./deploy.sh hufmanager (Pascal, 2026-09-20): Build des eingefrorenen RC -> releases/<commit>/ -> pruefen -> current-Symlink atomar umschalten; Rollback = Symlink zurueck
+FRONTEND_DEPLOY_SCRIPT=scripts/deploy-hufmanager.sh
+FRONTEND_ENV_FILE=.env.hufmanager (gitignored, enthaelt VITE_APP_FLAVOR/URL/PUBLISHABLE_KEY der Produktion)
+FRONTEND_STRUCTURE=releases/<commit>/ + current -> releases/<commit> + previous -> releases/<commit> + app -> current
+FRONTEND_NGINX_CHANGE_REQUIRED=NO   (root bleibt /srv/hufi/business/hufmanager/app, app wird zum Symlink)
+FRONTEND_FIRST_RUN_MIGRATION=bisheriges app/ wird nach releases/legacy-app-<ts>/ verschoben und als previous verlinkt
+FRONTEND_BUILD_PRECONDITION=erfuellt — Build laeuft aus einem sauberen git-Worktree des Ziel-Commits
 FRONTEND_RELEASE_REQUIRED=YES
 PRODUCTION_BUILD_PRECHECK=PASS
 PRODUCTION_BUILD_PRECHECK_NOTE=separater lokaler Build mit Prod-Env erfolgreich; 0 Treffer Staging-URL, Prod-Supabase-URL in 7 Chunks, PDF-Fix (INVOICE_ITEMS_MISSING) enthalten
@@ -226,7 +231,7 @@ GATE_3_NO_STAGING_URL=PASS          # 0 Treffer im Precheck-Bundle
 GATE_4_VAULT_PRECONDITIONS=PASS     # bewusste Entscheidung dokumentiert
 GATE_5_MIGRATIONS_IDENTIFIED=PASS   # 9 Migrationen, Reihenfolge fixiert
 GATE_6_RELEASE_FILES_IDENTIFIED=PASS
-GATE_7_ROLLBACK_ARTIFACTS=OPEN      # beim Deploy
+GATE_7_ROLLBACK_ARTIFACTS=OPEN      # beim Deploy; Frontend zusaetzlich durch previous-Symlink abgedeckt
 GATE_8_NO_UNKNOWN_FILES=OPEN        # beim Deploy
 ```
 

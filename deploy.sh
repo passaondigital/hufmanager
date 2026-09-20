@@ -1,4 +1,12 @@
 #!/bin/bash
+# Deploy-Einstieg für beide Flavors.
+#
+#   ./deploy.sh                     -> HufiApp (hufiapp.de), Ablauf unverändert
+#   ./deploy.sh --rollback          -> HufiApp Rollback, unverändert
+#   ./deploy.sh hufmanager [...]    -> HufManager (app.hufmanager.de),
+#                                      Release-Verzeichnis + current-Symlink,
+#                                      siehe scripts/deploy-hufmanager.sh
+#
 # HufiApp (hufiapp.de) — einziger erlaubter Deploy-Weg für /var/www/hufiapps/v25.
 # NICHT per Hand-Kommandos deployen — siehe HUFI_ROADMAP.md ("Ausfall 19.07.2026").
 #
@@ -11,6 +19,14 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# HufManager läuft über einen eigenen, isolierten Ablauf (Release-Verzeichnis +
+# atomarer current-Symlink). Der HufiApp-Pfad unten bleibt davon unberührt.
+if [[ "${1:-}" == "hufmanager" ]]; then
+  shift
+  exec "$REPO_DIR/scripts/deploy-hufmanager.sh" "$@"
+fi
+
 ENV_FILE="$REPO_DIR/.env"
 WT_DIR="/tmp/hufi-deploy-worktree-$$"
 WEBROOT="/var/www/hufiapps"
