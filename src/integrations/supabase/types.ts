@@ -18974,6 +18974,10 @@ export type Database = {
         Args: { p_invoice: Json; p_items?: Json }
         Returns: Json
       }
+      create_customer_with_contact: {
+        Args: { p_contact?: Json; p_profile: Json }
+        Returns: Json
+      }
       consume_hufi_voice_credit: {
         Args: { p_description?: string; p_seconds: number; p_user_id: string }
         Returns: Json

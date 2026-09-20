@@ -141,39 +141,42 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
       let createdClientId: string | undefined;
       let createdHorseId: string | undefined;
 
-      // Create ghost profile + horse if client data provided
+      // P1-3 (Correction Pass 4): einziger canonical Customer-Create-Pfad ist
+      // die atomare RPC create_customer_with_contact (siehe AddCustomerModal),
+      // statt profiles+contacts als zwei separate, unkompensierte Writes.
+      // Pferd-Anlage bleibt ein eigener Schritt danach (kein Teil des
+      // Customer-Contracts) — bei RPC-Fehler wird gar kein Kunde angelegt,
+      // also auch kein verwaistes Pferd möglich.
       if (clientName.trim() && horseName.trim()) {
-        // Create ghost profile for client
-        const { data: ghostProfile } = await supabase
-          .from('profiles')
-          .insert({
-            full_name: clientName.trim(),
-            mobile: clientPhone.trim() || null,
-            created_by_provider_id: user.id,
-            onboarding_completed: false as boolean,
-          } as any)
-          .select('id')
-          .single();
-
-        if (ghostProfile) {
-          createdClientId = ghostProfile.id;
-
-          // Create contact
-          await supabase.from('contacts').insert({
-            provider_id: user.id,
+        const { data: customerResult, error: customerError } = await supabase.rpc('create_customer_with_contact', {
+          p_profile: {
             full_name: clientName.trim(),
             phone: clientPhone.trim() || null,
-            category: 'client',
-            profile_id: ghostProfile.id,
-          });
+          },
+          p_contact: { category: 'client' },
+        });
 
-          // Create horse with ghost profile as owner
-          const { data: horseData } = await supabase.from('horses').insert({
+        const profileId = (customerResult as { profile_id?: string } | null)?.profile_id;
+        if (customerError || !profileId) {
+          // Fehler nicht verschlucken: ohne diesen Hinweis hätte der
+          // Abschlussbildschirm einen Kunden gemeldet, den es nicht gibt.
+          // Das Onboarding selbst wird nicht blockiert — der Kunde lässt
+          // sich jederzeit regulär unter "Kunden" anlegen.
+          console.error('Error creating customer via RPC:', customerError);
+          toast.error('Kunde konnte nicht angelegt werden. Du kannst ihn später unter „Kunden“ anlegen.');
+        } else {
+          createdClientId = profileId;
+
+          // Create horse with new profile as owner
+          const { data: horseData, error: horseError } = await supabase.from('horses').insert({
             name: horseName.trim(),
-            owner_id: ghostProfile.id,
+            owner_id: profileId,
           }).select('id').single();
 
-          if (horseData) {
+          if (horseError || !horseData) {
+            console.error('Error creating horse:', horseError);
+            toast.error('Pferd konnte nicht angelegt werden. Du kannst es später beim Kunden ergänzen.');
+          } else {
             createdHorseId = horseData.id;
           }
 
@@ -182,8 +185,12 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
       }
 
       // Create appointment if date provided and horse exists
+      // P2 (Correction Pass 5): derselbe Codepfad, derselbe Fehlerumgang wie
+      // bei Kunde und Pferd — kein stiller Fehlschlag, und der
+      // Abschlussbildschirm meldet den Termin nur, wenn er wirklich steht.
+      let createdAppointment = false;
       if (appointmentDate && createdHorseId && createdClientId) {
-        await supabase.from('appointments').insert({
+        const { error: appointmentError } = await supabase.from('appointments').insert({
           provider_id: user.id,
           horse_id: createdHorseId,
           client_id: createdClientId,
@@ -192,6 +199,12 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
           status: 'planned',
           service_type: 'Ausschneiden',
         });
+        if (appointmentError) {
+          console.error('Error creating first appointment:', appointmentError);
+          toast.error('Der erste Termin konnte nicht angelegt werden. Du kannst ihn im Kalender nachtragen.');
+        } else {
+          createdAppointment = true;
+        }
       }
 
       // Mark onboarding complete
@@ -199,11 +212,13 @@ export function ProviderSetupWizard({ onComplete }: ProviderSetupWizardProps) {
         onboarding_completed: true,
       }).eq('id', user.id);
 
+      // Nur melden, was tatsächlich angelegt wurde — kein Erfolg ohne
+      // verifizierte ID.
       setResult({
-        horseName: horseName.trim() || undefined,
-        clientName: clientName.trim() || undefined,
-        appointmentDate: appointmentDate || undefined,
-        appointmentTime: appointmentTime || undefined,
+        horseName: createdHorseId ? horseName.trim() || undefined : undefined,
+        clientName: createdClientId ? clientName.trim() || undefined : undefined,
+        appointmentDate: createdAppointment ? appointmentDate || undefined : undefined,
+        appointmentTime: createdAppointment ? appointmentTime || undefined : undefined,
         clientId: createdClientId,
       });
 

@@ -44,8 +44,12 @@ const horseSchema = z.object({
       if (!val) return true;
       const year = parseInt(val);
       const currentYear = new Date().getFullYear();
-      return year >= 1970 && year <= currentYear;
-    }, "Ungültiges Geburtsjahr")
+      // Muss mit dem DB-Trigger validate_horse_data() übereinstimmen
+      // (supabase/migrations/20260301155912_...sql:96): dort ist
+      // birth_year < 1980 ungültig. Frontend erzwingt denselben Bereich,
+      // damit ein gültig aussehendes Formular nicht am Insert scheitert.
+      return year >= 1980 && year <= currentYear;
+    }, "Ungültiges Geburtsjahr (ab 1980)")
     .optional(),
 });
 
@@ -57,14 +61,21 @@ const EQUINE_TYPES = [
   { value: "zebra", label: "Zebra" },
 ];
 
+interface CreatedHorse {
+  id: string;
+  name: string;
+  owner_id: string;
+}
+
 interface Props {
   customerId: string | null;
   customerName?: string;
   open: boolean;
   onClose: () => void;
+  onCreated?: (horse: CreatedHorse) => void;
 }
 
-export function AddHorseModal({ customerId, customerName, open, onClose }: Props) {
+export function AddHorseModal({ customerId, customerName, open, onClose, onCreated }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const emptyForm = {
@@ -127,18 +138,21 @@ export function AddHorseModal({ customerId, customerName, open, onClose }: Props
       usage_type?: UsageType;
       height_cm?: number;
     }) => {
-      const { error } = await supabase.from("horses").insert(data);
+      const { data: created, error } = await supabase.from("horses").insert(data).select("id, name, owner_id").single();
       if (error) throw error;
+      return created as CreatedHorse;
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
       queryClient.invalidateQueries({ queryKey: ["horses"] });
       queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
+      queryClient.invalidateQueries({ queryKey: ["horses-with-price-group"] });
       toast({
         title: "Pferd angelegt",
         description: `${form.name} wurde erfolgreich erstellt.`,
       });
       clearDraft();
       resetForm();
+      onCreated?.(created);
       onClose();
     },
     onError: (error: any) => {

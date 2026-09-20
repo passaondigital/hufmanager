@@ -42,6 +42,7 @@ import { PdfPreviewDialog } from "@/components/invoices/PdfPreviewDialog";
 import { toast } from "@/hooks/use-toast";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
 import { downloadDatevExport, downloadSimpleExport } from "@/lib/datevExport";
+import { getInvoiceStatusCategory, isInvoiceCancelled, isInvoiceOpen, isInvoiceOverdue, isInvoicePaid } from "@/lib/invoiceStatus";
 
 interface Invoice {
   id: string;
@@ -60,6 +61,10 @@ interface Invoice {
   paid_at: string | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
+  customer_type: string | null;
+  signature_url: string | null;
+  credit_note_for: string | null;
+  created_at: string;
   horse: {
     name: string;
   } | null;
@@ -120,6 +125,10 @@ export default function Rechnungen() {
         paid_at,
         cancelled_at,
         cancellation_reason,
+        customer_type,
+        signature_url,
+        credit_note_for,
+        created_at,
         horse:horses(name)
       `)
       .eq("provider_id", user.id)
@@ -179,28 +188,21 @@ export default function Rechnungen() {
     setFilteredInvoices(filtered);
   }, [searchQuery, invoices]);
 
-  const getStatusBadge = (status: string | null, cancelledAt: string | null) => {
-    if (cancelledAt) {
-      return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30">Storniert</Badge>;
-    }
-    switch (status) {
+  const getStatusBadge = (invoice: Pick<Invoice, "status" | "payment_status" | "cancelled_at" | "credit_note_for">) => {
+    switch (getInvoiceStatusCategory(invoice)) {
+      case "cancelled":
+        return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30">Storniert</Badge>;
+      case "credited":
+        return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30">Gutschrift</Badge>;
       case "paid":
         return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Bezahlt</Badge>;
       case "overdue":
         return <Badge variant="destructive">Überfällig</Badge>;
-      case "pending":
+      case "draft":
+        return <Badge variant="outline">Entwurf</Badge>;
       default:
         return <Badge variant="secondary">Offen</Badge>;
     }
-  };
-
-  const getPaymentStatusBadge = (paymentStatus: string | null, paymentLink: string | null) => {
-    if (!paymentLink) return null;
-    
-    if (paymentStatus === "paid") {
-      return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Bezahlt</Badge>;
-    }
-    return <Badge className="bg-destructive/10 text-destructive border-destructive/20">Unbezahlt</Badge>;
   };
 
   const handleCopyPaymentLink = (paymentLink: string) => {
@@ -215,8 +217,8 @@ export default function Rechnungen() {
     }).format(amount);
   };
 
-  const totalOpen = invoices.filter(i => i.status === "pending").reduce((sum, i) => sum + i.total_amount, 0);
-  const totalOverdue = invoices.filter(i => i.status === "overdue").reduce((sum, i) => sum + i.total_amount, 0);
+  const totalOpen = invoices.filter(isInvoiceOpen).reduce((sum, i) => sum + i.total_amount, 0);
+  const totalOverdue = invoices.filter(isInvoiceOverdue).reduce((sum, i) => sum + i.total_amount, 0);
 
   const handleGeneratePdf = async (invoice: Invoice): Promise<Blob | null> => {
     if (!user) return null;
@@ -414,7 +416,7 @@ export default function Rechnungen() {
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Bezahlt</p>
             <p className="text-2xl font-bold text-green-600">
-              {invoices.filter(i => i.status === "paid").length}
+              {invoices.filter(isInvoicePaid).length}
             </p>
           </CardContent>
         </Card>
@@ -471,17 +473,22 @@ export default function Rechnungen() {
                       <span className="font-semibold text-foreground">
                         {invoice.invoice_number || `Rechnung`}
                       </span>
-                      {getStatusBadge(invoice.status, invoice.cancelled_at)}
+                      {getStatusBadge(invoice)}
+                      {/* P1-D: das CopeCart-Badge darf nie unabhängig vom canonical
+                          Status "offen"/"bezahlbar" wirken — bei bezahlt/storniert/
+                          Gutschrift zeigt getStatusBadge(invoice) darüber bereits den
+                          korrekten Zustand, ein zusätzliches "CopeCart offen" würde
+                          dem widersprechen. */}
                       {invoice.payment_link && invoice.payment_method === "CopeCart" && (
-                        <Badge 
-                          variant="outline" 
-                          className={invoice.payment_status === "paid" 
-                            ? "bg-green-500/10 text-green-600 border-green-500/20" 
-                            : "bg-destructive/10 text-destructive border-destructive/20"
-                          }
-                        >
-                          {invoice.payment_status === "paid" ? "CopeCart ✓" : "CopeCart offen"}
-                        </Badge>
+                        isInvoicePaid(invoice) ? (
+                          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+                            CopeCart ✓
+                          </Badge>
+                        ) : isInvoiceOpen(invoice) ? (
+                          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+                            CopeCart offen
+                          </Badge>
+                        ) : null
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -524,8 +531,8 @@ export default function Rechnungen() {
                           <Download className="h-4 w-4 mr-2" />
                           Herunterladen
                         </DropdownMenuItem>
-                        {invoice.payment_link && invoice.status !== "paid" && !invoice.cancelled_at && (
-                          <DropdownMenuItem 
+                        {invoice.payment_link && isInvoiceOpen(invoice) && (
+                          <DropdownMenuItem
                             onClick={() => handleCopyPaymentLink(invoice.payment_link!)}
                             className="text-[#F47B20] focus:text-[#F47B20]"
                           >
@@ -533,8 +540,8 @@ export default function Rechnungen() {
                             Zahlungslink kopieren
                           </DropdownMenuItem>
                         )}
-                        {invoice.payment_link && invoice.status !== "paid" && !invoice.cancelled_at && (
-                          <DropdownMenuItem 
+                        {invoice.payment_link && isInvoiceOpen(invoice) && (
+                          <DropdownMenuItem
                             onClick={() => window.open(invoice.payment_link!, "_blank")}
                             className="text-[#F47B20] focus:text-[#F47B20]"
                           >
@@ -542,8 +549,8 @@ export default function Rechnungen() {
                             Zahlungslink öffnen
                           </DropdownMenuItem>
                         )}
-                        {invoice.status !== "paid" && !invoice.cancelled_at && (
-                          <DropdownMenuItem 
+                        {isInvoiceOpen(invoice) && (
+                          <DropdownMenuItem
                             onClick={() => setInvoiceToMarkPaid(invoice)}
                             className="text-green-600 focus:text-green-600"
                           >
@@ -551,13 +558,13 @@ export default function Rechnungen() {
                             Als bezahlt markieren
                           </DropdownMenuItem>
                         )}
-                        {invoice.status === "paid" && invoice.payment_method && (
+                        {isInvoicePaid(invoice) && invoice.payment_method && (
                           <DropdownMenuItem disabled className="text-muted-foreground">
                             Zahlart: {invoice.payment_method}
                             {invoice.paid_at && ` (${format(new Date(invoice.paid_at), "dd.MM.yyyy", { locale: de })})`}
                           </DropdownMenuItem>
                         )}
-                        {!invoice.cancelled_at && (
+                        {!isInvoiceCancelled(invoice) && (
                           <DropdownMenuItem
                             onClick={() => setInvoiceToCancel(invoice)}
                             className="text-amber-600 focus:text-amber-600"
@@ -566,7 +573,7 @@ export default function Rechnungen() {
                             Stornieren
                           </DropdownMenuItem>
                         )}
-                        {invoice.cancelled_at && (
+                        {isInvoiceCancelled(invoice) && invoice.cancelled_at && (
                           <DropdownMenuItem disabled className="text-muted-foreground">
                             Storniert am {format(new Date(invoice.cancelled_at), "dd.MM.yyyy", { locale: de })}
                           </DropdownMenuItem>

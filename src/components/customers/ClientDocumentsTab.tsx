@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { getInvoiceStatusCategory } from "@/lib/invoiceStatus";
 
 interface Invoice {
   id: string;
@@ -29,7 +30,13 @@ interface Invoice {
   due_date: string | null;
   total_amount: number;
   status: string | null;
+  payment_status: string | null;
+  cancelled_at: string | null;
+  credit_note_for: string | null;
   notes: string | null;
+  customer_type: string | null;
+  signature_url: string | null;
+  created_at: string;
   horse?: { name: string } | null;
 }
 
@@ -66,7 +73,13 @@ export function ClientDocumentsTab({ clientId, clientName }: ClientDocumentsTabP
           due_date,
           total_amount,
           status,
+          payment_status,
+          cancelled_at,
+          credit_note_for,
           notes,
+          customer_type,
+          signature_url,
+          created_at,
           horse:horses(name)
         `)
         .eq("client_id", clientId)
@@ -125,12 +138,18 @@ export function ClientDocumentsTab({ clientId, clientName }: ClientDocumentsTabP
     }).format(amount);
   };
 
-  const getStatusBadge = (status: string | null) => {
-    switch (status) {
+  const getStatusBadge = (invoice: Pick<Invoice, "status" | "payment_status" | "cancelled_at" | "credit_note_for">) => {
+    switch (getInvoiceStatusCategory(invoice)) {
+      case "cancelled":
+        return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30 text-xs">Storniert</Badge>;
+      case "credited":
+        return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30 text-xs">Gutschrift</Badge>;
       case "paid":
         return <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-xs">Bezahlt</Badge>;
       case "overdue":
         return <Badge variant="destructive" className="text-xs">Überfällig</Badge>;
+      case "draft":
+        return <Badge variant="outline" className="text-xs">Entwurf</Badge>;
       default:
         return <Badge variant="secondary" className="text-xs">Offen</Badge>;
     }
@@ -247,7 +266,7 @@ export function ClientDocumentsTab({ clientId, clientName }: ClientDocumentsTabP
                               <span className="font-medium text-sm">
                                 {invoice.invoice_number || "Rechnung"}
                               </span>
-                              {getStatusBadge(invoice.status)}
+                              {getStatusBadge(invoice)}
                             </div>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                               <Calendar className="h-3 w-3" />

@@ -332,7 +332,7 @@ const Kalender = () => {
     return { start, end };
   }, [currentDate]);
 
-  const { data: appointments = [], isLoading } = useQuery({
+  const { data: appointments = [], isLoading, isError: appointmentsLoadError } = useQuery({
     queryKey: ["appointments", user?.id, dateRange.start, dateRange.end],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -715,6 +715,8 @@ const Kalender = () => {
             selectedDate={selectedDate}
             existingAppointments={appointments}
             preselectedHorseId={preselectedHorseId}
+            appointmentsLoading={isLoading}
+            appointmentsLoadError={appointmentsLoadError}
           />
         </Suspense>
       )}

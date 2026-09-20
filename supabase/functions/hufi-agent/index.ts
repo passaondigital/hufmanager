@@ -515,9 +515,19 @@ const MUTATING_TOOLS = new Set([
 
 // Tools, für die bereits ein Ausführungspfad existiert (client-seitig über
 // executeHufiAction, siehe hufi-actions.ts) — Name → AgentTaskType. Fehlt ein
-// Tool hier (create_horse, create_contact), wird es NICHT ausgeführt, auch
-// nicht nach Bestätigung — Claude bekommt stattdessen sofort eine Absage,
-// damit nichts still hängen bleibt (siehe executeTool-Aufrufstelle unten).
+// Tool hier (create_horse), wird es NICHT ausgeführt, auch nicht nach
+// Bestätigung — Claude bekommt stattdessen sofort eine Absage, damit nichts
+// still hängen bleibt (siehe executeTool-Aufrufstelle unten).
+//
+// P1-3 (Correction Pass 5): create_contact stand im Toolkatalog und in
+// MUTATING_TOOLS, fehlte aber hier — es wurde also immer mit "kann ich noch
+// nicht" abgelehnt, und der kanonische create_customer_with_contact-Pfad war
+// unerreichbar. Jetzt eingetragen, OHNE die Bestätigungspflicht zu umgehen:
+// der Eintrag ändert nur, WAS nach der Nutzerbestätigung passiert. Der Weg
+// bleibt exakt derselbe wie bei create_invoice — hufi_task_queue-Eintrag mit
+// requires_confirm, Ausführung erst nach dem ✓-Button, dann clientseitig mit
+// dem Provider-JWT über executeHufiAction (→ _createCustomer →
+// create_customer_with_contact, die auth.uid() selbst prüft).
 // taskType: AgentTaskType-Wert für die Client-Anzeige (Label/Icon, siehe
 // hufi-agent-tasks.ts). actionType: HufiAction["type"] -- was executeHufiAction
 // nach Bestätigung wirklich ausführt (siehe hufi-actions.ts). Beide Werte
@@ -528,6 +538,7 @@ const EXECUTABLE_MUTATING_TOOLS: Record<string, { taskType: string; actionType: 
   update_appointment: { taskType: "update_appointment", actionType: "update_appointment" },
   cancel_appointment: { taskType: "delete",             actionType: "cancel_appointment" },
   create_invoice:     { taskType: "create_invoice",     actionType: "send_invoice" },
+  create_contact:     { taskType: "create_customer",    actionType: "create_customer" },
   create_note:        { taskType: "create_note",        actionType: "create_note" },
   add_expense:        { taskType: "add_expense",        actionType: "add_expense" },
   send_notification:  { taskType: "send_message",       actionType: "notify_client" },
@@ -784,6 +795,12 @@ async function executeTool(
   supabaseUrl: string,
   supabaseServiceKey: string,
   professionType: string | null = null,
+  // P1-1/P1-3 (Correction Pass 4): anon-Key-Client mit dem weitergereichten
+  // Caller-JWT (siehe serve() ganz unten) — nötig für die kanonischen
+  // atomaren RPCs create_invoice_with_items/create_customer_with_contact,
+  // die auth.uid() auswerten. supabaseAdmin (service_role) hat kein
+  // auth.uid() und würde beide RPCs mit "Authentication required" ablehnen.
+  supabaseUser: ReturnType<typeof createClient> = supabaseAdmin,
 ): Promise<string> {
   const professionProfile = (professionType && PROFESSION_PROFILES[professionType]) || DEFAULT_PROFESSION_PROFILE;
   const today = new Date().toISOString().slice(0, 10);
@@ -1164,6 +1181,18 @@ async function executeTool(
       }
 
       // ── create_invoice ────────────────────────────────────────────────────
+      // Hinweis (Correction Pass 5): create_invoice steht in MUTATING_TOOLS
+      // und wird deshalb schon in callClaudeWithTools abgefangen — der
+      // produktive Weg ist Bestätigungsschlange → executeHufiAction
+      // (src/lib/hufi-actions.ts). Dieser Zweig bleibt bewusst auf derselben
+      // kanonischen RPC, damit beide Pfade nicht auseinanderlaufen, falls das
+      // Gate je geändert wird.
+      // P1-1 (Correction Pass 4): Kopf + Positionen liefen bisher als zwei
+      // getrennte Writes (supabaseAdmin), deren invoice_items-Fehler nur
+      // geloggt, nie behandelt wurde — eine Rechnung ohne Positionen konnte
+      // stehen bleiben. Kanonischer, atomarer Pfad ist jetzt dieselbe RPC wie
+      // im Frontend (create_invoice_with_items, src/lib/hufi-actions.ts):
+      // ein Server-Aufruf, ein DB-Commit, kein halbfertiger Zustand.
       case "create_invoice": {
         interface LineItem { title: string; quantity: number; unit_price: number; inventory_item_id: string | null; }
         const rawItems = input.line_items;
@@ -1183,40 +1212,43 @@ async function executeTool(
           const amount = Number(input.amount ?? 0);
           lineItems = amount > 0 ? [{ title, quantity: 1, unit_price: amount, inventory_item_id: null }] : [];
         }
-        const totalNetto = lineItems.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+
+        const clientId = (input.client_id as string | null) ?? null;
+        if (!clientId) return "Rechnung konnte nicht erstellt werden: kein Kunde zugeordnet.";
+        if (lineItems.length === 0) return "Rechnung konnte nicht erstellt werden: keine Rechnungsposition angegeben.";
+
+        // Pro Position gerundet, dann summiert — muss exakt der serverseitigen
+        // v_items_total aus create_invoice_with_items entsprechen (dort wird
+        // ebenfalls pro Zeile gerundet und aufsummiert), sonst lehnt die RPC
+        // den Aufruf wegen Summenabweichung ab.
+        const itemRows = lineItems.map((li) => ({
+          inventory_item_id: li.inventory_item_id,
+          title: li.title,
+          quantity: li.quantity,
+          unit_price: li.unit_price,
+          total_price: Math.round(li.quantity * li.unit_price * 100) / 100,
+        }));
+        const totalNetto = Math.round(itemRows.reduce((s, i) => s + i.total_price, 0) * 100) / 100;
         const invoiceNumber = `HF-${Date.now().toString(36).toUpperCase()}`;
 
-        const { data: inv, error: invErr } = await supabaseAdmin
-          .from("invoices")
-          .insert({
+        const { data: rpcResult, error: invErr } = await supabaseUser.rpc("create_invoice_with_items", {
+          p_invoice: {
             provider_id: providerId,
-            client_id: input.client_id ?? null,
+            client_id: clientId,
             horse_id: input.horse_id ?? null,
             invoice_number: invoiceNumber,
             issue_date: today,
-            total_amount: totalNetto > 0 ? totalNetto : Number(input.amount ?? 0),
+            total_amount: totalNetto,
             status: "draft",
             payment_status: null,
             customer_type: "client",
             notes: input.notes ? String(input.notes) : null,
-          })
-          .select("id")
-          .single();
+          },
+          p_items: itemRows,
+        });
         if (invErr) return `Rechnung konnte nicht erstellt werden: ${invErr.message}`;
-        const invoiceId = (inv as Record<string,unknown>).id as string;
-
-        if (lineItems.length > 0) {
-          const itemRows = lineItems.map((li) => ({
-            invoice_id: invoiceId,
-            inventory_item_id: li.inventory_item_id,
-            title: li.title,
-            quantity: li.quantity,
-            unit_price: li.unit_price,
-            total_price: li.quantity * li.unit_price,
-          }));
-          const { error: itemsErr } = await supabaseAdmin.from("invoice_items").insert(itemRows);
-          if (itemsErr) console.error("[hufi-agent] invoice_items insert error:", itemsErr.message);
-        }
+        const invoiceId = (rpcResult as Record<string, unknown> | null)?.id as string | undefined;
+        if (!invoiceId) return "Rechnung konnte nicht erstellt werden: unerwartete Serverantwort.";
 
         let deducted = 0;
         for (const li of lineItems.filter((l) => l.inventory_item_id)) {
@@ -1281,33 +1313,32 @@ async function executeTool(
       }
 
       // ── create_contact ────────────────────────────────────────────────────
+      // Hinweis (Correction Pass 5): wie create_invoice wird auch
+      // create_contact vom MUTATING_TOOLS-Gate abgefangen. Produktiv läuft es
+      // seit Pass 5 über EXECUTABLE_MUTATING_TOOLS → Bestätigung →
+      // executeHufiAction → _createCustomer. Dieselbe kanonische RPC wie hier.
+      // P1-3 (Correction Pass 4): profiles+contacts liefen bisher als zwei
+      // getrennte Writes (supabaseAdmin), der contacts-Fehler wurde nur
+      // geloggt — ein Kunde ohne Kontakteintrag konnte stehen bleiben.
+      // Kanonischer, atomarer Pfad ist jetzt dieselbe RPC wie AddCustomerModal
+      // (create_customer_with_contact): ein Server-Aufruf, ein DB-Commit.
       case "create_contact": {
         if (!input.full_name) return "full_name ist Pflicht.";
-        const newId = crypto.randomUUID();
         const fullName = String(input.full_name);
-        const { error: profileErr } = await supabaseAdmin.from("profiles").insert({
-          id: newId,
-          full_name: fullName,
-          email: input.email ? String(input.email) : null,
-          phone: input.phone ? String(input.phone) : null,
-          street: input.street ? String(input.street) : null,
-          zip_code: input.zip_code ? String(input.zip_code) : null,
-          city: input.city ? String(input.city) : null,
-          created_by_provider_id: providerId,
-          onboarding_completed: false,
-          has_logged_in: false,
+        const { data: rpcResult, error: customerErr } = await supabaseUser.rpc("create_customer_with_contact", {
+          p_profile: {
+            full_name: fullName,
+            email: input.email ? String(input.email) : null,
+            phone: input.phone ? String(input.phone) : null,
+            street: input.street ? String(input.street) : null,
+            zip_code: input.zip_code ? String(input.zip_code) : null,
+            city: input.city ? String(input.city) : null,
+          },
+          p_contact: { category: "client" },
         });
-        if (profileErr) return `Kunde konnte nicht angelegt werden: ${profileErr.message}`;
-
-        const { error: contactErr } = await supabaseAdmin.from("contacts").insert({
-          provider_id: providerId,
-          full_name: fullName,
-          email: input.email ? String(input.email) : null,
-          phone: input.phone ? String(input.phone) : null,
-          category: "client",
-          profile_id: newId,
-        });
-        if (contactErr) console.error("[hufi-agent] contacts insert error:", contactErr.message);
+        if (customerErr) return `Kunde konnte nicht angelegt werden: ${customerErr.message}`;
+        const newId = (rpcResult as Record<string, unknown> | null)?.profile_id as string | undefined;
+        if (!newId) return "Kunde konnte nicht angelegt werden: unerwartete Serverantwort.";
 
         return `✅ Kunde "${fullName}" angelegt | client_id:${newId}`;
       }
@@ -1592,6 +1623,9 @@ async function callClaudeWithTools(
   originalText: string = "",
   incomingFocus: ConversationFocus = {},
   correlationId: string = "?",
+  // P1-1/P1-3 (Correction Pass 4): siehe executeTool — Caller-JWT-Client für
+  // die kanonischen atomaren RPCs, Default supabaseAdmin nur als Fallback.
+  supabaseUser: ReturnType<typeof createClient> = supabaseAdmin,
 ): Promise<CallToolsResult> {
   const ctrl = new AbortController();
   // Unter dem Clientbudget bleiben, damit eine späte Providerantwort nicht
@@ -1662,7 +1696,7 @@ async function callClaudeWithTools(
         if (MUTATING_TOOLS.has(block.name)) {
           const exec = EXECUTABLE_MUTATING_TOOLS[block.name];
           if (!exec) {
-            // create_horse / create_contact: (noch) kein Ausführungspfad.
+            // create_horse: (noch) kein Ausführungspfad.
             // Klare Absage statt stillem Hängenbleiben.
             toolResults.push({
               type: "tool_result",
@@ -1730,6 +1764,7 @@ async function callClaudeWithTools(
           supabaseUrl,
           supabaseServiceKey,
           professionType,
+          supabaseUser,
         );
         console.log(`[hufi-agent][${correlationId}] Tool-Aufruf beendet: ${block.name} (${Date.now() - toolT0}ms)`);
         // search_entity liefert selbst neue IDs (Claude kannte sie vor dem
@@ -1978,7 +2013,7 @@ serve(async (req) => {
       const result = await callClaudeWithTools(
         systemPrompt, messages, ANTHROPIC_KEY, selectedModel,
         user.id, supabaseAdmin, supabaseUrl, supabaseServiceKey, voiceMode,
-        ctx.professionType, text, conversationFocus ?? {}, requestId,
+        ctx.professionType, text, conversationFocus ?? {}, requestId, supabase,
       );
       rawAnswer = result.text;
       pendingConfirmation = result.pendingConfirmation;
@@ -1996,7 +2031,7 @@ serve(async (req) => {
           const result = await callClaudeWithTools(
             systemPrompt, messages, ANTHROPIC_KEY, selectedModel,
             user.id, supabaseAdmin, supabaseUrl, supabaseServiceKey, voiceMode,
-            ctx.professionType, text, conversationFocus ?? {}, requestId,
+            ctx.professionType, text, conversationFocus ?? {}, requestId, supabase,
           );
           rawAnswer = result.text;
           pendingConfirmation = result.pendingConfirmation;

@@ -2,22 +2,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { updateHufiMemory } from "./hufi-brain";
 import { extractLineItems } from "./hufi-tool-definitions";
+import { assertCreateInvoiceWithItemsResult } from "./invoiceRpc";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+// P1-3 (Correction Pass 5): die Liste der ausführbaren Aktionstypen liegt in
+// hufiActionTypes.ts — importfrei, damit Vertragstests sie laden können, ohne
+// den Supabase-Client mitzuziehen. Hier nur re-exportiert, damit bestehende
+// Importe von HufiAction unverändert bleiben.
+export { HUFI_ACTION_TYPES, type HufiActionType } from "./hufiActionTypes";
+import type { HufiActionType } from "./hufiActionTypes";
+
 export interface HufiAction {
-  type:
-    | "create_appointment"
-    | "update_appointment"
-    | "cancel_appointment"
-    | "send_invoice"
-    | "notify_client"
-    | "create_note"
-    | "request_permission"
-    | "remind_dsgvo"
-    | "escalate_emergency"
-    | "set_price_group"
-    | "add_expense";
+  type: HufiActionType;
   payload: Record<string, unknown>;
   requiresConfirmation: boolean;
   dsgvoRelevant: boolean;
@@ -127,6 +124,7 @@ export async function executeHufiAction(
     case "escalate_emergency":  return _escalateEmergency(action.payload, userId);
     case "set_price_group":     return _setPriceGroup(action.payload, userId);
     case "add_expense":         return _addExpense(action.payload, userId);
+    case "create_customer":     return _createCustomer(action.payload);
     default:                    return { success: false, message: "Unbekannte Aktion" };
   }
 }
@@ -260,47 +258,59 @@ async function _createInvoice(
   userId: string,
 ): Promise<ActionResult> {
   try {
-    const today = format(new Date(), "yyyy-MM-dd");
+    const clientId = (payload.client_id as string | null) ?? null;
+    if (!clientId) {
+      return { success: false, message: "Rechnung konnte nicht erstellt werden: kein Kunde zugeordnet." };
+    }
+
     const lineItems = extractLineItems(payload);
-    const totalNetto = lineItems.reduce((s, i) => s + i.quantity * i.unit_price, 0);
+    if (lineItems.length === 0) {
+      return { success: false, message: "Rechnung konnte nicht erstellt werden: keine Rechnungsposition angegeben." };
+    }
+
+    const today = format(new Date(), "yyyy-MM-dd");
     const invoiceNumber = `HF-${Date.now().toString(36).toUpperCase()}`;
     const notesDefault = payload.horse_name
       ? `${payload.service_type ?? "Hufpflege"}: ${payload.horse_name}`
       : null;
 
-    // Rechnungs-Kopf anlegen
-    const { data: inv, error: invErr } = await supabase
-      .from("invoices")
-      .insert({
-        provider_id:    userId,
-        client_id:      (payload.client_id as string | null) ?? null,
-        horse_id:       (payload.horse_id  as string | null) ?? null,
-        invoice_number: invoiceNumber,
-        issue_date:     today,
-        total_amount:   totalNetto > 0 ? totalNetto : ((payload.amount as number) ?? 0),
-        status:         "draft",
-        payment_status: null,
-        customer_type:  "client",
-        notes:          (payload.notes as string | null) ?? notesDefault,
-      })
-      .select("id")
-      .single();
-    if (invErr) throw invErr;
-    const invoiceId = (inv as { id: string }).id;
+    // Pro Position gerundet, dann summiert — muss exakt dem serverseitigen
+    // v_items_total aus create_invoice_with_items entsprechen (dort wird
+    // ebenfalls pro Zeile gerundet und aufsummiert), sonst lehnt die RPC den
+    // Aufruf wegen Summenabweichung ab.
+    const itemRows = lineItems.map((li) => ({
+      inventory_item_id: li.inventory_item_id ?? null,
+      title:             li.title,
+      quantity:          li.quantity,
+      unit_price:        li.unit_price,
+      total_price:       Math.round(li.quantity * li.unit_price * 100) / 100,
+    }));
+    const totalNetto = Math.round(itemRows.reduce((s, i) => s + i.total_price, 0) * 100) / 100;
 
-    // Rechnungspositionen anlegen
-    if (lineItems.length > 0) {
-      const itemRows = lineItems.map((li) => ({
-        invoice_id:        invoiceId,
-        inventory_item_id: li.inventory_item_id ?? null,
-        title:             li.title,
-        quantity:          li.quantity,
-        unit_price:        li.unit_price,
-        total_price:       li.quantity * li.unit_price,
-      }));
-      const { error: itemsErr } = await supabase.from("invoice_items").insert(itemRows);
-      if (itemsErr) console.error("[invoice] items insert error:", itemsErr.message);
-    }
+    // P1-E: Kopf + Positionen werden serverseitig atomar geschrieben
+    // (create_invoice_with_items) — kein separater invoice_items-Insert mehr,
+    // dessen Fehler nur geloggt statt behandelt wird. Ein RPC-Fehler wirft
+    // hart, statt eine Rechnung ohne Positionen zurückzulassen.
+    const { data: insertedInvoice, error: invoiceError } = await supabase.rpc(
+      "create_invoice_with_items",
+      {
+        p_invoice: {
+          provider_id:    userId,
+          client_id:      clientId,
+          horse_id:       (payload.horse_id as string | null) ?? null,
+          invoice_number: invoiceNumber,
+          issue_date:     today,
+          total_amount:   totalNetto,
+          status:         "draft",
+          payment_status: null,
+          customer_type:  "client",
+          notes:          (payload.notes as string | null) ?? notesDefault,
+        },
+        p_items: itemRows,
+      },
+    );
+    if (invoiceError) throw invoiceError;
+    const invoiceId = assertCreateInvoiceWithItemsResult(insertedInvoice).id;
 
     // Lagerbestand abziehen
     const stockDeductions = lineItems.filter((li) => li.inventory_item_id);
@@ -427,6 +437,56 @@ async function _setReminder(
     return { success: true, message: `🔔 Erinnerung gesetzt.` };
   } catch {
     return { success: false, message: "Erinnerung konnte nicht gesetzt werden." };
+  }
+}
+
+/**
+ * P1-3 (Correction Pass 5): Ausführung des bestätigten Agent-Tools
+ * create_contact. Läuft über denselben canonical, atomaren RPC wie
+ * AddCustomerModal (create_customer_with_contact) — profiles + contacts in
+ * einer Transaktion, kein Two-Write, kein Client-Rollback.
+ *
+ * Läuft bewusst clientseitig mit dem JWT des angemeldeten Providers: die RPC
+ * liest auth.uid() und prüft damit selbst Provider-Rolle und Mandanten-
+ * bindung. Es gibt hier keinen Service-Role-Pfad, der das umgehen könnte.
+ */
+async function _createCustomer(
+  payload: Record<string, unknown>,
+): Promise<ActionResult> {
+  try {
+    const fullName = typeof payload.full_name === "string" ? payload.full_name.trim() : "";
+    if (!fullName) {
+      return { success: false, message: "Kunde konnte nicht angelegt werden: kein Name angegeben." };
+    }
+
+    const text = (key: string): string | null => {
+      const raw = payload[key];
+      if (typeof raw !== "string") return null;
+      const trimmed = raw.trim();
+      return trimmed === "" ? null : trimmed;
+    };
+
+    const { data, error } = await supabase.rpc("create_customer_with_contact", {
+      p_profile: {
+        full_name: fullName,
+        email:     text("email"),
+        phone:     text("phone"),
+        street:    text("street"),
+        zip_code:  text("zip_code"),
+        city:      text("city"),
+      },
+      p_contact: { category: "client" },
+    });
+    if (error) throw error;
+
+    const profileId = (data as { profile_id?: unknown } | null)?.profile_id;
+    if (typeof profileId !== "string") {
+      return { success: false, message: "Kunde konnte nicht angelegt werden: unerwartete Serverantwort." };
+    }
+
+    return { success: true, message: `👤 Kunde "${fullName}" angelegt.`, data: { client_id: profileId } };
+  } catch (err) {
+    return { success: false, message: `Kunde konnte nicht angelegt werden: ${(err as Error).message}` };
   }
 }
 

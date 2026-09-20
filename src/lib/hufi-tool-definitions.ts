@@ -141,6 +141,7 @@ export function toolNameToTaskType(toolName: string): AgentTaskType {
   switch (toolName) {
     case "create_appointment": return "create_appointment";
     case "create_invoice":     return "create_invoice";
+    case "create_contact":     return "create_customer";
     case "create_note":        return "create_note";
     case "set_reminder":       return "set_reminder";
     case "add_expense":        return "add_expense";

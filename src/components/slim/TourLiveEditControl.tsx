@@ -369,6 +369,14 @@ export function TourLiveEditControl() {
         onClose={() => void closeAddDialog()}
         selectedDate={new Date()}
         existingAppointments={appointments}
+        appointmentsLoading={tourEditQuery.isLoading}
+        appointmentsLoadError={tourEditQuery.isError}
+        // P1-4 (Correction Pass 4): dieses Control lässt das Modal dauerhaft
+        // gemountet (anders als Kalender.tsx' `{isFormOpen && <...>}`), der
+        // React-State überlebt Cancel/Close also. discardOnClose erzwingt
+        // deshalb beim Schließen den vollständigen Reset + clearDraft, damit
+        // Reopen nie eine stale Owner-/Pferde-Auswahl zeigt.
+        discardOnClose
       />
 
       <Dialog open={removeOpen} onOpenChange={setRemoveOpen}>

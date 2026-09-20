@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
@@ -28,6 +27,7 @@ import "leaflet/dist/leaflet.css";
 import { AppointmentCompletionDialog } from "@/components/appointment/AppointmentCompletionDialog";
 import { DelayReportSheet } from "@/components/day-cockpit/DelayReportSheet";
 import { NoShowSheet } from "@/components/day-cockpit/NoShowSheet";
+import { SlimAppointmentModal } from "@/components/slim/SlimAppointmentModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { HelpTip } from "@/components/ui/HelpTip";
@@ -111,7 +111,6 @@ function getCurrentBrowserPosition(): Promise<[number, number] | null> {
 
 export function SlimTourScreen() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const today = format(new Date(), "yyyy-MM-dd");
   const [orderedStops, setOrderedStops] = useState<SlimTourStop[]>([]);
@@ -120,6 +119,7 @@ export function SlimTourScreen() {
   const [selectedStop, setSelectedStop] = useState<SlimTourStop | null>(null);
   const [delaySheetOpen, setDelaySheetOpen] = useState(false);
   const [noShowStop, setNoShowStop] = useState<SlimTourStop | null>(null);
+  const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const tourQuery = useQuery({
@@ -509,7 +509,7 @@ export function SlimTourScreen() {
       )}
 
       {!orderedStops.length ? (
-        <section className="hm-card flex min-h-72 flex-col items-start justify-center p-6 sm:p-8"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-600"><Route className="h-6 w-6" /></div><h2 className="mt-5 text-xl font-semibold text-[var(--hm-text-primary)]">Heute sind noch keine Termine geplant.</h2><p className="mt-2 text-sm text-[var(--hm-text-secondary)]">Mit dem ersten Termin entsteht automatisch deine Tagesroute.</p><button className="hm-button-primary mt-5" onClick={() => navigate("/kalender?new=true")}>Termin hinzufügen</button></section>
+        <section className="hm-card flex min-h-72 flex-col items-start justify-center p-6 sm:p-8"><div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-600"><Route className="h-6 w-6" /></div><h2 className="mt-5 text-xl font-semibold text-[var(--hm-text-primary)]">Heute sind noch keine Termine geplant.</h2><p className="mt-2 text-sm text-[var(--hm-text-secondary)]">Mit dem ersten Termin entsteht automatisch deine Tagesroute.</p><button className="hm-button-primary mt-5" onClick={() => setAppointmentModalOpen(true)}>Termin hinzufügen</button></section>
       ) : (
         <div className="grid min-h-[calc(100vh-11rem)] overflow-hidden rounded-2xl border border-[var(--hm-border)] bg-[var(--hm-surface)] shadow-[var(--hm-shadow-card)] xl:grid-cols-[minmax(0,1fr)_23rem]">
           <section className="relative min-h-[31rem] overflow-hidden xl:min-h-full">
@@ -603,6 +603,12 @@ export function SlimTourScreen() {
           onCompleted={() => { setSelectedStop(null); void tourQuery.refetch(); }}
         />
       )}
+
+      <SlimAppointmentModal
+        isOpen={appointmentModalOpen}
+        onClose={() => { setAppointmentModalOpen(false); void tourQuery.refetch(); }}
+        selectedDate={new Date()}
+      />
     </div>
   );
 }

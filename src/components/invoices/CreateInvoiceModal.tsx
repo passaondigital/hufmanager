@@ -29,10 +29,11 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package, Info, Sparkles } from "lucide-react";
 import { z } from "zod";
-import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { generateInvoicePdfPreview } from "@/lib/invoicePdfGenerator";
 import { SignaturePad } from "@/components/signature/SignaturePad";
 import { useInvoiceNumber } from "@/hooks/useInvoiceNumber";
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { assertCreateInvoiceWithItemsResult } from "@/lib/invoiceRpc";
 
 // Haversine formula to calculate distance between two coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -450,31 +451,36 @@ export function CreateInvoiceModal({
     }
 
     setPreviewLoading(true);
-    
+
     try {
       const selectedClient = clients.find(c => c.id === formData.client_id);
       const selectedHorse = filteredHorses.find(h => h.id === formData.horse_id);
-      
-      // Build positions notes
-      const positionsText = lineItems.map(item => 
-        `${item.title} (${item.quantity}x) = €${(item.quantity * item.unit_price).toFixed(2)}`
-      ).join("\n");
 
-      // Build a mock invoice for preview
+      // P1-E: Vorschau nutzt direkt die aktuellen lokalen Formular-Positionen
+      // — keine invoice_items-DB-Abfrage, keine erfundene "PREVIEW"-UUID. Die
+      // Rechnung existiert an dieser Stelle noch nicht in der DB.
+      const previewLineItems = lineItems.map(item => ({
+        description: item.title,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        total: item.quantity * item.unit_price,
+      }));
+
+      // Build a mock invoice for preview (id ist nur ein Anzeige-Fallback für
+      // die Rechnungsnummer, nie ein DB-Query-Parameter — siehe generateInvoicePdfPreview).
       const previewInvoice = {
-        id: "PREVIEW",
+        id: "preview",
         invoice_number: formData.invoice_number || `VORSCHAU-${Date.now()}`,
         issue_date: formData.issue_date,
         due_date: formData.due_date || null,
         total_amount: calculatedTotal,
         status: formData.status,
-        notes: formData.notes 
-          ? `${formData.notes}\n\nPositionen:\n${positionsText}`
-          : `Positionen:\n${positionsText}`,
+        notes: formData.notes || null,
+        customer_type: formData.customer_type,
         horse: selectedHorse ? { name: selectedHorse.name } : null,
         signature_url: signatureDataUrl,
       };
-      
+
       const clientProfile = selectedClient ? {
         full_name: selectedClient.full_name,
         email: null,
@@ -486,13 +492,13 @@ export function CreateInvoiceModal({
         stable_zip: null,
         readable_id: selectedClient.readable_id,
       } : null;
-      
-      const pdfBlob = await generateInvoicePdf(previewInvoice, clientProfile, user?.id || "");
-      
+
+      const pdfBlob = await generateInvoicePdfPreview(previewInvoice, clientProfile, user?.id || "", previewLineItems);
+
       // Open PDF in new tab
       const pdfUrl = URL.createObjectURL(pdfBlob);
       window.open(pdfUrl, "_blank");
-      
+
       toast({ title: "Vorschau generiert", description: "PDF wurde in neuem Tab geöffnet." });
     } catch (error) {
       console.error("Preview error:", error);
@@ -617,16 +623,20 @@ export function CreateInvoiceModal({
       if (invoiceError) {
         throw new Error(`Rechnung erstellen fehlgeschlagen: ${invoiceError.message}`);
       }
-      
+
+      // P1-G: RPC-Rückgabe ist als Json typisiert — sauber narrowen statt
+      // insertedInvoice.id ungeprüft zu lesen.
+      const invoiceResult = assertCreateInvoiceWithItemsResult(insertedInvoice);
+
       // Step 1b: Update payment link with invoice ID if CopeCart
-      if (paymentLink && insertedInvoice) {
+      if (paymentLink) {
         const separator = paymentLink.includes("?") ? "&" : "?";
-        const fullPaymentLink = `${paymentLink}${separator}custom=${insertedInvoice.id}`;
-        
+        const fullPaymentLink = `${paymentLink}${separator}custom=${invoiceResult.id}`;
+
         await supabase
           .from("invoices")
           .update({ payment_link: fullPaymentLink })
-          .eq("id", insertedInvoice.id);
+          .eq("id", invoiceResult.id);
       }
 
       // Step 3: Deduct stock for each line item with inventory_item_id

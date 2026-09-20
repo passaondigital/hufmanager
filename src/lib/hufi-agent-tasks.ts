@@ -11,6 +11,7 @@ export type AgentTaskType =
   | "create_appointment"
   | "update_appointment"
   | "create_invoice"
+  | "create_customer"
   | "send_message"
   | "set_reminder"
   | "create_note"
@@ -26,6 +27,7 @@ export function taskTypeLabel(type: AgentTaskType): string {
     case "create_appointment": return "Termin anlegen";
     case "update_appointment": return "Termin ändern";
     case "create_invoice":     return "Rechnung erstellen";
+    case "create_customer":    return "Kunde anlegen";
     case "send_message":       return "Nachricht senden";
     case "set_reminder":       return "Erinnerung setzen";
     case "create_note":        return "Notiz erstellen";
@@ -41,6 +43,7 @@ export function taskTypeIcon(type: AgentTaskType): string {
     case "create_appointment": return "📅";
     case "update_appointment": return "📅";
     case "create_invoice":     return "🧾";
+    case "create_customer":    return "👤";
     case "send_message":       return "💬";
     case "set_reminder":       return "🔔";
     case "create_note":        return "📝";
@@ -72,6 +75,7 @@ export function taskTypeToActionType(type: AgentTaskType): HufiAction["type"] {
     case "create_appointment": return "create_appointment";
     case "update_appointment": return "update_appointment";
     case "create_invoice":     return "send_invoice";
+    case "create_customer":    return "create_customer";
     case "send_message":       return "notify_client";
     case "set_reminder":       return "remind_dsgvo";
     case "create_note":        return "create_note";

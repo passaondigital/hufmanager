@@ -24,6 +24,8 @@ interface SuccessState {
   fullName: string;
   email: string;
   tempPassword: string;
+  /** P1-4: false, wenn der Kunde angelegt wurde, der Mailversand aber fehlschlug. */
+  emailSent: boolean;
 }
 
 export function InviteByEmailModal({ open, onOpenChange }: InviteByEmailModalProps) {
@@ -67,9 +69,14 @@ export function InviteByEmailModal({ open, onOpenChange }: InviteByEmailModalPro
         return;
       }
 
-      setSuccess({ fullName, email: email.trim().toLowerCase(), tempPassword: data.tempPassword });
+      const emailSent = data?.emailSent !== false;
+      setSuccess({ fullName, email: email.trim().toLowerCase(), tempPassword: data.tempPassword, emailSent });
       queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
-      toast.success(`Einladung an ${fullName} gesendet`);
+      if (emailSent) {
+        toast.success(`Einladung an ${fullName} gesendet`);
+      } else {
+        toast.warning(`${fullName} wurde angelegt, die E-Mail konnte aber nicht versendet werden.`);
+      }
     } catch (err: any) {
       toast.error(err?.message || "Unbekannter Fehler");
     } finally {
@@ -100,14 +107,26 @@ export function InviteByEmailModal({ open, onOpenChange }: InviteByEmailModalPro
 
         {success ? (
           <div className="space-y-4 py-2">
-            <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4 space-y-3">
-              <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                ✓ Einladung erfolgreich gesendet
-              </p>
-              <p className="text-sm text-green-700 dark:text-green-400">
-                <strong>{success.fullName}</strong> ({success.email}) hat eine E-Mail mit dem Einmalpasswort erhalten.
-              </p>
-            </div>
+            {success.emailSent ? (
+              <div className="rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 p-4 space-y-3">
+                <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                  ✓ Einladung erfolgreich gesendet
+                </p>
+                <p className="text-sm text-green-700 dark:text-green-400">
+                  <strong>{success.fullName}</strong> ({success.email}) hat eine E-Mail mit dem Einmalpasswort erhalten.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-4 space-y-3">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                  Kunde angelegt — E-Mail nicht zugestellt
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                  <strong>{success.fullName}</strong> ({success.email}) kann sich einloggen, hat aber keine E-Mail bekommen.
+                  Bitte die Zugangsdaten unten selbst weitergeben.
+                </p>
+              </div>
+            )}
 
             <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Zugangsdaten (zur Sicherheit)</p>

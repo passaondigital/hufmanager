@@ -5,10 +5,11 @@ import { ArrowRight, Banknote, Clock3, FileText, Plus, ReceiptText, Tags } from 
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getInvoiceStatusCategory, getInvoiceStatusLabel, isInvoiceOpen, isInvoiceOverdue, isInvoicePaid } from "@/lib/invoiceStatus";
 
 type FinanceTab = "services" | "offers" | "invoices" | "payments";
 type ServiceRow = { id: string; name: string; base_price: number; duration: number | null; is_active: boolean | null };
-type InvoiceRow = { id: string; invoice_number: string | null; total_amount: number; status: string; payment_status: string | null; due_date: string | null };
+type InvoiceRow = { id: string; invoice_number: string | null; total_amount: number; status: string; payment_status: string | null; due_date: string | null; cancelled_at: string | null; credit_note_for: string | null };
 
 const tabs: Array<{ id: FinanceTab; label: string }> = [
   { id: "services", label: "Leistungen" },
@@ -30,7 +31,7 @@ export function SlimFinanceScreen() {
       if (!user?.id) return { services: [] as ServiceRow[], invoices: [] as InvoiceRow[] };
       const [servicesResult, invoicesResult] = await Promise.all([
         supabase.from("services").select("id, name, base_price, duration, is_active").eq("provider_id", user.id).order("sort_order"),
-        supabase.from("invoices").select("id, invoice_number, total_amount, status, payment_status, due_date").eq("provider_id", user.id).order("created_at", { ascending: false }).limit(25),
+        supabase.from("invoices").select("id, invoice_number, total_amount, status, payment_status, due_date, cancelled_at, credit_note_for").eq("provider_id", user.id).order("created_at", { ascending: false }).limit(25),
       ]);
       if (servicesResult.error || invoicesResult.error) throw new Error("FINANCE_LOAD_FAILED");
       return {
@@ -42,16 +43,16 @@ export function SlimFinanceScreen() {
 
   const services = financeQuery.data?.services ?? [];
   const invoices = financeQuery.data?.invoices ?? [];
-  const openInvoices = invoices.filter((invoice) => ["open", "overdue"].includes(invoice.status) || invoice.payment_status === "open");
-  const overdueInvoices = invoices.filter((invoice) => invoice.status === "overdue");
-  const paidInvoices = invoices.filter((invoice) => invoice.status === "paid" || invoice.payment_status === "paid");
+  const openInvoices = invoices.filter(isInvoiceOpen);
+  const overdueInvoices = invoices.filter(isInvoiceOverdue);
+  const paidInvoices = invoices.filter(isInvoicePaid);
 
   return (
     <div className="space-y-5">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-sm font-medium text-[var(--hm-text-secondary)]">Leistung → Rechnung → Zahlung</p><h1 className="mt-1 text-[clamp(1.75rem,3vw,2rem)] font-bold tracking-[-0.035em] text-[var(--hm-text-primary)]">Finanzen</h1></div><Button onClick={() => navigate("/rechnungen?new=true")}><Plus className="h-4 w-4" />Rechnung erstellen</Button></header>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatusCard label="Heute abzurechnen" value={`${invoices.filter((invoice) => invoice.status === "draft").length}`} hint="Entwürfe" />
+        <StatusCard label="Heute abzurechnen" value={`${invoices.filter((invoice) => getInvoiceStatusCategory(invoice) === "draft").length}`} hint="Entwürfe" />
         <StatusCard label="Offene Rechnungen" value={money(openInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0))} hint={`${openInvoices.length} Vorgänge`} />
         <StatusCard label="Überfällig" value={`${overdueInvoices.length}`} hint={money(overdueInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0))} attention />
         <StatusCard label="Bezahlt" value={money(paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0))} hint="im sichtbaren Zeitraum" />
@@ -68,7 +69,7 @@ export function SlimFinanceScreen() {
             <FinanceSection title="Angebote" description="Anfrage prüfen, Angebot erstellen und anschließend in Kunde, Pferd und Termin übernehmen." action="Anfragen & Angebote öffnen" onAction={() => navigate("/anfragen")}><ProcessFlow /></FinanceSection>
           ) : activeTab === "invoices" ? (
             <FinanceSection title="Rechnungen" description="Entwürfe, offene Posten, PDF und Zahlungsstatus." action="Alle Rechnungen" onAction={() => navigate("/rechnungen")}>
-              {invoices.length ? <div className="divide-y divide-[var(--hm-border)]">{invoices.slice(0, 8).map((invoice) => <button key={invoice.id} onClick={() => navigate("/rechnungen")} className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4 text-left"><div><p className="font-semibold text-[var(--hm-text-primary)]">{invoice.invoice_number || "Rechnungsentwurf"}</p><p className="mt-1 text-sm text-[var(--hm-text-secondary)]">{invoice.status === "overdue" ? "Überfällig" : invoice.status === "paid" || invoice.payment_status === "paid" ? "Bezahlt" : invoice.status === "draft" ? "Entwurf" : "Offen"}</p></div><span className="flex items-center gap-3 font-semibold text-[var(--hm-text-primary)]">{money(invoice.total_amount)}<ArrowRight className="h-4 w-4 text-[var(--hm-text-secondary)]" /></span></button>)}</div> : <EmptyFinance title="Noch keine Rechnungen" action={() => navigate("/rechnungen?new=true")} />}
+              {invoices.length ? <div className="divide-y divide-[var(--hm-border)]">{invoices.slice(0, 8).map((invoice) => <button key={invoice.id} onClick={() => navigate("/rechnungen")} className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-4 text-left"><div><p className="font-semibold text-[var(--hm-text-primary)]">{invoice.invoice_number || "Rechnungsentwurf"}</p><p className="mt-1 text-sm text-[var(--hm-text-secondary)]">{getInvoiceStatusLabel(invoice)}</p></div><span className="flex items-center gap-3 font-semibold text-[var(--hm-text-primary)]">{money(invoice.total_amount)}<ArrowRight className="h-4 w-4 text-[var(--hm-text-secondary)]" /></span></button>)}</div> : <EmptyFinance title="Noch keine Rechnungen" action={() => navigate("/rechnungen?new=true")} />}
             </FinanceSection>
           ) : (
             <FinanceSection title="Zahlungen" description="Zahlungsstatus aus Rechnungen, ohne separate Buchhaltungswelt." action="Zahlungsstatus öffnen" onAction={() => navigate("/rechnungen")}><div className="grid gap-3 sm:grid-cols-3"><PaymentCard icon={Banknote} label="Bezahlt" value={money(paidInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0))} /><PaymentCard icon={Clock3} label="Offen" value={money(openInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0))} /><PaymentCard icon={ReceiptText} label="Überfällig" value={money(overdueInvoices.reduce((sum, invoice) => sum + invoice.total_amount, 0))} /></div></FinanceSection>

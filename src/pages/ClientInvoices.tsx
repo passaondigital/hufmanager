@@ -23,6 +23,7 @@ import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { toast } from "sonner";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { getInvoiceStatusCategory, isInvoiceOpen } from "@/lib/invoiceStatus";
 import { PdfPreviewDialog } from "@/components/invoices/PdfPreviewDialog";
 import { ClientExpenseTracker } from "@/components/client/ClientExpenseTracker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -46,6 +47,11 @@ interface Invoice {
   payment_link: string | null;
   payment_status: string | null;
   payment_method: string | null;
+  cancelled_at: string | null;
+  customer_type: string | null;
+  signature_url: string | null;
+  credit_note_for: string | null;
+  created_at: string;
   horse: {
     name: string;
   } | null;
@@ -111,6 +117,11 @@ export default function ClientInvoices() {
         payment_link,
         payment_status,
         payment_method,
+        cancelled_at,
+        customer_type,
+        signature_url,
+        credit_note_for,
+        created_at,
         horse:horses(name)
       `)
       .eq("client_id", user.id)
@@ -169,13 +180,18 @@ export default function ClientInvoices() {
     setFilteredInvoices(filtered);
   }, [searchQuery, invoices, userProfile]);
 
-  const getStatusBadge = (status: string | null) => {
-    switch (status) {
+  const getStatusBadge = (invoice: Pick<Invoice, "status" | "payment_status" | "cancelled_at" | "credit_note_for">) => {
+    switch (getInvoiceStatusCategory(invoice)) {
+      case "cancelled":
+        return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30">Storniert</Badge>;
+      case "credited":
+        return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30">Gutschrift</Badge>;
       case "paid":
         return <Badge className="bg-green-500/10 text-green-600 border-green-500/20" title="Alles erledigt ✓">Bezahlt</Badge>;
       case "overdue":
         return <Badge variant="destructive" title="Zahlungsfrist abgelaufen">Überfällig</Badge>;
-      case "pending":
+      case "draft":
+        return <Badge variant="outline">Entwurf</Badge>;
       default:
         return <Badge variant="secondary" title="Noch nicht bezahlt">Offen</Badge>;
     }
@@ -357,15 +373,15 @@ export default function ClientInvoices() {
                             <span className="font-bold text-foreground">
                               {formatCurrency(invoice.total_amount)}
                             </span>
-                            {getStatusBadge(invoice.status)}
-                            {invoice.payment_link && invoice.payment_method === "CopeCart" && invoice.status !== "paid" && (
+                            {getStatusBadge(invoice)}
+                            {invoice.payment_link && invoice.payment_method === "CopeCart" && isInvoiceOpen(invoice) && (
                               <Badge className="bg-[#F47B20]/10 text-[#F47B20] border-[#F47B20]/20">
                                 CopeCart
                               </Badge>
                             )}
                           </div>
-                          
-                          {invoice.payment_link && invoice.status !== "paid" && invoice.payment_status !== "paid" && (
+
+                          {invoice.payment_link && isInvoiceOpen(invoice) && (
                             <Button
                               className="w-full mt-2 bg-[#F47B20] hover:bg-[#F47B20]/90 text-white"
                               onClick={() => window.open(invoice.payment_link!, "_blank")}

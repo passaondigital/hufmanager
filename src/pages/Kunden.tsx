@@ -33,14 +33,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -68,7 +60,7 @@ import {
   LifecycleStatus
 } from "@/components/horse-detail/types";
 import { exportClientData } from "@/lib/customerExport";
-import { useFormDraft } from "@/hooks/useFormDraft";
+import { AddCustomerModal } from "@/components/customers/AddCustomerModal";
 
 const Kunden = () => {
   const { user } = useAuth();
@@ -89,23 +81,12 @@ const Kunden = () => {
   const [showLinkUserModal, setShowLinkUserModal] = useState(false);
 
   // New client modal
+  // P1-A: einziger canonical Customer-Create-Pfad ist AddCustomerModal (ruft
+  // die atomare RPC create_customer_with_contact auf). Der frühere eigene
+  // Zwei-Write-Pfad dieser Seite (profiles-Insert + ignorierter
+  // contacts-Insert-Fehler) ist entfernt — keine zweite Lösung.
   const [showNewClientModal, setShowNewClientModal] = useState(false);
   const [showInviteByEmailModal, setShowInviteByEmailModal] = useState(false);
-  const [savingNewClient, setSavingNewClient] = useState(false);
-  const emptyNewClient = {
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    street: "",
-    zip_code: "",
-    city: "",
-  };
-  const { value: newClient, setValue: setNewClient, clearDraft: clearNewClientDraft } = useFormDraft(
-    "new-customer",
-    emptyNewClient,
-    { userId: user?.id, route: "/kunden", step: 1, section: "customer" },
-  );
 
   // Open modal when ?new=true
   useEffect(() => {
@@ -114,71 +95,6 @@ const Kunden = () => {
       setSearchParams({}, { replace: true });
     }
   }, [searchParams, setSearchParams]);
-
-  const resetNewClientForm = () => {
-    setNewClient(emptyNewClient);
-  };
-
-  const handleCreateNewClient = async () => {
-    if (!user?.id) return;
-    if (!newClient.first_name.trim() || !newClient.last_name.trim()) {
-      toast({ title: "Vor- und Nachname sind Pflichtfelder", variant: "destructive" });
-      return;
-    }
-
-    setSavingNewClient(true);
-    try {
-      const fullName = `${newClient.first_name.trim()} ${newClient.last_name.trim()}`;
-      const newId = crypto.randomUUID();
-
-      // Create ghost profile
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: newId,
-          full_name: fullName,
-          email: newClient.email.trim() || null,
-          phone: newClient.phone.trim() || null,
-          street: newClient.street.trim() || null,
-          zip_code: newClient.zip_code.trim() || null,
-          city: newClient.city.trim() || null,
-          created_by_provider_id: user.id,
-          onboarding_completed: false,
-          has_logged_in: false,
-        } as any)
-        .select("id")
-        .single();
-
-      if (profileError) throw profileError;
-
-      if (profile) {
-        // A managed customer remains a business record without a login. The
-        // access grant is created only after a customer identity is linked.
-
-        // Create contact entry
-        await supabase.from("contacts").insert({
-          provider_id: user.id,
-          full_name: fullName,
-          email: newClient.email.trim() || null,
-          phone: newClient.phone.trim() || null,
-          category: "client",
-          profile_id: profile.id,
-        });
-      }
-
-      toast({ title: "Kunde angelegt", description: fullName });
-      queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
-      queryClient.invalidateQueries({ queryKey: ["provider-horses"] });
-      setShowNewClientModal(false);
-      resetNewClientForm();
-      clearNewClientDraft();
-    } catch (err: any) {
-      console.error("Error creating client:", err);
-      toast({ title: "Fehler beim Anlegen", description: err.message, variant: "destructive" });
-    } finally {
-      setSavingNewClient(false);
-    }
-  };
 
   // Fetch profiles (clients) - both created by provider AND connected via access_grants (ACTIVE only)
   const { data: clients = [] } = useQuery({
@@ -719,93 +635,12 @@ const Kunden = () => {
         onOpenChange={setShowInviteByEmailModal}
       />
 
-      <Dialog open={showNewClientModal} onOpenChange={(open) => { setShowNewClientModal(open); if (!open) resetNewClientForm(); }}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Neuen Kunden anlegen</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="nc-first">Vorname *</Label>
-                <Input
-                  id="nc-first"
-                  value={newClient.first_name}
-                  onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })}
-                  placeholder="Vorname"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nc-last">Nachname *</Label>
-                <Input
-                  id="nc-last"
-                  value={newClient.last_name}
-                  onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })}
-                  placeholder="Nachname"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="nc-email">E-Mail</Label>
-              <Input
-                id="nc-email"
-                type="email"
-                value={newClient.email}
-                onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                placeholder="kunde@beispiel.de"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="nc-phone">Telefon</Label>
-              <Input
-                id="nc-phone"
-                type="tel"
-                value={newClient.phone}
-                onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
-                placeholder="+49 123 456789"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="nc-street">Straße</Label>
-              <Input
-                id="nc-street"
-                value={newClient.street}
-                onChange={(e) => setNewClient({ ...newClient, street: e.target.value })}
-                placeholder="Musterstraße 1"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="nc-zip">PLZ</Label>
-                <Input
-                  id="nc-zip"
-                  value={newClient.zip_code}
-                  onChange={(e) => setNewClient({ ...newClient, zip_code: e.target.value })}
-                  placeholder="12345"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nc-city">Ort</Label>
-                <Input
-                  id="nc-city"
-                  value={newClient.city}
-                  onChange={(e) => setNewClient({ ...newClient, city: e.target.value })}
-                  placeholder="Musterstadt"
-                />
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowNewClientModal(false); resetNewClientForm(); }}>
-              Abbrechen
-            </Button>
-            <Button onClick={handleCreateNewClient} disabled={savingNewClient}>
-              {savingNewClient && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Kunde anlegen
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <AddCustomerModal
+        open={showNewClientModal}
+        onClose={() => setShowNewClientModal(false)}
+        draftKey="new-customer"
+        draftRoute="/kunden"
+      />
     </div>
   );
 };

@@ -8,7 +8,6 @@ import {
   Camera,
   FileText,
   Footprints,
-  Loader2,
   Mail,
   MapPin,
   Phone,
@@ -17,15 +16,12 @@ import {
   Search,
   UserRound,
 } from "lucide-react";
+import { AddCustomerModal } from "@/components/customers/AddCustomerModal";
 import { AddHorseModal } from "@/components/customers/AddHorseModal";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
-import { useFormDraft } from "@/hooks/useFormDraft";
 
 type Customer = {
   id: string;
@@ -53,8 +49,6 @@ type Horse = {
   special_notes: string | null;
 };
 
-const emptyCustomer = { first_name: "", last_name: "", email: "", phone: "", street: "", zip_code: "", city: "" };
-
 export function SlimCustomerHorseWorkspace() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -65,12 +59,6 @@ export function SlimCustomerHorseWorkspace() {
   const [selectedHorseId, setSelectedHorseId] = useState<string | null>(null);
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const [addHorseOpen, setAddHorseOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const { value: newCustomer, setValue: setNewCustomer, hasDraft: hasCustomerDraft, clearDraft: clearCustomerDraft, discardDraft: discardCustomerDraft } = useFormDraft(
-    "slim-new-customer",
-    emptyCustomer,
-    { userId: user?.id, route: "/home/kunden", step: 1, section: "customer" },
-  );
 
   const workspaceQuery = useQuery({
     queryKey: ["slim-customer-horse-workspace", user?.id],
@@ -121,43 +109,6 @@ export function SlimCustomerHorseWorkspace() {
   const selectedCustomerHorses = horses.filter((horse) => horse.owner_id === selectedCustomerId);
   const selectedHorse = horses.find((horse) => horse.id === selectedHorseId) ?? null;
 
-  const createCustomer = async () => {
-    if (!user?.id || !newCustomer.first_name.trim() || !newCustomer.last_name.trim()) {
-      toast({ title: "Vor- und Nachname fehlen", variant: "destructive" });
-      return;
-    }
-    setSaving(true);
-    try {
-      const id = crypto.randomUUID();
-      const fullName = `${newCustomer.first_name.trim()} ${newCustomer.last_name.trim()}`;
-      const { error } = await supabase.from("profiles").insert({
-        id,
-        full_name: fullName,
-        email: newCustomer.email.trim() || null,
-        phone: newCustomer.phone.trim() || null,
-        street: newCustomer.street.trim() || null,
-        zip_code: newCustomer.zip_code.trim() || null,
-        city: newCustomer.city.trim() || null,
-        created_by_provider_id: user.id,
-        onboarding_completed: false,
-        has_logged_in: false,
-      } as any);
-      if (error) throw error;
-      await supabase.from("contacts").insert({ provider_id: user.id, profile_id: id, full_name: fullName, email: newCustomer.email.trim() || null, phone: newCustomer.phone.trim() || null, category: "client" });
-      setNewCustomerOpen(false);
-      setNewCustomer(emptyCustomer);
-      clearCustomerDraft();
-      setSelectedCustomerId(id);
-      await queryClient.invalidateQueries({ queryKey: ["slim-customer-horse-workspace", user.id] });
-      toast({ title: "Kunde angelegt", description: "Du kannst jetzt direkt ein Pferd hinzufügen." });
-    } catch (error) {
-      console.error("Customer creation failed", error);
-      toast({ title: "Kunde konnte nicht angelegt werden", description: "Bitte prüfe die Eingaben und versuche es erneut.", variant: "destructive" });
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (workspaceQuery.isLoading) return <div className="hm-card min-h-[34rem] animate-pulse bg-[var(--hm-surface-elevated)]" aria-label="Kunden und Pferde werden geladen" />;
   if (workspaceQuery.isError) return <WorkspaceError onRetry={() => void workspaceQuery.refetch()} />;
 
@@ -193,9 +144,13 @@ export function SlimCustomerHorseWorkspace() {
         </div>
       )}
 
-      <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
-        <DialogContent className="max-w-lg"><DialogHeader><DialogTitle>Neuen Kunden anlegen</DialogTitle></DialogHeader><div className="grid gap-4 sm:grid-cols-2"><Field label="Vorname" value={newCustomer.first_name} onChange={(value) => setNewCustomer((current) => ({ ...current, first_name: value }))} /><Field label="Nachname" value={newCustomer.last_name} onChange={(value) => setNewCustomer((current) => ({ ...current, last_name: value }))} /><Field label="E-Mail" value={newCustomer.email} onChange={(value) => setNewCustomer((current) => ({ ...current, email: value }))} /><Field label="Telefon" value={newCustomer.phone} onChange={(value) => setNewCustomer((current) => ({ ...current, phone: value }))} /><div className="sm:col-span-2"><Field label="Straße" value={newCustomer.street} onChange={(value) => setNewCustomer((current) => ({ ...current, street: value }))} /></div><Field label="PLZ" value={newCustomer.zip_code} onChange={(value) => setNewCustomer((current) => ({ ...current, zip_code: value }))} /><Field label="Ort" value={newCustomer.city} onChange={(value) => setNewCustomer((current) => ({ ...current, city: value }))} /></div><DialogFooter><Button variant="outline" onClick={() => setNewCustomerOpen(false)}>Abbrechen</Button>{hasCustomerDraft && <Button variant="ghost" onClick={() => { discardCustomerDraft(); setNewCustomerOpen(false); }}>Entwurf verwerfen</Button>}<Button onClick={() => void createCustomer()} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin" />}Kunde anlegen</Button></DialogFooter></DialogContent>
-      </Dialog>
+      <AddCustomerModal
+        open={newCustomerOpen}
+        onClose={() => setNewCustomerOpen(false)}
+        draftKey="slim-new-customer"
+        draftRoute="/home/kunden"
+        onCreated={(customer) => setSelectedCustomerId(customer.id)}
+      />
 
       <AddHorseModal customerId={selectedCustomer?.id ?? null} customerName={selectedCustomer?.full_name ?? undefined} open={addHorseOpen} onClose={() => { setAddHorseOpen(false); void queryClient.invalidateQueries({ queryKey: ["slim-customer-horse-workspace", user?.id] }); }} />
     </div>
@@ -210,7 +165,6 @@ function HorseDetail({ horse, owner, onBack, onNavigate }: { horse: Horse; owner
   return <div><button onClick={onBack} className="flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--hm-text-secondary)] hover:text-orange-600"><ArrowLeft className="h-4 w-4" />{owner?.full_name || "Kunde"}</button><div className="mt-2 flex flex-col gap-4 border-b border-[var(--hm-border)] pb-5 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-3xl font-bold tracking-[-0.04em] text-[var(--hm-text-primary)]">{horse.name}</h2><p className="mt-2 text-sm text-[var(--hm-text-secondary)]">{[horse.breed, horse.gender, horse.birth_year ? `${new Date().getFullYear() - horse.birth_year} Jahre` : null].filter(Boolean).join(" · ")}</p><p className="mt-1 text-sm text-[var(--hm-text-secondary)]">Besitzer: {owner?.full_name || "Nicht zugeordnet"}</p></div><div className="flex gap-2"><Button variant="outline" onClick={() => onNavigate(`/pferd/${horse.id}`)}>Vollständige Akte</Button><Button onClick={() => onNavigate(`/home/hufi-hufanalyse?horse=${horse.id}`)}>Hufi Hufanalyse</Button></div></div><div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"><RecordCard label="Nächster Termin" value={horse.next_appointment_due || "Noch nicht geplant"} icon={CalendarDays} /><RecordCard label="Letzte Bearbeitung" value={horse.last_appointment_date || "Noch kein Verlauf"} icon={Footprints} /><RecordCard label="Besonderer Hinweis" value={horse.special_notes || "Keine offenen Hinweise"} icon={FileText} /></div><div className="mt-6 grid gap-2 sm:grid-cols-2 lg:grid-cols-3"><QuickLink icon={Footprints} label="Verlauf" onClick={() => onNavigate(`/pferd/${horse.id}`)} /><QuickLink icon={Camera} label="Fotos" onClick={() => onNavigate(`/pferd/${horse.id}`)} /><QuickLink icon={FileText} label="Dokumente" onClick={() => onNavigate(`/pferd/${horse.id}`)} /><QuickLink icon={Footprints} label="Hufi Hufanalyse" onClick={() => onNavigate(`/home/hufi-hufanalyse?horse=${horse.id}`)} /><QuickLink icon={CalendarDays} label="Termin planen" onClick={() => onNavigate(`/kalender?horseId=${horse.id}`)} /><QuickLink icon={ReceiptText} label="Rechnungen" onClick={() => onNavigate("/rechnungen")} /></div></div>;
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { const id = `customer-${label.toLowerCase().replace(/\W/g, "-")}`; return <div className="space-y-2"><Label htmlFor={id}>{label}</Label><Input id={id} value={value} onChange={(event) => onChange(event.target.value)} /></div>; }
 function QuickLink({ icon: Icon, label, onClick }: { icon: React.ComponentType<{ className?: string }>; label: string; onClick: () => void }) { return <button onClick={onClick} className="flex min-h-14 items-center justify-between rounded-xl border border-[var(--hm-border)] bg-[var(--hm-surface)] px-4 text-left text-sm font-semibold text-[var(--hm-text-primary)] transition hover:bg-orange-500/10"><span className="flex items-center gap-2"><Icon className="h-4 w-4 text-orange-600" />{label}</span><ArrowRight className="h-4 w-4 text-[var(--hm-text-secondary)]" /></button>; }
 function RecordCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) { return <div className="rounded-2xl bg-[var(--hm-surface-elevated)] p-4"><Icon className="h-4 w-4 text-orange-600" /><p className="mt-3 text-xs text-[var(--hm-text-secondary)]">{label}</p><p className="mt-1 text-sm font-semibold text-[var(--hm-text-primary)]">{value}</p></div>; }
 function WorkspaceError({ onRetry }: { onRetry: () => void }) { return <section className="hm-card flex min-h-72 flex-col items-start justify-center p-6"><UserRound className="h-7 w-7 text-orange-600" /><h1 className="mt-4 text-xl font-semibold text-[var(--hm-text-primary)]">Kunden und Pferde konnten gerade nicht geladen werden.</h1><p className="mt-2 text-sm text-[var(--hm-text-secondary)]">Bitte prüfe die Verbindung und versuche es erneut.</p><button className="hm-button-primary mt-5" onClick={onRetry}>Erneut versuchen</button></section>; }

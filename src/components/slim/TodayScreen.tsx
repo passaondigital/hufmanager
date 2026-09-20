@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { SlimAppointmentModal } from "@/components/slim/SlimAppointmentModal";
+import { isInvoiceOpen } from "@/lib/invoiceStatus";
 
 type AppointmentRow = {
   id: string;
@@ -53,6 +55,7 @@ export function TodayScreen() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const today = format(new Date(), "yyyy-MM-dd");
+  const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
 
   const todayQuery = useQuery({
     queryKey: ["slim-today-unchained", user?.id, today],
@@ -72,13 +75,21 @@ export function TodayScreen() {
           .eq("provider_id", user.id)
           .neq("status", "cancelled")
           .order("time", { ascending: true }) as any,
-        supabase.from("invoices").select("id", { count: "exact", head: true }).eq("provider_id", user.id).in("status", ["open", "overdue"]),
+        supabase.from("invoices").select("status, payment_status, cancelled_at, credit_note_for").eq("provider_id", user.id),
         supabase.from("hufi_followup_suggestions").select("horse_id", { count: "exact", head: true }).eq("provider_id", user.id).in("status", ["open", "overdue"]),
         supabase.from("daily_tours").select("total_distance_km").eq("provider_id", user.id).eq("tour_date", today).maybeSingle(),
       ]);
 
       if (appointmentsResult.error) {
         console.error("Today appointments failed", { code: appointmentsResult.error.code });
+        throw new Error("TODAY_LOAD_FAILED");
+      }
+      // P2 (Correction Pass 4): ein Query-Fehler darf nie als "0 offene
+      // Rechnungen" erscheinen — invoicesResult.data wäre dann undefined,
+      // ".data ?? []" hätte das stillschweigend als Erfolg mit 0 Treffern
+      // interpretiert. Selber Fehlerpfad wie appointmentsResult.
+      if (invoicesResult.error) {
+        console.error("Today invoices failed", { code: invoicesResult.error.code });
         throw new Error("TODAY_LOAD_FAILED");
       }
 
@@ -103,7 +114,7 @@ export function TodayScreen() {
 
       return {
         appointments,
-        overdueInvoices: invoicesResult.count ?? 0,
+        overdueInvoices: (invoicesResult.data ?? []).filter(isInvoiceOpen).length,
         followUps: followupsResult.count ?? 0,
         distanceKm: tourResult.data?.total_distance_km == null ? null : Number(tourResult.data.total_distance_km),
       };
@@ -149,7 +160,7 @@ export function TodayScreen() {
           <h1 className="mt-1 text-[clamp(1.75rem,3vw,2rem)] font-bold tracking-[-0.035em] text-[var(--hm-text-primary)]">Heute</h1>
           <p className="mt-1 text-sm text-[var(--hm-text-secondary)]">Dein Arbeitstag, auf einen Blick.</p>
         </div>
-        <button type="button" className="hm-button-secondary" onClick={() => navigate("/kalender?new=true")}>
+        <button type="button" className="hm-button-secondary" onClick={() => setAppointmentModalOpen(true)}>
           <CalendarPlus className="h-4 w-4" />
           Termin hinzufügen
         </button>
@@ -170,7 +181,7 @@ export function TodayScreen() {
           <h2 className="mt-5 text-xl font-semibold text-[var(--hm-text-primary)]">Heute sind noch keine Termine geplant.</h2>
           <p className="mt-2 max-w-lg text-sm leading-6 text-[var(--hm-text-secondary)]">Lege einen Termin an oder öffne deine Kunden- und Pferdeakte, um den nächsten Besuch zu planen.</p>
           <div className="mt-5 flex flex-wrap gap-2">
-            <button type="button" className="hm-button-primary" onClick={() => navigate("/kalender?new=true")}>Termin hinzufügen</button>
+            <button type="button" className="hm-button-primary" onClick={() => setAppointmentModalOpen(true)}>Termin hinzufügen</button>
             <button type="button" className="hm-button-secondary" onClick={() => navigate("/home/kunden")}>Kunden & Pferde</button>
           </div>
         </section>
@@ -243,6 +254,12 @@ export function TodayScreen() {
           </div>
         </>
       )}
+
+      <SlimAppointmentModal
+        isOpen={appointmentModalOpen}
+        onClose={() => { setAppointmentModalOpen(false); void todayQuery.refetch(); }}
+        selectedDate={new Date()}
+      />
     </div>
   );
 }

@@ -37,6 +37,7 @@ import { de } from "date-fns/locale";
 import { toast } from "@/hooks/use-toast";
 import { CreateInvoiceModal } from "./CreateInvoiceModal";
 import { generateInvoicePdf } from "@/lib/invoicePdfGenerator";
+import { getInvoiceStatusCategory } from "@/lib/invoiceStatus";
 import { openWhatsApp, waTextInvoice } from "@/lib/whatsappTemplates";
 
 interface Invoice {
@@ -46,9 +47,15 @@ interface Invoice {
   due_date: string | null;
   total_amount: number;
   status: string | null;
+  payment_status: string | null;
   pdf_url: string | null;
   horse_id: string | null;
   notes: string | null;
+  cancelled_at: string | null;
+  customer_type: string | null;
+  signature_url: string | null;
+  credit_note_for: string | null;
+  created_at: string;
   horse?: { name: string } | null;
 }
 
@@ -95,9 +102,15 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
           due_date,
           total_amount,
           status,
+          payment_status,
           pdf_url,
           horse_id,
           notes,
+          cancelled_at,
+          customer_type,
+          signature_url,
+          credit_note_for,
+          created_at,
           horse:horses(name)
         `)
         .eq("client_id", clientId)
@@ -144,13 +157,18 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
     }).format(amount);
   };
 
-  const getStatusBadge = (status: string | null) => {
-    switch (status) {
+  const getStatusBadge = (invoice: Pick<Invoice, "status" | "payment_status" | "cancelled_at" | "credit_note_for">) => {
+    switch (getInvoiceStatusCategory(invoice)) {
+      case "cancelled":
+        return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30">Storniert</Badge>;
+      case "credited":
+        return <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30">Gutschrift</Badge>;
       case "paid":
         return <Badge className="bg-green-500/10 text-green-600 border-green-500/20">Bezahlt</Badge>;
       case "overdue":
         return <Badge variant="destructive">Überfällig</Badge>;
-      case "pending":
+      case "draft":
+        return <Badge variant="outline">Entwurf</Badge>;
       default:
         return <Badge variant="secondary">Offen</Badge>;
     }
@@ -345,7 +363,7 @@ export function ClientInvoicesSection({ clientId, clientName, horses = [] }: Cli
                       <span className="font-medium text-sm">
                         {invoice.invoice_number || "Rechnung"}
                       </span>
-                      {getStatusBadge(invoice.status)}
+                      {getStatusBadge(invoice)}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       <span>{format(new Date(invoice.issue_date), "dd.MM.yyyy", { locale: de })}</span>

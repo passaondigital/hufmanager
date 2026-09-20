@@ -3,15 +3,20 @@ import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
-import { 
-  TaxCountry, 
-  Currency, 
-  getDACHConfig, 
-  formatCurrencyDACH, 
+import {
+  TaxCountry,
+  Currency,
+  getDACHConfig,
+  formatCurrencyDACH,
   applySwissRounding,
-  calculateVatFromGross 
 } from "./dachConfig";
 import { addSwissQrBillToInvoice } from "./swissQrBill";
+import {
+  resolveInvoiceLineItems,
+  assertInvoiceItemsQuerySucceeded,
+  type ResolvedInvoiceLineItem,
+} from "./invoiceLineItems";
+import { resolveInvoiceTaxPresentation } from "./invoiceTax";
 
 interface BusinessSettings {
   business_name: string | null;
@@ -61,6 +66,7 @@ interface Invoice {
   signature_url?: string | null;
   client_id?: string | null;
 }
+
 
 // Design tokens - Premium color palette
 const COLORS = {
@@ -127,91 +133,18 @@ function formatCurrency(amount: number): string {
   return formatCurrencyDACH(amount, _currentCurrency, { swissRounding: _swissRounding });
 }
 
-// Parse invoice notes to extract line items
-function parseLineItems(notes: string | null, totalAmount: number): { description: string; quantity: number; unitPrice: number; total: number; isBundle?: boolean }[] {
-  if (!notes) {
-    return [{ description: "Hufbearbeitung", quantity: 1, unitPrice: totalAmount, total: totalAmount }];
-  }
-
-  const items: { description: string; quantity: number; unitPrice: number; total: number; isBundle?: boolean }[] = [];
-  const lines = notes.split('\n');
-  
-  let currentSection = '';
-  let runningTotal = 0;
-  
-  for (const line of lines) {
-    const trimmedLine = line.trim();
-    if (!trimmedLine) continue;
-    
-    // Check for section headers
-    if (trimmedLine === 'Produkte:') {
-      currentSection = 'products';
-      continue;
-    }
-    
-    // Parse product lines: "Product Name (2x) = €10.00"
-    const productMatch = trimmedLine.match(/^(.+?)\s*\((\d+)x\)\s*=\s*€?([\d.,]+)$/);
-    if (productMatch) {
-      const [, name, qty, total] = productMatch;
-      const quantity = parseInt(qty, 10);
-      const totalPrice = parseFloat(total.replace(',', '.'));
-      const unitPrice = totalPrice / quantity;
-      items.push({
-        description: name.trim(),
-        quantity,
-        unitPrice,
-        total: totalPrice,
-        isBundle: currentSection === 'bundles'
-      });
-      runningTotal += totalPrice;
-      continue;
-    }
-    
-    // Parse travel cost: "Anfahrt: 25 km (Hin- und Rückfahrt) = €25.00"
-    const travelMatch = trimmedLine.match(/^Anfahrt:\s*(\d+)\s*km.*=\s*€?([\d.,]+)$/);
-    if (travelMatch) {
-      const [, km, total] = travelMatch;
-      const totalPrice = parseFloat(total.replace(',', '.'));
-      items.push({
-        description: `Anfahrt (${km} km × 2)`,
-        quantity: 1,
-        unitPrice: totalPrice,
-        total: totalPrice
-      });
-      runningTotal += totalPrice;
-      continue;
-    }
-  }
-  
-  // If we couldn't parse anything, add a generic service line
-  if (items.length === 0) {
-    const cleanNotes = notes.replace(/\n/g, ' ').substring(0, 80);
-    items.push({
-      description: cleanNotes || "Hufbearbeitung",
-      quantity: 1,
-      unitPrice: totalAmount,
-      total: totalAmount
-    });
-  } else {
-    // Check if we need to add remaining amount as a service fee
-    const remaining = totalAmount - runningTotal;
-    if (remaining > 0.01) {
-      items.unshift({
-        description: "Hufbearbeitung / Dienstleistung",
-        quantity: 1,
-        unitPrice: remaining,
-        total: remaining
-      });
-    }
-  }
-  
-  return items;
-}
-
-export async function generateInvoicePdf(
+/**
+ * Gemeinsamer Renderer für beide Einstiegspunkte unten (persistiert +
+ * Vorschau). Nimmt lineItems immer als fertigen Parameter entgegen — fragt
+ * selbst NIE die Datenbank ab. So kann die Vorschau (Rechnung existiert noch
+ * nicht) dieselbe Render-/Steuerlogik nutzen, ohne einen invoice_items-Query
+ * mit einer nicht existierenden invoice.id zu riskieren (P1-E).
+ */
+async function renderInvoicePdfWithItems(
   invoice: Invoice,
   clientProfile: ClientProfile | null,
-  providerId: string
+  providerId: string,
+  lineItems: ResolvedInvoiceLineItem[],
 ): Promise<Blob> {
   // Default settings
   let settings: BusinessSettings = {
@@ -454,8 +387,6 @@ export async function generateInvoicePdf(
   // ITEM TABLE - Clean, modern design
   // ============================================================================
   
-  const lineItems = parseLineItems(invoice.notes, invoice.total_amount);
-  
   const tableBody = lineItems.map((item, index) => [
     (index + 1).toString(),
     item.description,
@@ -528,64 +459,57 @@ export async function generateInvoicePdf(
   doc.setFont("helvetica", "normal");
   doc.setTextColor(COLORS.gray600.r, COLORS.gray600.g, COLORS.gray600.b);
   
-  const isGewerbe = invoice.customer_type === "gewerbe";
-  const isKleinunternehmer = invoice.customer_type === "kleinunternehmer" || vatRate === 0;
-  
   // Apply Swiss rounding if enabled
   let finalAmount = invoice.total_amount;
   if (_swissRounding && _currentCurrency === 'CHF') {
     finalAmount = applySwissRounding(finalAmount);
   }
-  
-  if (isKleinunternehmer) {
+
+  const taxPresentation = resolveInvoiceTaxPresentation(invoice.customer_type, vatRate, finalAmount);
+
+  if (taxPresentation.mode === "kleinunternehmer") {
     // Kleinunternehmer: Keine MwSt.
     doc.text("Betrag:", totalBoxX, yPos);
     doc.text(formatCurrency(finalAmount), pageWidth - margin, yPos, { align: "right" });
-    
+
     yPos += 5;
-    
+
     doc.setFontSize(8);
     doc.setTextColor(COLORS.gray500.r, COLORS.gray500.g, COLORS.gray500.b);
     doc.text(dachConfig.vatExemptLabel, totalBoxX, yPos);
-  } else if (isGewerbe) {
+  } else if (taxPresentation.mode === "gewerbe") {
     // Gewerbekunde: Netto-Rechnung
     doc.text("Nettobetrag:", totalBoxX, yPos);
     doc.text(formatCurrency(finalAmount), pageWidth - margin, yPos, { align: "right" });
-    
+
     yPos += 5;
-    
+
     doc.text(`${dachConfig.vatLabel}:`, totalBoxX, yPos);
     doc.setTextColor(COLORS.gray500.r, COLORS.gray500.g, COLORS.gray500.b);
     doc.text("nicht ausgewiesen (Reverse Charge)", pageWidth - margin, yPos, { align: "right" });
   } else {
     // Privatkunde: Brutto mit MwSt - use actual VAT rate from settings
-    const { netAmount, vatAmount } = calculateVatFromGross(finalAmount, vatRate);
-    
     doc.text("Nettobetrag:", totalBoxX, yPos);
-    doc.text(formatCurrency(netAmount), pageWidth - margin, yPos, { align: "right" });
-    
+    doc.text(formatCurrency(taxPresentation.netAmount), pageWidth - margin, yPos, { align: "right" });
+
     yPos += 5;
-    
+
     // Use country-specific VAT label
     doc.text(`${dachConfig.vatLabel} (${vatRate}%):`, totalBoxX, yPos);
-    doc.text(formatCurrency(vatAmount), pageWidth - margin, yPos, { align: "right" });
+    doc.text(formatCurrency(taxPresentation.vatAmount), pageWidth - margin, yPos, { align: "right" });
   }
-  
+
   yPos += 8;
-  
+
   // Total line with brand color accent
   doc.setFillColor(brandColor.r, brandColor.g, brandColor.b);
   doc.roundedRect(totalBoxX - 4, yPos - 4, totalBoxWidth + 4, 14, 2, 2, 'F');
-  
+
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(COLORS.white.r, COLORS.white.g, COLORS.white.b);
-  
-  let totalLabel = "Gesamtbetrag:";
-  if (isGewerbe) totalLabel = "Gesamtbetrag (Netto):";
-  if (isKleinunternehmer) totalLabel = "Rechnungsbetrag:";
-  
-  doc.text(totalLabel, totalBoxX, yPos + 5);
+
+  doc.text(taxPresentation.totalLabel, totalBoxX, yPos + 5);
   doc.text(formatCurrency(finalAmount), pageWidth - margin - 2, yPos + 5, { align: "right" });
 
   yPos += 25;
@@ -814,4 +738,46 @@ export async function generateInvoicePdf(
   }
 
   return doc.output("blob");
+}
+
+/**
+ * PERSISTED INVOICE PDF: lädt die kanonischen Positionen aus invoice_items
+ * für eine bereits gespeicherte Rechnung (invoice.id ist eine echte UUID).
+ * Ein Query-Fehler bricht ab (kein stiller Freitext-Fallback). 0 Zeilen sind
+ * IMMER ein harter Fehler — es gibt keinen unterstützten automatischen
+ * Legacy-Fallback (P1-F: LEGACY_INVOICE_CONTRACT=NOT_SUPPORTED, siehe
+ * invoiceLineItems.ts).
+ */
+export async function generateInvoicePdf(
+  invoice: Invoice,
+  clientProfile: ClientProfile | null,
+  providerId: string
+): Promise<Blob> {
+  const { data: canonicalItems, error: itemsError } = await supabase
+    .from("invoice_items")
+    .select("title, quantity, unit_price, total_price")
+    .eq("invoice_id", invoice.id)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true }); // deterministischer Tie-Breaker bei gleichem created_at
+  assertInvoiceItemsQuerySucceeded(itemsError);
+
+  const lineItems = resolveInvoiceLineItems(canonicalItems, invoice.notes, invoice.total_amount);
+
+  return renderInvoicePdfWithItems(invoice, clientProfile, providerId, lineItems);
+}
+
+/**
+ * NEW INVOICE PREVIEW: die Rechnung ist noch nicht gespeichert (keine echte
+ * invoice.id), also gibt es keine invoice_items-Zeilen zu laden. Nutzt
+ * stattdessen direkt die aktuellen lokalen Formular-Positionen des
+ * Aufrufers — kein DB-Query, keine erfundene UUID. Gleiche Render-/
+ * Berechnungslogik wie der persistierte Pfad (renderInvoicePdfWithItems).
+ */
+export async function generateInvoicePdfPreview(
+  invoice: Invoice,
+  clientProfile: ClientProfile | null,
+  providerId: string,
+  lineItems: ResolvedInvoiceLineItem[],
+): Promise<Blob> {
+  return renderInvoicePdfWithItems(invoice, clientProfile, providerId, lineItems);
 }

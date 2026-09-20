@@ -34,6 +34,7 @@ import {
   FileText,
   Camera,
   ChevronDown,
+  Plus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -51,6 +52,18 @@ import { useProfessionConfig } from "@/hooks/useProfessionConfig";
 import { sendTypedPush, resolveProviderDisplayName } from "@/lib/pushNotificationService";
 import { HelpTip } from "@/components/ui/HelpTip";
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { AddCustomerModal } from "@/components/customers/AddCustomerModal";
+import { AddHorseModal } from "@/components/customers/AddHorseModal";
+import {
+  computeHorseIdsForOwnerChange,
+  computeSelectionAfterClose,
+  emptyAppointmentSelection,
+  isAppointmentSaveBlockedByLoad,
+  resolveHorseOwnerId,
+  resolveOwnerDisplayName,
+  shouldDiscardOnClose,
+} from "@/lib/appointmentFormGuards";
+import type { AppointmentSelectionState } from "@/lib/appointmentFormGuards";
 
 const appointmentSchema = z.object({
   horseIds: z.array(z.string()).min(1, "Bitte wählen Sie mindestens ein Pferd aus"),
@@ -67,6 +80,21 @@ interface AppointmentFormModalProps {
   selectedDate: Date | null;
   existingAppointments: any[];
   preselectedHorseId?: string | null;
+  /** P1-2: true solange existingAppointments noch lädt — Speichern muss gesperrt bleiben. */
+  appointmentsLoading?: boolean;
+  /** P1-2: true wenn das Laden von existingAppointments fehlgeschlagen ist — Speichern muss gesperrt bleiben, nie stillschweigend "kein Konflikt" annehmen. */
+  appointmentsLoadError?: boolean;
+  /**
+   * P1-4 (Correction Pass 4): true für Hosts, die dieses Modal dauerhaft
+   * gemountet lassen (z.B. TourLiveEditControl) statt es bei jedem Schließen
+   * zu unmounten (wie Kalender.tsx es mit `{isFormOpen && <...>}` tut).
+   * Ohne echtes Unmount überlebt der React-State (Owner-/Pferde-Auswahl etc.)
+   * Cancel/Reopen. Statt eine zweite State-Architektur zu bauen, wird beim
+   * Schließen einfach derselbe `resetForm()` verwendet, der schon nach
+   * erfolgreichem Speichern läuft. Default false, damit Kalender.tsx' Drafts
+   * (bewusst "überlebt Reload/Backgrounding") unverändert bleiben.
+   */
+  discardOnClose?: boolean;
 }
 
 interface PendingEvidence {
@@ -98,6 +126,9 @@ export function AppointmentFormModal({
   selectedDate,
   existingAppointments,
   preselectedHorseId,
+  appointmentsLoading = false,
+  appointmentsLoadError = false,
+  discardOnClose = false,
 }: AppointmentFormModalProps) {
   const { user } = useAuth();
   const location = useLocation();
@@ -115,6 +146,17 @@ export function AppointmentFormModal({
 
   const [selectionMode, setSelectionMode] = useState<"horse" | "owner">("horse");
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>("");
+  const [addCustomerOpen, setAddCustomerOpen] = useState(false);
+  const [addHorseOpen, setAddHorseOpen] = useState(false);
+  // P1-3: kein unabhängiger "aktueller Name"-State mehr — der Name wird immer
+  // per resolveOwnerDisplayName aus der aktuellen selectedOwnerId abgeleitet,
+  // damit er nie zu einer anderen owner_id gehören kann.
+  const [knownOwnerNames, setKnownOwnerNames] = useState<Record<string, string>>({});
+  // P1-A (Correction Pass 3): owner_id für Pferde, die in diesem Formular
+  // gerade erst angelegt wurden — Fallback, solange die
+  // "horses-with-price-group"-Query den neuen Datensatz noch nicht kennt.
+  // Siehe resolveHorseOwnerId in appointmentFormGuards.ts.
+  const [knownHorseOwners, setKnownHorseOwners] = useState<Record<string, string>>({});
 
   const emptyFormData = {
     horseIds: [] as string[],
@@ -127,7 +169,7 @@ export function AppointmentFormModal({
     seriesCurrent: 1,
     seriesTotal: 5,
   };
-  const { value: formData, setValue: setFormData, hasDraft, clearDraft, discardDraft } = useFormDraft(
+  const { value: formData, setValue: setFormData, hasDraft, clearDraft } = useFormDraft(
     `new-appointment-${selectedDate ? format(selectedDate, "yyyy-MM-dd") : "unscheduled"}`,
     emptyFormData,
     { userId: user?.id, route: location.pathname, step: 1, section: "appointment" },
@@ -161,37 +203,23 @@ export function AppointmentFormModal({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("horses")
-        .select("*, owner:owner_id (id, price_group)");
+        .select("*, owner:owner_id (id, full_name, price_group)");
       if (error) throw error;
       return data;
     },
   });
 
   const owners = useMemo(() => {
-    const ownerMap = new Map<string, { id: string; horses: typeof horses }>();
+    const ownerMap = new Map<string, { id: string; full_name: string | null; horses: typeof horses }>();
     horses.forEach((horse: any) => {
       if (!horse.owner_id) return;
       if (!ownerMap.has(horse.owner_id)) {
-        ownerMap.set(horse.owner_id, { id: horse.owner_id, horses: [] });
+        ownerMap.set(horse.owner_id, { id: horse.owner_id, full_name: horse.owner?.full_name ?? null, horses: [] });
       }
       ownerMap.get(horse.owner_id)!.horses.push(horse);
     });
     return ownerMap;
   }, [horses]);
-
-  const { data: contacts = [] } = useQuery({
-    queryKey: ["contacts-for-appointment"],
-    queryFn: async () => {
-      const { data } = await supabase.from("contacts").select("id, full_name").limit(500);
-      return data || [];
-    },
-  });
-
-  const contactMap = useMemo(() => {
-    const map = new Map<string, string>();
-    contacts.forEach((contact: any) => map.set(contact.id, contact.full_name));
-    return map;
-  }, [contacts]);
 
   const filteredHorses = useMemo(() => {
     if (selectionMode === "owner" && selectedOwnerId) {
@@ -241,14 +269,6 @@ export function AppointmentFormModal({
         : [...previous.horseIds, horseId],
     }));
   }, []);
-
-  const selectAllOwnerHorses = useCallback((ownerId: string) => {
-    const ownerHorses = horses.filter((horse: any) => horse.owner_id === ownerId);
-    setFormData((previous) => ({
-      ...previous,
-      horseIds: [...new Set([...previous.horseIds, ...ownerHorses.map((horse: any) => horse.id)])],
-    }));
-  }, [horses]);
 
   const { data: priceOverrides = [] } = useQuery({
     queryKey: ["service-price-overrides", currentService?.id],
@@ -442,31 +462,74 @@ export function AppointmentFormModal({
             : "Der Termin wurde erfolgreich gespeichert.",
       });
 
-      resetForm();
-      onClose();
-      clearDraft();
+      // P1-5 (Correction Pass 5): auch der Erfolgsfall läuft über den einen
+      // Schließpfad (resetForm + clearDraft + Auswahl-Reset + onClose) statt
+      // über eine eigene Kombination — sonst driften die Pfade wieder
+      // auseinander.
+      handleClose({ forceDiscardDraft: true });
     },
   });
 
+  const applySelectionState = (next: AppointmentSelectionState) => {
+    setSelectionMode(next.selectionMode);
+    setSelectedOwnerId(next.selectedOwnerId);
+    setKnownOwnerNames(next.knownOwnerNames);
+    setKnownHorseOwners(next.knownHorseOwners);
+    setFormData((previous) =>
+      previous.horseIds === next.horseIds ? previous : { ...previous, horseIds: next.horseIds },
+    );
+  };
+
   const resetForm = () => {
-    setFormData({
-      horseIds: [] as string[],
-      time: "09:00",
-      serviceType: "Barhuf",
-      notes: "",
-      location: "",
-      duration: professionConfig.appointmentDuration,
-      isSeriesAppointment: false,
-      seriesCurrent: 1,
-      seriesTotal: 5,
-    });
+    // emptyFormData ist bereits die Default-Referenz von useFormDraft —
+    // dasselbe Objekt zu verwenden verhindert, dass Reset und Default
+    // auseinanderlaufen (und löscht den Entwurf, weil der Hook Wert ===
+    // Default als "kein Entwurf" behandelt).
+    setFormData(emptyFormData);
     setRecurrence("none");
     setCustomWeeks(4);
     setConflictWarning(null);
-    setSelectionMode("horse");
-    setSelectedOwnerId("");
+    applySelectionState(emptyAppointmentSelection());
     setPendingEvidence([]);
     setShowAdvancedOptions(false);
+  };
+
+  // P1-4 (Correction Pass 4) / P1-5 (Correction Pass 5): der EINZIGE
+  // Schließpfad des Dialogs. Abbrechen, X, Escape, Overlay-Klick,
+  // "Entwurf verwerfen" und der erfolgreiche Save laufen alle hier durch —
+  // es gibt bewusst keinen zweiten Reset-Weg, der davon abweichen könnte.
+  //
+  // Verworfen wird, wenn der Host das Modal dauerhaft gemountet lässt
+  // (discardOnClose, z.B. TourLiveEditControl) ODER der Nutzer ausdrücklich
+  // verwirft (forceDiscardDraft) — siehe shouldDiscardOnClose.
+  //
+  // clearDraft() zusätzlich zu resetForm(): der Reset per setState würde den
+  // localStorage-Entwurf erst im nächsten Render entfernen — wird der Dialog
+  // vom Host im selben Tick unmountet, schreibt der Unmount-Flush von
+  // useFormDraft sonst den alten Wert zurück. clearDraft() setzt die interne
+  // Referenz synchron auf den Default und entfernt den Key sofort.
+  const handleClose = (options: { forceDiscardDraft?: boolean } = {}) => {
+    const discard = shouldDiscardOnClose(discardOnClose, options.forceDiscardDraft === true);
+    if (discard) {
+      resetForm();
+      clearDraft();
+    }
+    // Derselbe Vertrag noch einmal explizit über die reine, getestete
+    // Funktion (appointmentFormGuards.test.ts deckt Cancel und
+    // "Entwurf verwerfen" beim Reopen ab).
+    applySelectionState(
+      computeSelectionAfterClose(
+        {
+          selectionMode,
+          selectedOwnerId,
+          horseIds: formData.horseIds,
+          knownOwnerNames,
+          knownHorseOwners,
+        },
+        discard,
+      ),
+    );
+    onClose();
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -522,6 +585,17 @@ export function AppointmentFormModal({
   const handleSubmit = () => {
     if (import.meta.env.DEV) console.log("[AppointmentFormModal] handleSubmit click");
 
+    if (isAppointmentSaveBlockedByLoad(appointmentsLoading, appointmentsLoadError)) {
+      toast({
+        title: appointmentsLoadError ? "Termine konnten nicht geladen werden" : "Bitte kurz warten",
+        description: appointmentsLoadError
+          ? "Die Kollisionsprüfung ist gerade nicht verfügbar. Bitte erneut versuchen."
+          : "Bestehende Termine werden noch geladen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!selectedDate || !user?.id) {
       toast({
         title: "Fehler",
@@ -559,6 +633,22 @@ export function AppointmentFormModal({
       : (recurrence === "none" ? 1 : parseInt(recurrence, 10) || 4);
     const occurrences = recurrence === "none" ? 1 : Math.floor(52 / weeksInterval) || 1;
 
+    // P1-A: client_id darf nie stillschweigend null werden, nur weil die
+    // horses-Query ein gerade erst angelegtes Pferd noch nicht kennt —
+    // resolveHorseOwnerId fällt in diesem Fenster auf knownHorseOwners zurück.
+    const resolvedOwnerByHorseId = new Map(
+      validated.horseIds.map((horseId) => [horseId, resolveHorseOwnerId(horseId, horses, knownHorseOwners)]),
+    );
+    const horseIdsWithoutKnownOwner = validated.horseIds.filter((horseId) => !resolvedOwnerByHorseId.get(horseId));
+    if (horseIdsWithoutKnownOwner.length > 0) {
+      toast({
+        title: "Kunde konnte nicht ermittelt werden",
+        description: "Bitte kurz warten, bis die Pferdeliste aktualisiert ist, und erneut speichern.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     for (const horseId of validated.horseIds) {
       for (let index = 0; index < occurrences; index += 1) {
         const appointmentDate = addWeeks(selectedDate, index * weeksInterval);
@@ -571,7 +661,7 @@ export function AppointmentFormModal({
 
         appointments.push({
           horse_id: horseId,
-          client_id: selectedHorse?.owner_id ?? null,
+          client_id: resolvedOwnerByHorseId.get(horseId) ?? null,
           service_id: currentService?.id ?? null,
           date: format(appointmentDate, "yyyy-MM-dd"),
           time: validated.time,
@@ -616,7 +706,8 @@ export function AppointmentFormModal({
     : false;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <>
+    <Dialog open={isOpen} onOpenChange={(next) => { if (!next) handleClose(); }}>
       <DialogContent className="w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] max-h-[92dvh] overflow-y-auto p-4 sm:max-w-[560px] sm:p-6">
         {isUploading && (
           <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-background/80 backdrop-blur-sm">
@@ -666,15 +757,27 @@ export function AppointmentFormModal({
         </DialogHeader>
 
         <div className="space-y-4 py-2 sm:py-4">
-          {conflictWarning && (
+          {appointmentsLoadError ? (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Bestehende Termine konnten nicht geladen werden. Eine Kollisionsprüfung ist gerade nicht möglich — Speichern ist deshalb gesperrt, bis der Ladevorgang erneut erfolgreich war.
+              </AlertDescription>
+            </Alert>
+          ) : appointmentsLoading ? (
+            <Alert>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertDescription>Bestehende Termine werden geladen, um Kollisionen zu prüfen…</AlertDescription>
+            </Alert>
+          ) : conflictWarning ? (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>{conflictWarning}</AlertDescription>
             </Alert>
-          )}
+          ) : null}
 
           <section className="space-y-3 rounded-xl border border-border bg-background p-3 sm:p-4">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-1">
                 <Label className="text-sm font-semibold">Kunde / Pferd *</Label>
                 <HelpTip
@@ -682,42 +785,65 @@ export function AppointmentFormModal({
                   description="Wähle direkt ein Pferd oder zuerst den Kunden/Besitzer. Mehrere Pferde eines Kunden kannst du in einem Schritt auswählen."
                 />
               </div>
-              <div className="flex overflow-hidden rounded-lg border border-border">
-                <button
-                  type="button"
-                  className={cn(
-                    "px-3 py-2 text-xs font-medium transition-colors",
-                    selectionMode === "horse"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80",
-                  )}
-                  onClick={() => setSelectionMode("horse")}
-                >
-                  Pferd
-                </button>
-                <button
-                  type="button"
-                  className={cn(
-                    "px-3 py-2 text-xs font-medium transition-colors",
-                    selectionMode === "owner"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80",
-                  )}
-                  onClick={() => setSelectionMode("owner")}
-                >
-                  Kunde
-                </button>
+              <div className="flex items-center gap-2">
+                <div className="flex overflow-hidden rounded-lg border border-border">
+                  <button
+                    type="button"
+                    className={cn(
+                      "px-3 py-2 text-xs font-medium transition-colors",
+                      selectionMode === "horse"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    )}
+                    onClick={() => setSelectionMode("horse")}
+                  >
+                    Pferd
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      "px-3 py-2 text-xs font-medium transition-colors",
+                      selectionMode === "owner"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80",
+                    )}
+                    onClick={() => setSelectionMode("owner")}
+                  >
+                    Kunde
+                  </button>
+                </div>
+                <Button type="button" variant="outline" size="sm" className="min-h-9 gap-1" onClick={() => setAddCustomerOpen(true)}>
+                  <Plus className="h-3.5 w-3.5" />
+                  Neuer Kunde
+                </Button>
               </div>
             </div>
 
             {selectionMode === "owner" && (
               <div className="space-y-2">
-                <Label className="text-xs">Kunde auswählen</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-xs">Kunde auswählen</Label>
+                  {selectedOwnerId && (
+                    <button
+                      type="button"
+                      className="text-[11px] font-medium text-primary hover:underline"
+                      onClick={() => setAddHorseOpen(true)}
+                    >
+                      + Neues Pferd
+                    </button>
+                  )}
+                </div>
                 <Select
                   value={selectedOwnerId}
                   onValueChange={(value) => {
                     setSelectedOwnerId(value);
-                    selectAllOwnerHorses(value);
+                    // P1-A: beim Kundenwechsel die horseIds des vorherigen
+                    // Kunden vollständig ersetzen (nicht zusammenführen) —
+                    // sonst akkumulieren sich Pferde verschiedener Besitzer.
+                    setFormData((previous) => ({
+                      ...previous,
+                      horseIds: computeHorseIdsForOwnerChange(horses, value),
+                    }));
                   }}
                 >
                   <SelectTrigger className="min-h-11">
@@ -726,7 +852,7 @@ export function AppointmentFormModal({
                   <SelectContent>
                     {Array.from(owners.entries()).map(([ownerId, data]) => (
                       <SelectItem key={ownerId} value={ownerId}>
-                        {contactMap.get(ownerId) || "Unbekannt"} ({data.horses.length} Pferde)
+                        {data.full_name || "Unbekannt"} ({data.horses.length} Pferde)
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -778,26 +904,41 @@ export function AppointmentFormModal({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{horse.name}</span>
                     <span className="block truncate text-[11px] text-muted-foreground sm:hidden">
-                      {selectionMode === "horse" && horse.owner_id && contactMap.get(horse.owner_id)
-                        ? contactMap.get(horse.owner_id)
+                      {selectionMode === "horse" && horse.owner?.full_name
+                        ? horse.owner.full_name
                         : horse.breed || ""}
                     </span>
                   </span>
                   <span className="hidden text-xs text-muted-foreground sm:inline">
                     {horse.breed || "Unbekannt"}
                   </span>
-                  {horse.owner_id && contactMap.get(horse.owner_id) && selectionMode === "horse" && (
+                  {horse.owner?.full_name && selectionMode === "horse" && (
                     <span className="ml-auto hidden max-w-[120px] truncate text-[10px] text-muted-foreground sm:inline">
-                      {contactMap.get(horse.owner_id)}
+                      {horse.owner.full_name}
                     </span>
                   )}
                 </label>
               ))}
 
               {filteredHorses.length === 0 && (
-                <p className="py-4 text-center text-xs text-muted-foreground">
-                  {selectionMode === "owner" ? "Bitte zuerst einen Kunden wählen" : "Keine Pferde gefunden"}
-                </p>
+                <div className="py-4 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    {selectionMode === "owner"
+                      ? selectedOwnerId
+                        ? "Für diesen Kunden ist noch kein Pferd angelegt."
+                        : "Bitte zuerst einen Kunden wählen."
+                      : "Keine Pferde gefunden."}
+                  </p>
+                  {selectionMode === "owner" && selectedOwnerId && (
+                    <button
+                      type="button"
+                      className="mt-2 text-xs font-semibold text-primary hover:underline"
+                      onClick={() => setAddHorseOpen(true)}
+                    >
+                      + Neues Pferd anlegen
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </section>
@@ -1266,13 +1407,23 @@ export function AppointmentFormModal({
         </div>
 
         <DialogFooter className="sticky bottom-0 -mx-4 -mb-4 gap-2 border-t border-border bg-background px-4 pb-4 pt-3 sm:static sm:mx-0 sm:mb-0 sm:border-0 sm:bg-transparent sm:px-0 sm:pb-0">
-          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
+          <Button variant="outline" onClick={() => handleClose()} className="w-full sm:w-auto">
             Abbrechen
           </Button>
-          {hasDraft && <Button variant="ghost" onClick={() => { discardDraft(); onClose(); }} className="w-full sm:w-auto">Entwurf verwerfen</Button>}
+          {/* P1-5: läuft über denselben handleClose wie jeder andere Schließpfad
+              — vorher ging dieser Button an Reset und Auswahl-Cleanup vorbei. */}
+          {hasDraft && (
+            <Button
+              variant="ghost"
+              onClick={() => handleClose({ forceDiscardDraft: true })}
+              className="w-full sm:w-auto"
+            >
+              Entwurf verwerfen
+            </Button>
+          )}
           <Button
             onClick={handleSubmit}
-            disabled={createAppointments.isPending || isUploading || formData.horseIds.length === 0}
+            disabled={createAppointments.isPending || isUploading || formData.horseIds.length === 0 || isAppointmentSaveBlockedByLoad(appointmentsLoading, appointmentsLoadError)}
             className="w-full sm:w-auto"
           >
             {(createAppointments.isPending || isUploading) && (
@@ -1288,5 +1439,43 @@ export function AppointmentFormModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AddCustomerModal
+      open={addCustomerOpen}
+      onClose={() => setAddCustomerOpen(false)}
+      draftKey="appointment-new-customer"
+      draftRoute={location.pathname}
+      onCreated={(customer) => {
+        setKnownOwnerNames((previous) => ({ ...previous, [customer.id]: customer.full_name }));
+        // P1-A: ein neu angelegter Kunde hat noch keine Pferde — eine evtl.
+        // vorher (für einen anderen Kunden) getroffene Pferdeauswahl darf
+        // nicht stehen bleiben.
+        setFormData((previous) => ({ ...previous, horseIds: [] }));
+        setSelectionMode("owner");
+        setSelectedOwnerId(customer.id);
+        setAddCustomerOpen(false);
+        setAddHorseOpen(true);
+      }}
+    />
+
+    <AddHorseModal
+      customerId={selectedOwnerId || firstSelectedHorse?.owner_id || null}
+      customerName={resolveOwnerDisplayName(selectedOwnerId || firstSelectedHorse?.owner_id, knownOwnerNames, owners)}
+      open={addHorseOpen}
+      onClose={() => setAddHorseOpen(false)}
+      onCreated={(horse) => {
+        // P1-A: owner_id sofort lokal vorhalten — der Save darf nicht auf den
+        // Refetch von "horses-with-price-group" warten müssen.
+        setKnownHorseOwners((previous) => ({ ...previous, [horse.id]: horse.owner_id }));
+        setFormData((previous) => ({
+          ...previous,
+          horseIds: [...new Set([...previous.horseIds, horse.id])],
+        }));
+        setSelectionMode("owner");
+        setSelectedOwnerId(horse.owner_id);
+        setAddHorseOpen(false);
+      }}
+    />
+    </>
   );
 }

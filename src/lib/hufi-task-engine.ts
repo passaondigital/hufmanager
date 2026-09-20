@@ -3,6 +3,7 @@ import { executeHufiAction, type HufiAction } from "./hufi-actions";
 import {
   type AgentTaskType, taskTypeLabel, taskTypeToActionType,
 } from "./hufi-agent-tasks";
+import { assertCreateInvoiceWithItemsResult } from "./invoiceRpc";
 
 export type TaskStatus =
   | "pending" | "running" | "awaiting_confirm" | "done" | "failed" | "cancelled";
@@ -157,23 +158,34 @@ async function executeTool(
     }
 
     case "create_invoices_batch": {
+      // P1-E: produktive Rechnungen entstehen nur noch über den canonical
+      // atomaren Pfad (create_invoice_with_items). Die RPC verlangt
+      // mindestens eine Position mit einer Summe, die total_amount ergibt —
+      // eine Platzhalter-Position (0 €, Titel = bisheriger notes-Text) hält
+      // das bewährte "Entwurf zum Finalisieren in Rechnungen" Verhalten,
+      // aber ohne dass je ein Rechnungskopf ohne Positionen entstehen kann.
       const appointments = (context.appointments as Array<{ id: string; client?: { id?: string }; horses?: { name?: string }; service_type?: string }>) ?? [];
       const created: string[] = [];
       for (const appt of appointments) {
-        const { data: inv } = await supabase
-          .from("invoices")
-          .insert({
+        if (!appt.client?.id) continue;
+        const title = `${appt.service_type ?? "Hufpflege"}${appt.horses?.name ? ": " + appt.horses.name : ""}`;
+        const { data: insertedInvoice, error } = await supabase.rpc("create_invoice_with_items", {
+          p_invoice: {
             provider_id: userId,
-            client_id: appt.client?.id ?? null,
+            client_id: appt.client.id,
             invoice_number: `HF-${Date.now().toString(36).toUpperCase()}`,
             issue_date: today,
             total_amount: 0,
             status: "draft",
-            notes: `${appt.service_type ?? "Hufpflege"}${appt.horses?.name ? ": " + appt.horses.name : ""}`,
-          })
-          .select("id")
-          .single();
-        if (inv) created.push((inv as { id: string }).id);
+            notes: title,
+          },
+          p_items: [{ inventory_item_id: null, title, quantity: 1, unit_price: 0, total_price: 0 }],
+        });
+        if (error) {
+          console.error("[create_invoices_batch] Rechnung konnte nicht erstellt werden:", error.message);
+          continue;
+        }
+        created.push(assertCreateInvoiceWithItemsResult(insertedInvoice).id);
       }
       return { created_count: created.length, invoice_ids: created };
     }

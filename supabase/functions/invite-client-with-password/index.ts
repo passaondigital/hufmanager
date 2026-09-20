@@ -114,7 +114,64 @@ serve(async (req: Request): Promise<Response> => {
 
     const tempPassword = generateTempPassword();
 
-    // Create auth user with one-time password
+    // FINAL ACCEPTANCE P0 (Tenant), Variante 3 — Pending-Invite-Vertrag.
+    //
+    // Die frühere Fassung hat app_metadata.invited_by_provider_id gesetzt und
+    // sich darauf verlassen, dass der Trigger auto_assign_client_to_provider
+    // den Marker sieht. Gegen echtes GoTrue v2.196.0 gemessen: custom
+    // app_metadata wird NICHT im selben Statement wie der auth.users-INSERT
+    // geschrieben, sondern danach — die Triggerkette läuft vorher und der
+    // eingeladene Kunde bekam weiterhin sofort einen aktiven Grant für den
+    // ältesten Provider im System, inkl. medizinischer Daten.
+    //
+    // Deshalb wird der Vertrag jetzt SERVERSEITIG angelegt, BEVOR der
+    // Auth-User existiert. Anker ist die normalisierte E-Mail: auth.users.email
+    // ist eine Kernspalte und steht im selben INSERT, ist im Trigger also
+    // unabhängig von jedem Metadata-Timing sichtbar.
+    //
+    // Der Invite erteilt selbst keinen Zugriff — er unterdrückt nur den
+    // generischen Fallback. Den Grant legt ausschliesslich
+    // create_invited_customer_with_contact an.
+    const requestId = crypto.randomUUID();
+
+    const { data: inviteData, error: inviteError } = await supabaseAdmin.rpc(
+      "create_pending_client_invite_v1",
+      { p_provider_id: callerUser.id, p_email: email, p_request_id: requestId, p_ttl_minutes: 15 },
+    );
+
+    if (inviteError) {
+      console.error("invite-client-with-password: pending invite failed:", inviteError.message);
+      return new Response(JSON.stringify({
+        error: "Einladung konnte nicht vorbereitet werden. Es wurde nichts angelegt, bitte erneut versuchen.",
+      }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    const inviteId = (inviteData as { invite_id?: string } | null)?.invite_id;
+    if (!inviteId) {
+      console.error("invite-client-with-password: pending invite returned no id");
+      return new Response(JSON.stringify({
+        error: "Einladung konnte nicht vorbereitet werden. Es wurde nichts angelegt, bitte erneut versuchen.",
+      }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Kompensation: ab hier existiert ein offener Invite. Jeder Abbruch muss
+    // ihn entwerten, sonst blockiert er die Adresse bis zum TTL-Ablauf.
+    const invalidateInvite = async (reason: string, cleanupRequired = false) => {
+      const { error } = await supabaseAdmin.rpc("invalidate_pending_client_invite_v1", {
+        p_invite_id: inviteId,
+        p_provider_id: callerUser.id,
+        p_reason: reason,
+        p_cleanup_required: cleanupRequired,
+      });
+      if (error) {
+        console.error("invite-client-with-password: invite invalidation failed:", error.message);
+      }
+    };
+
+    // Create auth user with one-time password. user_metadata trägt nur
+    // Anzeigedaten für handle_new_user() — bewusst KEINE Sicherheitsmarker,
+    // raw_user_meta_data ist bei einem normalen /signup vom Client frei
+    // befüllbar und taugt nicht als Vertrauensanker.
     const { data: newUserData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: tempPassword,
@@ -123,6 +180,7 @@ serve(async (req: Request): Promise<Response> => {
     });
 
     if (createError) {
+      await invalidateInvite("createUser failed");
       const msg = createError.message.toLowerCase().includes("already")
         ? "Diese E-Mail-Adresse ist bereits registriert."
         : createError.message;
@@ -133,29 +191,105 @@ serve(async (req: Request): Promise<Response> => {
 
     const newUserId = newUserData.user!.id;
 
-    // Create profile
-    await supabaseAdmin.from("profiles").insert({
-      id: newUserId,
-      full_name: fullName,
-      email,
-      created_by_provider_id: callerUser.id,
-      force_password_reset: true,
-      onboarding_completed: false,
-      has_logged_in: false,
-      invited_at: new Date().toISOString(),
-    } as any);
-
-    // Assign client role (triggers auto_create_access_grant_for_client via created_by_provider_id)
-    await supabaseAdmin.from("user_roles").insert({ user_id: newUserId, role: "client" });
-
-    // Create contact entry for provider's address book
-    await supabaseAdmin.from("contacts").insert({
-      provider_id: callerUser.id,
-      full_name: fullName,
-      email,
-      category: "client",
-      profile_id: newUserId,
+    // Invite an genau diese Identität binden. Ohne diesen Schritt könnte ein
+    // offener Invite auf eine Adresse einen FREMDEN Selbst-Signup derselben
+    // Adresse einsammeln — der kanonische Vertrag akzeptiert deshalb nur
+    // gebundene Invites.
+    const { error: bindError } = await supabaseAdmin.rpc("bind_pending_client_invite_v1", {
+      p_invite_id: inviteId,
+      p_provider_id: callerUser.id,
+      p_user_id: newUserId,
     });
+
+    if (bindError) {
+      console.error("invite-client-with-password: invite binding failed:", bindError.message);
+      await invalidateInvite("bind failed", true);
+      const { error: cleanupError } = await supabaseAdmin.auth.admin.deleteUser(newUserId);
+      if (cleanupError) {
+        console.error("invite-client-with-password: auth cleanup failed for", newUserId, cleanupError.message);
+        return new Response(JSON.stringify({
+          error: "Kunde konnte nicht angelegt werden und der angelegte Zugang konnte nicht automatisch entfernt werden. Bitte im Support melden.",
+        }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({
+        error: "Kunde konnte nicht angelegt werden. Es wurde nichts gespeichert, bitte erneut versuchen.",
+      }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // P1-4 (Correction Pass 5): profiles + user_roles + contacts liefen bisher
+    // als drei einzelne Writes, deren Fehler NICHT ausgewertet wurden. Weil
+    // der auth-Trigger on_auth_user_created -> handle_new_user() profiles und
+    // user_roles bereits anlegt, lief der profiles-INSERT hier immer in eine
+    // unique_violation auf dem Primary Key — still verschluckt. Ergebnis:
+    // created_by_provider_id, force_password_reset und invited_at wurden nie
+    // gespeichert, und ohne created_by_provider_id greift auch
+    // auto_create_access_grant_for_client nicht.
+    //
+    // Jetzt: ein einziger atomarer RPC-Aufruf (siehe supabase/migrations/
+    // 20260917160000_add_create_invited_customer_with_contact_v1.sql). Er
+    // ergänzt die vom Trigger angelegte Zeile, sichert die client-Rolle ab
+    // und legt den Kontakt an — alles in einer Transaktion. Der Auth-Invite
+    // (auth.admin.createUser oben) bleibt bewusst davon getrennt, weil er
+    // keine DB-Transaktion ist.
+    const { error: customerError } = await supabaseAdmin.rpc("create_invited_customer_with_contact", {
+      p_provider_id: callerUser.id,
+      p_user_id: newUserId,
+      p_profile: { full_name: fullName, email },
+      p_contact: { category: "client" },
+    });
+
+    if (customerError) {
+      // Definierter Zustand statt halb angelegtem Kunden: die DB-Seite ist
+      // durch die Transaktion vollständig zurückgerollt, also soll auch der
+      // gerade erzeugte Auth-User wieder weg. Nur dieser eine, frisch
+      // angelegte Nutzer wird entfernt.
+      //
+      // ABER: handle_new_user() führt beim auth.users-INSERT eine
+      // Ghost-Merge-Schleife aus — passte die eingeladene E-Mail zu einem
+      // bereits angelegten Ghost-Kunden, hängen dessen Pferde, Termine und
+      // Kontakte jetzt schon an diesem neuen Profil, und das Ghost-Profil ist
+      // soft-deleted. In dem Fall wäre das Löschen des Auth-Users
+      // destruktiver als der Fehler selbst (public.profiles hat keinen FK auf
+      // auth.users, die Zeile bliebe mitsamt den umgehängten Daten als
+      // besitzerloses Profil zurück). Deshalb vorher prüfen und im Zweifel
+      // NICHTS löschen. Tenant-sicher ist beides: ohne erfolgreiche RPC
+      // existiert kein Access Grant (die RPC ist eine Transaktion, sie legt
+      // Grant und Kunde gemeinsam an oder gar nicht), und der generische
+      // Fallback war während createUser durch den offenen Pending Invite
+      // unterdrückt.
+      console.error("invite-client-with-password: customer persistence failed:", customerError.message);
+
+      await invalidateInvite("customer persistence failed", true);
+
+      const [horsesRes, appointmentsRes, contactsRes] = await Promise.all([
+        supabaseAdmin.from("horses").select("id", { count: "exact", head: true }).eq("owner_id", newUserId),
+        supabaseAdmin.from("appointments").select("id", { count: "exact", head: true }).eq("client_id", newUserId),
+        supabaseAdmin.from("contacts").select("id", { count: "exact", head: true }).eq("profile_id", newUserId),
+      ]);
+      const mergedRowCheckFailed = !!(horsesRes.error || appointmentsRes.error || contactsRes.error);
+      const mergedRows = (horsesRes.count ?? 0) + (appointmentsRes.count ?? 0) + (contactsRes.count ?? 0);
+
+      if (mergedRowCheckFailed || mergedRows > 0) {
+        console.error(
+          "invite-client-with-password: keeping auth user", newUserId,
+          mergedRowCheckFailed ? "(merge check failed)" : `(${mergedRows} merged rows)`,
+        );
+        return new Response(JSON.stringify({
+          error: "Kunde konnte nicht vollständig angelegt werden. Es wurden keine Daten gelöscht und kein Zugriff vergeben — bitte im Support melden.",
+        }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const { error: cleanupError } = await supabaseAdmin.auth.admin.deleteUser(newUserId);
+      if (cleanupError) {
+        console.error("invite-client-with-password: auth cleanup failed for", newUserId, cleanupError.message);
+        return new Response(JSON.stringify({
+          error: "Kunde konnte nicht angelegt werden und der angelegte Zugang konnte nicht automatisch entfernt werden. Bitte im Support melden.",
+        }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      return new Response(JSON.stringify({
+        error: "Kunde konnte nicht angelegt werden. Es wurde nichts gespeichert, bitte erneut versuchen.",
+      }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // Fetch provider/business info for email
     const { data: businessSettings } = await supabaseAdmin
@@ -235,15 +369,26 @@ serve(async (req: Request): Promise<Response> => {
 </body>
 </html>`;
 
-    await resend.emails.send({
-      from: "HufManager <info@hufmanager.de>",
-      to: [email],
-      subject: `🐴 ${safeProviderName} lädt dich zur HufManager Kunden-App ein`,
-      html: emailHtml,
-    });
+    // P1-4: Ab hier ist der Kunde definitiv angelegt. Ein Fehler beim
+    // Mailversand darf deshalb NICHT als "nichts passiert" (500) zurückgehen
+    // — das wäre genau die unklare Zwischenlage, die vermieden werden soll.
+    // Der Aufrufer bekommt den Erfolg plus emailSent:false und kann das
+    // Einmalpasswort selbst weitergeben (die UI zeigt es ohnehin an).
+    let emailSent = true;
+    try {
+      await resend.emails.send({
+        from: "HufManager <info@hufmanager.de>",
+        to: [email],
+        subject: `🐴 ${safeProviderName} lädt dich zur HufManager Kunden-App ein`,
+        html: emailHtml,
+      });
+    } catch (mailErr) {
+      emailSent = false;
+      console.error("invite-client-with-password: Kunde angelegt, Mailversand fehlgeschlagen:", mailErr);
+    }
 
     return new Response(
-      JSON.stringify({ success: true, tempPassword }),
+      JSON.stringify({ success: true, tempPassword, emailSent }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 

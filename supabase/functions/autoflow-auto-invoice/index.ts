@@ -83,14 +83,28 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if invoice already exists for this appointment
-    const { data: existingInvoice } = await supabase
-      .from("invoices")
-      .select("id")
+    // P1-2 (Correction Pass 4): invoices hat keine appointment_id-Spalte
+    // (nie hatte — siehe Migrationshistorie und live PROD information_schema,
+    // geprüft 2026-09-17). Die Verknüpfung läuft über die bestehende
+    // invoice_appointments-Tabelle, die die kanonische RPC weiter unten
+    // atomar mitschreibt.
+    //
+    // P1-1 (Correction Pass 5): dieser SELECT ist nur noch ein günstiger
+    // Schnellausstieg, NICHT die Garantie. Die eigentliche Idempotenz liegt
+    // im partiellen Unique-Index idx_invoice_appointments_autoflow_unique
+    // (source='autoflow'), der in derselben Transaktion wie die Rechnung
+    // greift — ein Check-then-create-Race kann hier also keine zweite
+    // Rechnung mehr erzeugen. Der Filter auf source spiegelt den Index
+    // exakt: manuelle Verknüpfungen (source IS NULL) zählen nicht als
+    // "schon automatisch abgerechnet".
+    const { data: existingLink } = await supabase
+      .from("invoice_appointments")
+      .select("invoice_id")
       .eq("appointment_id", appointment_id)
+      .eq("source", "autoflow")
       .maybeSingle();
 
-    if (existingInvoice) {
+    if (existingLink) {
       console.log("[autoflow-auto-invoice] Invoice already exists");
       return new Response(
         JSON.stringify({ message: "Invoice already exists", created: false }),
@@ -98,56 +112,72 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get owner profile for invoice
     const horse = appointment.horses as any;
-    const { data: ownerProfile } = await supabase
-      .from("profiles")
-      .select("id, full_name, email")
-      .eq("id", horse.owner_id)
-      .single();
-
-    // Get contact record if exists
-    const { data: contact } = await supabase
-      .from("contacts")
-      .select("id, full_name, email, street, zip_code, city")
-      .eq("provider_id", appointment.provider_id)
-      .eq("profile_id", horse.owner_id)
-      .maybeSingle();
+    if (!horse?.owner_id) {
+      console.error("[autoflow-auto-invoice] Horse has no owner_id, cannot determine invoice client");
+      await logAction(supabase, appointment.provider_id, "auto_invoice", "appointment", appointment_id, "failed", {
+        error: "Horse has no owner_id",
+      });
+      return new Response(
+        JSON.stringify({ error: "Horse has no owner" }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Generate invoice number
     const { data: invoiceNumber } = await supabase
       .rpc("generate_invoice_number", { p_provider_id: appointment.provider_id });
 
-    // Create invoice
-    const invoiceData = {
-      provider_id: appointment.provider_id,
-      client_id: contact?.id || null,
-      appointment_id: appointment.id,
-      invoice_number: invoiceNumber || `RE-AUTO-${Date.now()}`,
-      status: "draft",
-      issue_date: new Date().toISOString().split("T")[0],
-      due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      subtotal: appointment.price || 0,
-      tax_amount: Math.round((appointment.price || 0) * 0.19 * 100) / 100,
-      total: Math.round((appointment.price || 0) * 1.19 * 100) / 100,
-      items: [{
-        description: appointment.service_type || "Hufbearbeitung",
-        horse_name: horse.name,
-        quantity: 1,
-        unit_price: appointment.price || 0,
-        total: appointment.price || 0,
-      }],
-      notes: `Automatisch erstellt via AutoFlow – Termin am ${new Date(appointment.date).toLocaleDateString("de-DE")}`,
-      client_name: contact?.full_name || ownerProfile?.full_name || "Unbekannt",
-      client_email: contact?.email || ownerProfile?.email || null,
-      client_address: contact ? `${contact.street || ""}\n${contact.zip_code || ""} ${contact.city || ""}`.trim() : null,
-    };
+    // P1-2: Kopf + Position werden jetzt atomar über dieselbe kanonische
+    // RPC-Familie wie create_invoice_with_items geschrieben (siehe
+    // supabase/migrations/20260917130000_add_create_invoice_with_items_for_
+    // provider_v1.sql — service_role-only, kein direkter Zwei-Write-Pfad
+    // mehr, kein Head-only-Invoice bei Item-Fehler mehr möglich). client_id
+    // ist die profiles.id des Pferdebesitzers (invoices.client_id verweist
+    // per FK auf profiles, nicht auf contacts — der bisherige Code setzte
+    // hier fälschlich die contacts.id ein).
+    const unitPrice = appointment.price || 0;
+    const totalAmount = Math.round(unitPrice * 100) / 100;
 
-    const { data: newInvoice, error: invoiceError } = await supabase
-      .from("invoices")
-      .insert(invoiceData)
-      .select("id, invoice_number")
-      .single();
+    const { data: rpcResult, error: invoiceError } = await supabase.rpc(
+      "create_invoice_with_items_for_provider",
+      {
+        p_provider_id: appointment.provider_id,
+        p_appointment_id: appointment.id,
+        p_invoice: {
+          provider_id: appointment.provider_id,
+          client_id: horse.owner_id,
+          horse_id: appointment.horse_id,
+          invoice_number: invoiceNumber || `RE-AUTO-${Date.now()}`,
+          issue_date: new Date().toISOString().split("T")[0],
+          due_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+          total_amount: totalAmount,
+          status: "draft",
+          customer_type: "client",
+          notes: `Automatisch erstellt via AutoFlow – Termin am ${new Date(appointment.date).toLocaleDateString("de-DE")}`,
+        },
+        p_items: [{
+          inventory_item_id: null,
+          title: appointment.service_type || "Hufbearbeitung",
+          quantity: 1,
+          unit_price: unitPrice,
+          total_price: totalAmount,
+        }],
+      },
+    );
+
+    // P1-1: verlorenes Rennen (paralleles Completion-/Signature-Event, doppelt
+    // gefeuerter Trigger, pg_net-Retry) ist kein Fehler, sondern genau das
+    // gewünschte Ergebnis: es existiert bereits eine automatische Rechnung,
+    // und diese Transaktion hat nichts hinterlassen. HINT kommt aus der RPC
+    // (siehe 20260917130000_…sql) und ist der stabile Vertrag dafür.
+    if (invoiceError && (invoiceError.hint === "autoflow_duplicate" || invoiceError.code === "23505")) {
+      console.log("[autoflow-auto-invoice] Invoice already exists (idempotency key)");
+      return new Response(
+        JSON.stringify({ message: "Invoice already exists", created: false }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (invoiceError) {
       console.error("[autoflow-auto-invoice] Invoice creation failed:", invoiceError);
@@ -156,6 +186,8 @@ serve(async (req: Request): Promise<Response> => {
       });
       throw invoiceError;
     }
+
+    const newInvoice = rpcResult as { id: string; invoice_number: string | null };
 
     // Notify provider
     await supabase.from("notifications").insert({
@@ -180,7 +212,7 @@ serve(async (req: Request): Promise<Response> => {
     await logAction(supabase, appointment.provider_id, "auto_invoice", "appointment", appointment_id, "success", {
       invoice_id: newInvoice.id,
       invoice_number: newInvoice.invoice_number,
-      total: invoiceData.total,
+      total: totalAmount,
     });
 
     console.log(`[autoflow-auto-invoice] Invoice ${newInvoice.invoice_number} created`);
