@@ -2,10 +2,11 @@
 
 ```
 RELEASE_BRANCH=release/hufmanager-lifecycle-2026-09-11
-RELEASE_HEAD=2f3b2a123ddce8495488460fbb1a7f669553ead7
-RELEASE_HEAD_NOTE=getesteter RC = RELEASE_HEAD + unkommittierter Worktree; Scope muss vor dem Build committet werden (Plan §2), danach RELEASE_HEAD hier aktualisieren
+RELEASE_HEAD=110dffc5e41461a332f9574f9decf014259faadb
+RELEASE_HEAD_PARENT=2f3b2a123ddce8495488460fbb1a7f669553ead7
+RELEASE_HEAD_NOTE=RC eingefroren am 2026-09-20 20:30:39 +0200; 52 Dateien, 6611 Insertions, 760 Deletions; Worktree danach sauber (nur untracked supabase/.branches/)
 RELEASE_DATE=2026-09-20
-RELEASE_STATUS=PREPARED_NOT_DEPLOYED
+RELEASE_STATUS=RC_COMMITTED_NOT_DEPLOYED
 PRODUCTION_PROJECT=vnschgjxkzzwzefqlrji
 PRODUCTION_FRONTEND=app.hufmanager.de -> /srv/hufi/business/hufmanager/app
 PROD_MIGRATION_STATE_BEFORE=20260911191418
@@ -55,8 +56,9 @@ bash scripts/build-hufmanager-canonical.sh
 ```
 
 ```
-FRONTEND_BUILD_PRECONDITION=sauberer Worktree (Skript bricht sonst mit "tracked worktree changes present" ab)
-FRONTEND_DEPLOY_COMMAND=rsync -a --delete dist/ /srv/hufi/business/hufmanager/app/
+FRONTEND_BUILD_PRECONDITION=erfuellt — git diff und git diff --cached sauber seit dem RC-Commit
+FRONTEND_VERIFY_COMMAND=bash scripts/verify-hufmanager-release.sh
+FRONTEND_DEPLOY_COMMAND=OFFEN — Entscheidung erforderlich, siehe Release-Plan §9.1 (Isolated Release + Symlink | deploy.sh um HufManager-Ziel erweitern | freigegebener einmaliger rsync). CLAUDE.md verbietet Hand-rsync, ./deploy.sh zielt auf HufiApp, nicht auf den HufManager-Webroot.
 FRONTEND_RELEASE_REQUIRED=YES
 PRODUCTION_BUILD_PRECHECK=PASS
 PRODUCTION_BUILD_PRECHECK_NOTE=separater lokaler Build mit Prod-Env erfolgreich; 0 Treffer Staging-URL, Prod-Supabase-URL in 7 Chunks, PDF-Fix (INVOICE_ITEMS_MISSING) enthalten
@@ -145,7 +147,7 @@ docs/HUFMANAGER_RELEASE_MANIFEST_2026-09-20.md
 ```
 
 ```
-RELEASE_FILES_COUNT=50
+RELEASE_FILES_COUNT=52
 RELEASE_FILES_IDENTIFIED=YES
 ```
 
@@ -217,7 +219,7 @@ ROLLBACK_ORDER=Frontend -> Edge Functions -> Datenbank (DB nur bei Datenschaden)
 ## GATES
 
 ```
-GATE_0_WORKTREE_COMMITTED=OPEN      # Release-Scope muss vor dem Build committet werden
+GATE_0_WORKTREE_COMMITTED=PASS      # RC-Commit 110dffc5e41461a332f9574f9decf014259faadb, Worktree sauber
 GATE_1_BACKUP=OPEN                  # beim Deploy
 GATE_2_PROJECT_ID=PASS              # vnschgjxkzzwzefqlrji = HufManager, ACTIVE_HEALTHY
 GATE_3_NO_STAGING_URL=PASS          # 0 Treffer im Precheck-Bundle
