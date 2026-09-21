@@ -1754,3 +1754,266 @@ SAFE_TO_PREPARE_MIGRATION_4=YES
 Migration #4, danach die beiden Vault-Secrets, danach Tests, danach ein Pilot-Provider.
 
 **STOPP.** Keine Migration #4, keine Vault-Secrets, kein `auto_invoice_enabled`, kein Push.
+
+---
+
+# NACHTRAG 7 — Migration #4 angewendet (2026-09-21)
+
+Ausgeführt wurde genau **ein** Schritt: Migration **#4**
+`20260917140000_fix_autoflow_trigger_auth_vault_v1` gegen Production
+`vnschgjxkzzwzefqlrji`. **Keine Vault-Secrets, kein `auto_invoice_enabled`, keine Migration #5,
+kein Push.**
+
+## N7.1 Artefakt-Integrität
+
+| | |
+|---|---|
+| Datei | `docs/backups/mig4_20260917140000_apply_canonical.sql` |
+| sha256 | `78ba4d763a2b790983548bd26392b5929ee5630dc94a96412f1c14844c61cf96` |
+| Größe | 9571 Bytes |
+| **eingebetteter Migrationstext md5** | **`3056567c716fd7a318254042f6e878a4`** (7864 Zeichen) |
+| Rollback-Artefakt | `docs/backups/mig4_20260917140000_prestate_rollback_2026-09-21.sql` (bereits getrackt) |
+
+Wie bei #2 und #3 steht der Migrationstext im Skript **einmal**: er wird von dort per `EXECUTE`
+ausgeführt **und** von dort in `statements` geschrieben — ausgeführter und protokollierter Text
+sind derselbe Wert, nicht zwei verglichene Kopien. Zwei Guards hätten vor jedem
+Produktionskontakt abgebrochen: der md5-Check im Shell-Wrapper und der `raise exception`-Guard
+innerhalb der Transaktion.
+
+**Kein `apply_migration`, kein `migration repair`, kein `db push`** — deshalb keine serverseitig
+vergebene Version und keine neue Drift.
+
+## N7.2 Apply
+
+`psql` über den Session-Pooler (`Port 5432`, `postgres.vnschgjxkzzwzefqlrji`, `sslmode=require`),
+genau **ein** Versuch, kein Retry. Das DB-Passwort wurde ausschließlich über `/dev/tty` gelesen,
+nicht gespeichert, nicht geloggt, nicht an ein Werkzeug übergeben; das Skript verweigert den
+Start ohne steuerndes Terminal. Client-Protokoll:
+
+```
+BEGIN
+CREATE TABLE
+INSERT 0 1
+DO
+INSERT 0 1
+COMMIT
+```
+
+Das ist die Client-Sicht. **Maßgeblich ist der anschließend read-only erhobene DB-Zustand**
+(N7.3 ff.) — dieser wurde nach dem Apply unabhängig über die Supabase-API erhoben, nicht aus
+dem Log abgeschrieben.
+
+## N7.3 Postcheck — Ledger
+
+| Prüfung | Erwartet | Gemessen | Ergebnis |
+|---|---|---|---|
+| `version` | `20260917140000` | `20260917140000` | ✅ **kanonisch** |
+| Häufigkeit | genau 1 | **1** | ✅ |
+| **zusätzliche automatisch erzeugte Version** | 0 | **0** | ✅ kein Drift |
+| `name` | `fix_autoflow_trigger_auth_vault_v1` | identisch | ✅ |
+| `statements` md5 / Länge | `3056567c716fd7a318254042f6e878a4` / 7864 | identisch | ✅ |
+| `array_length(statements,1)` | 1 | **1** | ✅ |
+| `created_by` | `passaondigital@gmail.com` | identisch | ✅ |
+| `idempotency_key` / `rollback` | NULL / NULL | **NULL / NULL** | ✅ |
+| Ledger gesamt | 438 | **438** | ✅ exakt +1 |
+| Ledger-Kopf | `20260917140000` | identisch | ✅ |
+
+### Keine andere Ledger-Zeile verändert
+
+| Eintrag | dokumentierter Sollwert | jetzt gemessen | |
+|---|---|---|---|
+| #1 `20260917120000` | `5df63e4ff759f7df487080626a9b683f` (5568) | identisch | ✅ |
+| #2 `20260917125000` | `f1c006ac7ec2b3eb923277977a35927b` (3464) | identisch | ✅ |
+| #3 `20260917130000` | `427b0dfbfa98b518f92eaeacc6d3b086` (12342) | identisch | ✅ |
+| übrige Zeilen (`version not in (#3,#4)`) | 436 | **436** | ✅ |
+
+> **Abweichung zur Methodik der Nachträge 3/4 — offen ausgewiesen:** dort wurde ein
+> Gesamt-Fingerprint `ledger_others_md5` geführt, dessen **exakter SQL-Ausdruck im Dokument nicht
+> festgehalten** ist (nur die Kurzform `md5(string_agg(version‖name‖md5(statements)‖created_by …))`).
+> Er ließ sich hier nicht bit-genau reproduzieren — u. a. weil 4 Zeilen `created_by IS NULL`
+> haben und das Verhalten von der genauen Klammerung/Coalescierung abhängt. Statt einen
+> nicht vergleichbaren Wert als „unverändert" auszugeben, steht oben der **Zeilennachweis pro
+> Release-Migration** plus die unveränderte Restmenge. Neuer, ab jetzt reproduzierbarer
+> Fingerprint für Folgeschritte, Ausdruck explizit:
+>
+> ```sql
+> select md5(string_agg(version||name||md5(statements::text)||coalesce(created_by,''), ''
+>                       order by version)), count(*)
+> from supabase_migrations.schema_migrations
+> where version not in ('20260917130000','20260917140000');
+> -- = d5d60e2b50d9ce5f8f120eb2a81b4eba / 436
+> ```
+
+## N7.4 Postcheck — Schemaobjekte
+
+Alle drei Bodies wurden lokal aus dem Repo-Artefakt zwischen `AS $$` und `$$;` extrahiert und
+gegen `pg_proc.prosrc` gehasht — **Inhaltsgleichheit, nicht Namensgleichheit**:
+
+| Funktion | erwartetes `md5(prosrc)` | gemessen | Länge | SECDEF | `search_path` | Owner |
+|---|---|---|---|---|---|---|
+| `_autoflow_trigger_endpoint()` | `922245f9f39cde4fecdf6370f632c08d` | **identisch** ✅ | 513 | true | `public` | `postgres` |
+| `autoflow_on_appointment_completed()` | `83e452510cd0e70bae468209b527ea6d` | **identisch** ✅ | 842 | true | `public` | `postgres` |
+| `autoflow_on_appointment_signed()` | `d03154a74218793df5fce0ddaa7ed7d6` | **identisch** ✅ | 822 | true | `public` | `postgres` |
+
+### Vorher / nachher
+
+| | vor #4 (N5.2) | nach #4 |
+|---|---|---|
+| `autoflow_on_appointment_completed` md5 (Länge) | `92910008ac054d1741829613ca2c0155` (710) | **`83e452510cd0e70bae468209b527ea6d`** (842) |
+| `autoflow_on_appointment_signed` md5 (Länge) | `ab5ddbc4edd28ceee007421c83ce0aa3` (691) | **`d03154a74218793df5fce0ddaa7ed7d6`** (822) |
+| `_autoflow_trigger_endpoint` | existierte nicht | **vorhanden** |
+
+| Prüfung | Ergebnis |
+|---|---|
+| JWT-Literal (`eyJ`) in einem der drei Bodies | **nein** ✅ — das hartcodierte anon-Token ist weg |
+| `supabase.co`-URL in einem der drei Bodies | **nein** ✅ — keine Projekt-URL mehr im Code |
+| Umgebungsauflösung | ausschließlich über `vault.decrypted_secrets` ✅ |
+
+### Trigger-Bindung unverändert
+
+| Trigger | Tabelle | Event | Funktion | `tgenabled` |
+|---|---|---|---|---|
+| `trg_autoflow_appointment_completed` | `public.appointments` | `AFTER UPDATE FOR EACH ROW` | `autoflow_on_appointment_completed()` | `O` (aktiv) ✅ |
+| `trg_autoflow_appointment_signed` | `public.appointments` | `AFTER UPDATE FOR EACH ROW` | `autoflow_on_appointment_signed()` | `O` (aktiv) ✅ |
+
+Kein `DROP`/`CREATE TRIGGER` nötig gewesen und keiner erfolgt — `CREATE OR REPLACE FUNCTION`
+bei gleicher Signatur genügt.
+
+## N7.5 Grants — der eine Punkt, der wirklich zählt, und ein bleibender Restbefund
+
+Gemessen über `has_function_privilege(role, oid, 'EXECUTE')`, nicht über ACL-Textparsing:
+
+| Funktion | `anon` | `authenticated` | `service_role` |
+|---|---|---|---|
+| **`_autoflow_trigger_endpoint()`** | **false** ✅ | **false** ✅ | true |
+| `autoflow_on_appointment_completed()` | **true** ⚠️ | **true** ⚠️ | true |
+| `autoflow_on_appointment_signed()` | **true** ⚠️ | **true** ⚠️ | true |
+
+**Der `REVOKE` in #4 hat gegriffen — für die einzige Funktion, die ihn braucht.**
+`_autoflow_trigger_endpoint()` gibt den Service-Key als Spalte zurück und ist eine normale,
+direkt aufrufbare Funktion; sie ist für `anon` und `authenticated` gesperrt.
+
+> **RESTBEFUND — durch #4 ausdrücklich NICHT behoben.**
+> `autoflow_on_appointment_completed()` und `autoflow_on_appointment_signed()` haben
+> **weiterhin** `EXECUTE` für `anon` und `authenticated`. `CREATE OR REPLACE FUNCTION` erhält
+> bestehende ACLs, und #4 enthält für diese beiden **kein** `REVOKE` — exakt wie in **N5.3**
+> vor dem Apply vorhergesagt. Der Zustand ist unverändert gegenüber N5.2
+> (`CURRENT_COMPLETED_ANON_EXECUTE=YES`, `CURRENT_SIGNED_ANON_EXECUTE=YES`), also **keine
+> Verschlechterung**, aber auch **keine Behebung**.
+>
+> Ausnutzbarkeit bleibt wie in N5.3 empirisch geprüft: PostgreSQL verweigert den Direktaufruf
+> einer `RETURNS trigger`-Funktion (`0A000: trigger functions can only be called as triggers`)
+> unabhängig vom Grant, der Service-Key kann darüber nicht abfließen. Die saubere Schließung
+> (zwei zusätzliche `REVOKE`-Zeilen) wäre eine Artefaktänderung und damit eine eigene
+> Entscheidung — hier weiterhin nicht eigenmächtig vorgenommen.
+
+## N7.6 Keine unerwarteten Schemaänderungen, keine Prod-Writes
+
+| Katalog | Pre (N6.7) | Post | Ergebnis |
+|---|---|---|---|
+| public functions | 188 | **189** | ✅ exakt +1 (`_autoflow_trigger_endpoint`) |
+| public tables | 292 | **292** | ✅ |
+| Policies gesamt (`pg_policy`, alle Schemas) | 835 | **835** | ✅ (davon `public`: 753) |
+| **Vault-Secrets** | 0 | **0** | ✅ **nichts angelegt** |
+| `autoflow_settings` Zeilen / davon aktiv | 2 / 0 | **2 / 0** | ✅ `auto_invoice_enabled` nicht angefasst |
+| `autoflow_log` | 0 | **0** | ✅ kein Trigger-Aufruf ausgelöst |
+| `invoices` / `invoice_items` / `invoice_appointments` | 11 / 12 / 0 | **11 / 12 / 0** | ✅ keine Datenänderung |
+| Temp-Reste (`_mig%`, `pg_temp%`) | — | **0** | ✅ `on commit drop` hat gegriffen |
+| Edge Function `autoflow-auto-invoice` | v80 (Deploy 15:06:45) | **v80, ACTIVE** | ✅ durch #4 unverändert |
+
+**`UNEXPECTED_PROD_WRITES=NONE`.**
+
+## N7.7 Advisors — #4 hat kein einziges Finding hinzugefügt
+
+| Advisor Security | nach #3 (N4.8) | nach #4 |
+|---|---|---|
+| Gruppen / Findings | 5 / 311 | **5 / 311** ✅ |
+| `anon_security_definer_function_executable` | 149 | **149** ✅ |
+| `authenticated_security_definer_function_executable` | 156 | **156** ✅ |
+| `rls_enabled_no_policy` (INFO) / `extension_in_public` / `auth_leaked_password_protection` | 4 / 1 / 1 | **4 / 1 / 1** ✅ |
+| ERROR-Level | 0 | **0** ✅ |
+
+* **`_autoflow_trigger_endpoint` taucht in keinem einzigen Finding auf** — unabhängige
+  Bestätigung, dass der `REVOKE` wirksam ist.
+* `autoflow_on_appointment_completed` und `autoflow_on_appointment_signed` werden in **beiden**
+  SECURITY-DEFINER-Listen weiterhin geführt — der Restbefund aus N7.5, wie in N5.3 angekündigt.
+
+## N7.8 Wirkung: angewendet, aber bewusst noch nicht scharf
+
+`vault.secrets` ist **leer** (0 Zeilen), `autoflow_functions_base_url` und `autoflow_service_key`
+existieren nicht. `_autoflow_trigger_endpoint()` liefert damit die leere Menge, beide Trigger
+gehen in den `RAISE WARNING`-Pfad und setzen **keinen** `net.http_post` ab. Das `UPDATE` auf
+`appointments` läuft unverändert durch.
+
+**Automatische Rechnungsstellung bei Completion/Signatur feuert weiterhin nicht.** Das ist der
+geplante Fail-Safe-Zustand und **keine Regression**: vorher scheiterte jeder Aufruf am 401 der
+Edge Function (`autoflow_log` = 0 belegt, dass nie einer durchkam). #4 hat den Mechanismus
+korrekt, umgebungsisoliert und ohne Secret im Repo bereitgestellt — scharf wird er erst mit
+Schritt 2 der Rollout-Reihenfolge aus N5.11.
+
+## N7.9 Ergebnis
+
+```
+MIG4_ARTEFACT_INTEGRITY=PASS
+MIG4_APPLIED=YES
+MIG4_APPLY_STATE=COMMITTED
+MIG4_APPLY_METHOD=PSQL_TTY
+MIG4_LEDGER_VERSION=20260917140000
+MIG4_LEDGER_STATEMENTS_MD5=3056567c716fd7a318254042f6e878a4
+LEDGER_DRIFT_CREATED=NO
+LEGACY_LEDGER_ROWS_UNCHANGED=YES
+
+ENDPOINT_FN_PROSRC_MD5=922245f9f39cde4fecdf6370f632c08d
+ENDPOINT_FN_SECURITY_DEFINER=YES
+ENDPOINT_FN_SEARCH_PATH=public
+ENDPOINT_FN_ANON_EXECUTE=NO
+ENDPOINT_FN_AUTHENTICATED_EXECUTE=NO
+ENDPOINT_FN_SERVICE_ROLE_EXECUTE=YES
+
+COMPLETED_FN_PROSRC_MD5=83e452510cd0e70bae468209b527ea6d
+SIGNED_FN_PROSRC_MD5=d03154a74218793df5fce0ddaa7ed7d6
+COMPLETED_FN_ANON_EXECUTE=YES     (Restbefund, durch #4 NICHT behoben)
+SIGNED_FN_ANON_EXECUTE=YES        (Restbefund, durch #4 NICHT behoben)
+HARDCODED_JWT_REMOVED=YES
+HARDCODED_PROD_URL_REMOVED=YES
+TRIGGER_BINDINGS_UNCHANGED=YES
+
+VAULT_SECRET_COUNT=0
+VAULT_CHANGED=NO
+AUTO_INVOICE_ENABLED_COUNT=0
+AUTO_INVOICE_LIVE=NO
+EDGE_FUNCTION_AUTOFLOW_AUTO_INVOICE_VERSION=80
+AUTOFLOW_LOG_ROWS=0
+
+ADVISORS_SECURITY_FINDINGS=311   (unveraendert)
+ADVISORS_ADDED_BY_MIG4=0
+UNEXPECTED_PROD_WRITES=NONE
+PRODUCTION_UNEXPECTED_SIDE_EFFECTS=NONE
+
+MIGRATION_5_APPLIED=NO
+PUSHED=NO
+```
+
+## N7.10 Aktualisiertes Mengengerüst
+
+| | nach NACHTRAG 4 | jetzt |
+|---|---|---|
+| Ledger-Einträge | 437 | **438** |
+| Ledger-Kopf | `20260917130000` | **`20260917140000`** |
+| Release-Migrationen offen | 6 (#4–#9) | **5 (#5–#9)** |
+| public functions | 188 | **189** |
+| durch das Werkzeug erzeugte Drift | 0 | **0** ✅ |
+
+Abgeleitet (Arithmetik, nicht per CLI erhoben): „nur lokal" 401 → **400**, beidseitig 80 → **81**,
+„nur remote" **357** unverändert. Die historische Drift (§3 Klasse B, 317 Einträge) besteht fort.
+**`db push` bleibt gesperrt** — §6 gilt unverändert.
+
+Noch nicht in Production, im Repo vorhanden (read-only gegengeprüft, alle 5 **nicht** im Ledger):
+`20260917150000`, `20260917155000`, `20260917160000`, `20260920120000`, `20260920190000`
+— die Invite-/Ghost-Kette.
+
+**Nächster Schritt laut Rollout-Reihenfolge (N5.11):** Schritt 2 — die beiden Vault-Secrets
+dieser Umgebung setzen. Der `service_role`-Key wird dabei **nicht** durch ein Werkzeug, ein
+Skript oder dieses Dokument geführt; das ist ein manueller Einzelschritt.
+
+**STOPP.** Keine Vault-Secrets, kein `auto_invoice_enabled`, keine Migration #5, kein Push.
