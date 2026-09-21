@@ -3526,3 +3526,224 @@ CHAIN_CAN_PAUSE_AFTER_MIG8=YES
 
 **STOPP.** Keine Migration #9, kein Edge-Deploy, keine Ghost-Bereinigung, keine
 Vault-Aenderung, kein Push.
+
+---
+
+# NACHTRAG 13 — Migration #9 Apply, Ghost Safety Review, Edge Predeploy (2026-09-21)
+
+`20260920190000_fix_cross_provider_ghost_takeover_v1`
+
+Letztes Glied der Invite-Kette. Angewendet als Einzelschritt. Ergebnis: **COMMITTED**, eine
+Funktion ersetzt, keine Bestandsdaten beruehrt, kein neuer Advisor-Befund. Anschliessend der
+angekuendigte Ghost-Review und das Edge-Predeploy-Audit — beide **read-only**, nichts
+veraendert, nichts deployt.
+
+## N13.1 Artefakt und Postcheck
+
+| Groesse | Wert |
+|---|---|
+| `MIG9_MD5` | `331a090f5cf61dbbc4f52f5d11dc72dc` (11673 Bytes, 292 Zeilen) |
+| Apply-Artefakt | `docs/backups/mig9_20260920190000_apply_canonical.sql` (`e705e380f87e02b2d62303f4dfdd10f9`) |
+| Rollback | `docs/backups/mig9_20260920190000_prestate_rollback_2026-09-21.sql` (`337caa6c2072081d893babdd8c0c29ab`) |
+
+3 DDL, 0 DML. Der reine Code-Diff gegen #8 sind vier Zeilen: `created_by_provider_id` als
+Ghost-Besitzmarker.
+
+**Ledger:** 443 → **444**, max `20260920190000`, #9 exakt 1, keine Phantomversion, #1–#8
+vollstaendig. `md5(statements[1])=331a090f…`, `octet_length=11673` — exakt die Repo-Datei.
+
+**Funktion:** `prosrc` md5 `dbbfc981c9ef9e8f1aaa8ccb4adb849a` (9465 Bytes) = Zielwert.
+Owner `postgres`, SECURITY DEFINER, `search_path=public`, Signatur unveraendert,
+ACL `postgres=X \| service_role=X`, `anon`/`authenticated`/`authenticator` ohne EXECUTE,
+**Besitzmarker-Guard im Funktionstext nachgewiesen**. `handle_new_user` (`5cb9eee6…`),
+`create_pending_client_invite_v1` (`cd138b57…`) und `auto_assign_client_to_provider`
+(`b6f62858…`) unveraendert.
+
+**Side Effects:** Tabellen 293, Routinen 196, Policies 753, Trigger 190+1, profiles 103,
+soft-deleted 10, contacts 44, grants 57/43, user_roles 64 (admin 2), auth.users 64,
+horses 78, appointments 295, Invites 0, Funktionen ohne festen `search_path` 0 — alle Δ=0.
+
+**Ghost/Duplikat mit wortgleicher Prestate-SQL: 39 / 4.** Unveraendert.
+
+**Advisor:** keine neue Kategorie, Zaehler identisch (149/156/0/0/5). Die Funktion taucht in
+keiner Kategorie auf. `NEW_SECURITY_FINDINGS_FROM_MIG9=NONE`.
+
+## N13.2 Ghost Safety Review — read-only
+
+### Herleitung der Zahl 25
+
+```
+39  GHOST_TOTAL        (Prestate-Definition: profiles ohne auth.users-Zeile)
+ -4  soft-deleted
+ 35  live
+ -2  ohne aktiven Grant
+ 33  mit aktivem Grant
+ -8  nur Demo-Provider-Grants
+ 25  GHOST_EXPOSED     (live, aktiver Nicht-Demo-Grant)
+```
+
+### Klassifikation aller 39
+
+| Klasse | Anzahl | davon Duplikat-Mail | Pferde | Termine | aktive Grants |
+|---|---|---|---|---|---|
+| `SAFE_SAME_PROVIDER` | **32** | 1 | 41 | 40 | 32 |
+| `ALREADY_DELETED` | **4** | 2 | 1 | 0 | 0 |
+| `MARKERLESS_LEGACY` | **2** | 1 | 0 | 0 | 0 |
+| `AUTH_COLLISION` | **1** | 1 | 1 | 0 | 1 |
+| **`CROSS_PROVIDER_CONFLICT`** | **0** | — | — | — | — |
+| `ORPHAN` | 0 | — | — | — | — |
+
+Summe 39. Klassifiziert wurde nach Praezedenz ueber `distinct_owner_providers` — der Zahl
+verschiedener Provider ueber `created_by_provider_id`, aktive Nicht-Demo-Grants und aktive
+Kontakte hinweg.
+
+**Der entscheidende Wert ist die Null:** Kein einziger Ghost traegt Besitzmarker, die auf
+mehr als einen Provider zeigen. Die Konstellation, die #9 adressiert, existiert im
+Bestand aktuell nicht.
+
+### Die zwei markerlosen Ghosts
+
+| opake ID | Marker | Grants | Kontakte | Pferde | Termine | Auth-User gleiche Mail | weitere Profile gleiche Mail |
+|---|---|---|---|---|---|---|---|
+| `5c8e997a` | nein | 0 | 0 | 0 | 0 | nein | 0 |
+| `621111d0` | nein | 0 | 0 | 0 | 0 | nein | 1 |
+
+**Beide sind vollstaendig leer.** Wuerde eine dieser Adressen eingeladen, greift weder #9s
+Markerpruefung noch #8s Grant- oder Kontakt-Guard — die Schleife faellt in CASE A und
+„finalisiert" den Ghost. Uebertragen wird dabei **nichts**, weil nichts da ist; ein leeres
+Profil wird soft-deleted. Kein Datenverlust, kein Fremdzugriff.
+
+`621111d0` liegt in Duplikat-Gruppe `97ae3013`, der einzigen Gruppe ohne existierenden
+Auth-User — also der einzigen, in der ein Invite ueberhaupt durchlaufen koennte. Das zweite
+Profil dieser Gruppe (`a4fdc44e`) traegt Marker, Grant **und** Kontakt, und alle drei zeigen
+auf **denselben** Provider (`ecb7497b`).
+
+* Laedt `ecb7497b` ein → beide Ghosts korrekt finalisiert, Grant wandert mit.
+* Laedt ein anderer Provider ein → `a4fdc44e` loest #9s Marker-Guard aus, die gesamte
+  Transaktion bricht ab. **Fail-closed.**
+
+`BLOCK_EDGE_DEPLOY_DUE_TO_MARKERLESS_GHOSTS=NO`
+
+### Die vier Duplikat-Gruppen (je 2 Profile)
+
+| Gruppe (opak) | Ghosts | echte Auth-User | soft-deleted | Auth-User mit dieser Mail | Bewertung |
+|---|---|---|---|---|---|
+| `e1938d46` | 1 | 1 | 0 | ja | Invite scheitert an `createUser` (409) — sicher |
+| `1c23ae1f` | 1 | 1 | 2 | ja | beide Profile soft-deleted — harmlos |
+| `97ae3013` | 2 | 0 | 0 | **nein** | alle Marker auf einen Provider — sicher, siehe oben |
+| `ee83d4cd` | 1 | 1 | 1 | ja | Invite scheitert an `createUser` — sicher |
+
+Drei der vier Gruppen haben bereits einen Auth-User mit dieser Adresse; dort bricht der
+Invite-Flow schon bei `auth.admin.createUser` mit 409 ab, bevor irgendein Ghost angefasst
+wird. Die vierte ist provider-rein.
+
+### AUTH_COLLISION (1)
+
+`39a34c62`: Marker gesetzt, 1 aktiver Nicht-Demo-Grant, 1 Kontakt desselben Providers,
+1 Pferd — und es existiert bereits ein Auth-User mit derselben Adresse. Auch hier scheitert
+ein erneuter Invite an `createUser`. Es ist eine bestehende Dateninkonsistenz, aber kein
+Deploy-Blocker.
+
+**`BLOCK_EDGE_DEPLOY_DUE_TO_GHOST_REVIEW=NO`**
+
+## N13.3 Edge Predeploy Audit — read-only, NICHT deployt
+
+### Zwei klar getrennte Pfade
+
+| | Slug | Version | `ezbr_sha256` | Frontend-Aufrufer |
+|---|---|---|---|---|
+| 1 | `invite-client-with-password` | **7** | `bb7c2e4794972ca150333c96c9cb934e55a24880c0328d4ff629050a590a00c8` | `InviteByEmailModal.tsx:63` |
+| 2 | `invite-client` | **8** | `ae834781f71068c87b4094ed90760b2600ebdcd661a714d8af92943ee3aa9c94` | `InviteClientButton.tsx:249` |
+
+Die deployte v7 wurde gelesen: sie enthaelt **keinen** Aufruf der neuen RPCs. Die Repo-Fassung
+(18386 Bytes, sha256 `c5abec5b611b9667…`) tut es.
+
+**Hinweis zur Hash-Vergleichbarkeit:** `ezbr_sha256` ist der Hash des deployten Bundles, nicht
+der Quelldatei. Ein direkter Vergleich Quelle↔Bundle ist nicht aussagekraeftig. Belastbar ist
+der inhaltliche Befund: der deployte Quelltext enthaelt die RPC-Aufrufe nicht.
+
+### Audit der Repo-Fassung
+
+| Pruefpunkt | Befund |
+|---|---|
+| Aufrufreihenfolge | `create_pending_client_invite_v1` (Z. 138) → `auth.admin.createUser` (175) → `bind_pending_client_invite_v1` (198) → `create_invited_customer_with_contact` (234) ✅ |
+| Invite VOR createUser | ✅ — Voraussetzung dafuer, dass die Unterdrueckung in #6 greift |
+| Fehlerpfade | `invalidateInvite` bei createUser-Fehler (183), bind-Fehler (206, `cleanupRequired=true`), Persistenz-Fehler (262, `cleanupRequired=true`) ✅ vollstaendig |
+| **Provider-ID** | **immer `callerUser.id` aus dem verifizierten JWT** (Z. 139/162/200/235). Der Request-Body liefert ausschliesslich `email` und `fullName` (Z. 107) ✅ |
+| Fremde Provider-ID akzeptierbar? | **nein** ✅ |
+| Aufrufer-Guards | 401 ohne Auth · 401 ungueltiges Token · 403 kein Provider · 403 kein Pro-Abo · 400 fehlende Felder · 409 Konflikte ✅ |
+| Secrets im Source | keine Literale, nur `Deno.env` (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `RESEND_API_KEY`) ✅ |
+| TTL | uebergibt 15; seit #8 ist der Parameter serverseitig ohnehin wirkungslos ✅ doppelt abgesichert |
+| Idempotenz | `requestId = crypto.randomUUID()` pro Aufruf. Der `(provider_id, request_id)`-Unique-Index aus #5 verhindert Doppel-Invites **innerhalb eines Retries derselben ID**; ein erneuter Klick erzeugt eine neue ID |
+| Replay | serverseitig abgesichert: `create_invited_customer_with_contact` liefert `already_completed` statt eines zweiten Grants (in NACHTRAG 11 empirisch belegt) |
+
+**Eine ehrliche Einschraenkung:** Weil `requestId` clientseitig je Aufruf neu erzeugt wird,
+ist die Idempotenz auf den Serverpfad verlagert. Zwei schnelle Klicks erzeugen zwei Invites
+auf dieselbe Adresse — der partielle Unique-Index auf `normalized_email` laesst nur einen
+offenen zu, der zweite scheitert mit `Another invite for this email is already pending`.
+Das ist korrekt, aber der Nutzer sieht dann eine 409-Meldung. Fuer den E2E-Test vormerken.
+
+### Deployment-Plan (nicht ausgefuehrt)
+
+```
+EDGE_CURRENT_VERSION = 7
+EDGE_TARGET_VERSION  = 8 (naechste Version nach Deploy)
+EDGE_CURRENT_HASH    = bb7c2e4794972ca150333c96c9cb934e55a24880c0328d4ff629050a590a00c8 (Bundle)
+EDGE_TARGET_SOURCE   = supabase/functions/invite-client-with-password/index.ts
+                       sha256 c5abec5b611b9667… (18386 Bytes)
+
+MECHANISMUS: supabase CLI 2.116.0 ist vorhanden
+  supabase functions deploy invite-client-with-password --project-ref vnschgjxkzzwzefqlrji
+
+VORBEDINGUNGEN (alle erfuellt):
+  #5, Hardening, #6, #7, #8, #9 applied · Ghost-Review ohne P0 ·
+  hm_pending_client_invites leer
+NACHBEDINGUNG: E2E aus beiden Providersichten, danach invite-client-Gap schliessen
+```
+
+**NICHT DEPLOYT.** `EDGE_READY_TO_DEPLOY=YES` (technisch), aber siehe N13.4.
+
+## N13.4 `invite-client` v8 bleibt Release-Blocker
+
+```
+INVITE_CLIENT_GAP_EXISTS=YES
+CHAIN_5_TO_9_FIXES_THIS_GAP=NO
+INVITE_CLIENT_GAP_BLOCKS_FEATURE_RELEASE=YES
+```
+
+`InviteClientButton.tsx:249` ruft weiterhin `invite-client` v8 — unveraendert deployt. Diese
+Function legt **keinen** Pending Invite an: sie ruft `createUser`, wartet `setTimeout(600 ms)`
+auf die Triggerkette und setzt erst danach `created_by_provider_id` plus einen eigenen Grant.
+
+Konsequenz auch **nach** dem Deploy von `invite-client-with-password`: Fuer diesen Pfad greift
+die Unterdrueckung aus #6 nie, weil kein Invite existiert. Der generische
+„erster Provider"-Fallback bleibt dort aktiv. Zwei Einladepfade im selben Frontend verhalten
+sich dann unterschiedlich — einer abgesichert, einer nicht.
+
+**Das ist der letzte offene P0 der Invite-Freigabe und wird von #5–#9 nicht geschlossen.**
+
+## N13.5 Ergebnis
+
+```
+MIG9_APPLIED=YES                 MIG9_APPLY_STATE=COMMITTED
+MIG9_LEDGER_VERSION=20260920190000        LEDGER_DRIFT_CREATED=NO
+MIG9_PROSRC_MD5=dbbfc981c9ef9e8f1aaa8ccb4adb849a
+MIG9_MARKER_GUARD_PRESENT=YES
+MIG9_EXISTING_DATA_MUTATED=NO
+NEW_SECURITY_FINDINGS_FROM_MIG9=NONE
+
+GHOST_TOTAL=39   GHOST_EXPOSED=25   GHOST_MARKERLESS=2   DUPLICATE_EMAIL_GROUPS=4
+SAFE_SAME_PROVIDER=32  ALREADY_DELETED=4  MARKERLESS_LEGACY=2
+AUTH_COLLISION=1       CROSS_PROVIDER_CONFLICT=0   ORPHAN=0
+BLOCK_EDGE_DEPLOY_DUE_TO_GHOST_REVIEW=NO
+
+EDGE_PREDEPLOY_AUDIT=PASS
+EDGE_CURRENT_VERSION=7   EDGE_TARGET_VERSION=8   EDGE_READY_TO_DEPLOY=YES
+RELATED_NEW_EDGE_FUNCTION_DEPLOYED=NO
+
+INVITE_CLIENT_GAP_EXISTS=YES
+INVITE_CLIENT_GAP_BLOCKS_FEATURE_RELEASE=YES
+```
+
+**STOPP.** Kein Edge-Deploy, keine Ghost-Daten veraendert, kein `invite-client`-Fix, keine
+Billing-Implementierung, kein Push.
