@@ -680,3 +680,284 @@ SAFE_FOR_MIGRATION_2=YES
 ```
 
 **STOPP.** Migration #2 erst nach ausdrücklicher Freigabe durch Pascal.
+
+---
+
+# NACHTRAG 3 — Migration #2 angewendet (2026-09-21)
+
+**Status:** `MIGRATION_2_APPLIED`
+Angewendet: **ausschließlich** `20260917125000_add_autoflow_invoice_appointment_idempotency_v1.sql`.
+Kein `db push`, kein `migration repair`, keine `_prepared`-Migration, keine Migration #3–#9,
+keine Edge-/Scheduler-/Service-Aktion, kein GitHub-Push.
+
+## N3.1 Ausführungsweg — Ledger-Version diesmal *gesetzt*, nicht nachträglich repariert
+
+Lehre aus N.5/NACHTRAG 2: `apply_migration` (MCP) erlaubt keine Vorgabe der Ledger-Version
+und vergibt serverseitig einen Timestamp aus der Ausführungszeit. Es hätte erneut Drift erzeugt.
+
+**`apply_migration` wurde deshalb nicht verwendet.** Stattdessen `execute_sql` mit einer
+expliziten Transaktion, die die DDL ausführt **und** den Ledger-Eintrag mit der kanonischen
+Version selbst schreibt. Die Version ist damit Teil der Migration, nicht ein Nebenprodukt
+des Werkzeugs. Keine nachträgliche Ledger-Reparatur.
+
+Der Migrationstext steht in der Transaktion **genau einmal** (in einer `temp table … on commit drop`).
+Von dort wird er (a) per `EXECUTE` ausgeführt und (b) in `statements` geschrieben. Ausgeführter und
+protokollierter Text sind damit nicht „gleich geprüft", sondern **derselbe Wert**. Zusätzlich hat
+ein Guard im selben Block abgebrochen, falls `md5(text) <> f1c006ac7ec2b3eb923277977a35927b`.
+
+## N3.2 Precheck (read-only) — PASS
+
+| Prüfung | Ergebnis |
+|---|---|
+| `git status` / `git diff HEAD` des Artefakts | leer — unverändert seit Release-Freeze `110dffc5` |
+| md5 roh | `a6bdadce689b8f382a42bcbc7010ec28` |
+| **md5 ohne trailing NL** | **`f1c006ac7ec2b3eb923277977a35927b`** (Ledger-Sollwert) |
+| sha256 roh | `35ccbf3dd0c80127c723ca080c9c5fab3be4088248df75b8499971dfd02245c9` |
+| Größe | 3510 B roh / 3509 B ohne NL / **3464 UTF-8-Zeichen** |
+| Quoting-Risiken | 0× `$`, 0× CR, 0× TAB, 0× Backslash |
+| Migration #1 Body-md5 | `7bea6a4333eb55a8a9bb314fa9f586a4` — unverändert ✅ |
+| Ledger #1 kanonisch | `20260917120000` genau **1×** ✅ |
+| `20260917125000` vorab | **0×** ✅ |
+| Kunstversion `20260921073500` | **0×** ✅ (bleibt beseitigt) |
+| Ledger-Kopf vorher | `20260917120000` |
+
+**Übertragungsbeweis:** Vor jedem Schreibvorgang wurde der SQL-Text in einem reinen
+Lese-Statement an Production gesendet und dort gehasht → `md5 = f1c006ac7ec2b3eb923277977a35927b`.
+Byte-Gleichheit des übertragenen Textes war damit bewiesen, bevor irgendetwas geschrieben wurde.
+(Relevant, weil das Artefakt 45 Nicht-ASCII-Bytes enthält: `ß`, `ä`×9, `ö`, `ü`×22, `—`×4, `→`×2.)
+
+### Zieltabelle `public.invoice_appointments` — Pre-State
+
+**0 Zeilen, 0 distinct `appointment_id`** — die im Migrationskopf dokumentierte Datenlage vom
+2026-09-17 gilt unverändert. Der partielle Unique-Index kann nicht an Altdaten scheitern.
+
+6 Spalten (**keine** Spalte `source`) · 3 Indizes · 4 Constraints · RLS aktiv · 3 Policies · 0 User-Trigger.
+
+| bestehende Indizes | |
+|---|---|
+| `invoice_appointments_pkey` | UNIQUE (id) |
+| `invoice_appointments_invoice_id_appointment_id_key` | UNIQUE (invoice_id, appointment_id) |
+| `idx_invoice_appointments_invoice` | (invoice_id) |
+
+**Kein Index mit gleichem semantischem Zweck vorhanden:** kein Index auf `appointment_id` allein,
+kein partieller Unique-Index. **Keine Namenskollision** — beide neuen Namen 0× im Schema `public`.
+
+## N3.3 Analyse von #2 — SQL gelesen, nicht aus dem Dateinamen geschlossen
+
+Erzeugte/geänderte Objekte — **vier Statements**, alle additiv:
+
+| # | Statement | Wirkung |
+|---|---|---|
+| 1 | `ALTER TABLE public.invoice_appointments ADD COLUMN IF NOT EXISTS source text` | neue **nullable** Spalte, **ohne** DEFAULT → reine Katalogänderung, kein Table-Rewrite |
+| 2 | `COMMENT ON COLUMN … .source` | reine Metadaten |
+| 3 | `CREATE UNIQUE INDEX IF NOT EXISTS idx_invoice_appointments_autoflow_unique ON … (appointment_id) WHERE source = 'autoflow'` | der Idempotenz-Schlüssel |
+| 4 | `CREATE INDEX IF NOT EXISTS idx_invoice_appointments_appointment ON … (appointment_id)` | Lese-Index |
+
+* **Nur additiv/idempotency-bezogen:** ja. Alle vier mit `IF NOT EXISTS` bzw. idempotent.
+* **Bestehende Daten verändert:** nein. Kein `UPDATE`, `INSERT`, `DELETE`, kein DEFAULT-Backfill.
+  Alle bestehenden Zeilen erhielten `source = NULL` (es gab ohnehin keine).
+* **Locks:** `ALTER TABLE` nimmt kurz `ACCESS EXCLUSIVE` (metadata-only, PG11+),
+  `CREATE INDEX` ohne `CONCURRENTLY` nimmt `SHARE` und blockiert Schreiber.
+  Bei **0 Zeilen** beides praktisch instantan. Genau deshalb ist `CONCURRENTLY` hier unnötig —
+  und nur so ist die Migration überhaupt transaktional anwendbar.
+* **Passt der partielle Unique-Index zu den aktuellen Daten:** ja, trivialerweise —
+  die Spalte entsteht in derselben Migration, alle Zeilen sind `NULL`, der Index-Prädikatsbereich
+  (`source = 'autoflow'`) ist leer.
+* **Funktionen/Trigger/Policies/Grants betroffen:** **nein.** Keins der vier Statements berührt sie.
+
+## N3.4 Backup / Rollback
+
+`docs/backups/mig2_20260917125000_prestate_rollback_2026-09-21.sql` —
+vollständiger Pre-State (Spalten, Indizes, Constraints, Policies, ACL, globale Kennzahlen,
+Ledger-Fingerprint) **plus** lauffähiges Rollback-Skript.
+
+Rollback: beide Indizes droppen, Spalte `source` droppen (entfernt implizit den COMMENT),
+Ledger-Zeile `20260917125000` löschen — in einer Transaktion.
+
+> **Vorbehalt im Skript dokumentiert:** Der Rollback ist nur gefahrlos, solange keine Zeile
+> `source IS NOT NULL` trägt. Vorher `select count(*) … where source is not null` prüfen;
+> ist das > 0, wäre der Rollback ein Datenverlust und erfordert eine eigene Entscheidung.
+
+Keine Kundendaten im Backup — der Pre-State enthält nur Katalog-Metadaten (0 Datenzeilen).
+
+## N3.5 Apply-Verlauf — ein sauber zurückgerollter Fehlversuch
+
+Der erste Versuch (Transaktion mit dem Migrationstext **doppelt** eingebettet, ~7 KB Nutzlast)
+lief in einen Connector-Timeout. Gemäß der Lehre aus N.3 wurde **nicht blind wiederholt**,
+sondern zuerst read-only der Zustand erhoben:
+
+```
+col_source = 0 | new_idx = 0 | ledger_mig2 = 0 | ledger_total = 435
+```
+
+→ **vollständig zurückgerollt, kein Teilzustand.** Erst danach der zweite Versuch mit der
+kompakteren `temp table`-Variante (N3.1). Auch dieser meldete einen Client-Timeout, war aber
+**committed** — wie bei Migration #1 durch Abfrage festgestellt, nicht angenommen.
+
+Der MCP-Connector war über die gesamte Sitzung flaky; auch reine Lesequeries timeouteten
+wiederholt und lieferten beim Retry korrekt.
+
+## N3.6 Postcheck — PASS
+
+### Ledger
+
+| Prüfung | Erwartet | Gemessen | Ergebnis |
+|---|---|---|---|
+| `version` | `20260917125000` | `20260917125000` | ✅ **kanonisch** |
+| Häufigkeit | genau 1 | 1 | ✅ |
+| `name` | `add_autoflow_invoice_appointment_idempotency_v1` | identisch | ✅ |
+| `array_length(statements,1)` | 1 | 1 | ✅ |
+| `statements` md5 | `f1c006ac7ec2b3eb923277977a35927b` | identisch | ✅ |
+| `statements` Länge | 3464 Zeichen | 3464 | ✅ |
+| `idempotency_key` / `rollback` | NULL / NULL | NULL / NULL | ✅ |
+| Ledger gesamt | 436 | 436 | ✅ exakt +1 |
+| Ledger-Kopf | `20260917125000` | `20260917125000` | ✅ |
+
+### Schemaobjekte
+
+Spalte 7 `source` — `text`, **nullable**, **kein** Default, COMMENT korrekt gesetzt
+(Umlaute unversehrt → UTF-8-Transport fehlerfrei). Spalten 1–6 unverändert.
+
+```
+CREATE UNIQUE INDEX idx_invoice_appointments_autoflow_unique
+  ON public.invoice_appointments USING btree (appointment_id)
+  WHERE (source = 'autoflow'::text)
+CREATE INDEX idx_invoice_appointments_appointment
+  ON public.invoice_appointments USING btree (appointment_id)
+```
+
+Semantisch exakt der Vertrag aus dem Migrationskopf: Eindeutigkeit **nur** für
+`source = 'autoflow'`, manuelle Verknüpfungen (`source IS NULL`) unbeschränkt.
+Beide Indizes `indisvalid AND indisready` → kein invalider Index-Rest.
+
+| Prüfung | Pre | Post | Ergebnis |
+|---|---|---|---|
+| Indizes auf der Tabelle | 3 | **5** | ✅ exakt +2, die 3 alten unverändert |
+| Constraints | 4 | **4** | ✅ unverändert |
+| Policies auf der Tabelle | 3 | **3** | ✅ unverändert |
+| RLS enabled | true | **true** | ✅ |
+| Table-ACL md5 | `caf3992086c391320d592320f5b4a787` | identisch | ✅ Grants unverändert |
+| Zeilen `invoice_appointments` | 0 | **0** | ✅ keine Datenänderung |
+
+### Globale Seiteneffekte
+
+| Katalog | Pre | Post | Ergebnis |
+|---|---|---|---|
+| public functions | 187 | **187** | ✅ unverändert |
+| public tables | 292 | **292** | ✅ unverändert |
+| Policies (`pg_policy` gesamt) | 835 | **835** | ✅ unverändert |
+| Migration #1 Body-md5 | `7bea6a4333eb55a8a9bb314fa9f586a4` | identisch | ✅ **#1 unverändert** |
+| `invoices` / `appointments` / `profiles` / `contacts` | 11 / 295 / 103 / 44 | identisch | ✅ keine Datenänderung |
+
+### Legacy-Ledger-Drift nicht angetastet
+
+Fingerprint über **alle übrigen** Ledger-Zeilen
+(`md5(string_agg(version‖name‖md5(statements)‖created_by order by version))`,
+erhoben mit `where version <> '20260917125000'` — vor und nach dem Apply dieselbe Zeilenmenge):
+
+| | Pre | Post |
+|---|---|---|
+| `ledger_others_md5` | `c8e82d6ccda1b07740bb6b94e63b3b13` | **`c8e82d6ccda1b07740bb6b94e63b3b13`** ✅ |
+| `n_others` | 435 | **435** ✅ |
+
+**Bit-identisch** → keine andere Ledger-Zeile verändert, **keine historische Drift automatisch repariert**.
+
+### Nichts anderes aktiviert
+
+| Objektgruppe | vorhanden |
+|---|---|
+| `product_memberships`, `product_membership_decisions`, `saas_billing_events`, `profession_insights` | **0** ✅ keine `_prepared`-Migration aktiviert |
+| `expire_hufmanager_trials`, `sync_trusted_app_role`, `prevent_canonical_readable_id_change`, `finalize_ghost_customer_access`, `classify_legacy_billing_state` | **0** ✅ |
+| `leads.plan_tier` | **0** ✅ |
+| `create_invoice_with_items_for_provider` (#3), `_autoflow_trigger_endpoint` (#4), `_hm_normalize_email` / `create_pending_client_invite_v1` (#5), `create_invited_customer_with_contact` (#7) | **0 von 5** ✅ |
+| `hm_pending_client_invites` (#5) | **0** ✅ |
+
+### Security-/Schema-Lints (direkt als SQL)
+
+| Lint | Ergebnis |
+|---|---|
+| RLS auf `invoice_appointments` weiterhin aktiv | **true** ✅ |
+| Beide neuen Indizes `indisvalid AND indisready` | **2 von 2** ✅ |
+| SECURITY-DEFINER-Funktionen in `public` **ohne** `search_path` | **0** ✅ |
+| Grants/ACL der Tabelle verändert | **nein** (md5 identisch) ✅ |
+
+### `get_advisors` — TOOLING BLOCKED
+
+Drei Versuche, drei serverseitige Fehlschläge:
+
+```
+1) Failed to run project user check: Connection terminated due to connection timeout
+2) The operation timed out.
+3) Failed to run project advisor lints: Query read timeout
+```
+
+**Das ist KEIN Advisor-PASS.** Der Endpoint war — wie schon bei Migration #1 (N.4) — nicht
+erreichbar. Die oben genannten Lints wurden ersatzweise direkt als SQL ausgeführt; sie decken
+den Advisor nicht vollständig ab. Offener Punkt, siehe §9.
+
+## N3.7 Idempotenz-Funktionstest — PASS
+
+Ausgeführt in **einer Transaktion, die sich per `RAISE EXCEPTION` zwingend selbst zurückrollt**;
+das Ergebnis kam über die Fehlermeldung zurück. Dadurch konnte **kein** Testdatensatz überleben —
+vor und nach dem Test verifiziert: `invoice_appointments = 0 Zeilen`.
+Verwendet wurden ausschließlich bestehende `invoices`/`appointments`-IDs als FK-Partner;
+diese Tabellen wurden nur gelesen.
+
+| Test | Fall | Erwartet | Ergebnis |
+|---|---|---|---|
+| **T1** | erster Autoflow-Link für Termin A | erlaubt | `OK` ✅ |
+| **T2** | **zweiter Autoflow-Link für Termin A, andere Rechnung** | **blockiert** | `BLOCKED(idx_invoice_appointments_autoflow_unique)` ✅ |
+| **T3** | manueller Link (`source IS NULL`) für Termin A neben dem Autoflow-Link | erlaubt | `ERLAUBT` ✅ |
+| **T4** | zweiter manueller Link für Termin A, dritte Rechnung | erlaubt | `ERLAUBT` ✅ |
+| **T5** | Autoflow-Link für Termin B | erlaubt | `ERLAUBT` ✅ |
+| **T6** | exaktes Duplikat (gleiche invoice + appointment) | blockiert | `BLOCKED(invoice_appointments_invoice_id_appointment_id_key)` ✅ |
+| **T7a** | Autoflow-Links für Termin A nach abgefangener Unique-Verletzung | genau 1 | **1** ✅ |
+| **T7b** | Links gesamt für Termin A | 3 (1 autoflow + 2 manuell) | **3** ✅ |
+| **T7c** | Zeilen in der Testtransaktion | 4 | **4** ✅ |
+
+Damit ist belegt:
+
+* **Derselbe fachliche Vorgang kann nicht doppelt denselben Autoflow-Link erzeugen** (T2) —
+  und zwar genau durch den neuen Index, nicht zufällig durch einen anderen Constraint:
+  der zurückgemeldete `CONSTRAINT_NAME` ist `idx_invoice_appointments_autoflow_unique`.
+* **Erlaubte unterschiedliche Datensätze bleiben möglich** (T3, T4, T5) — Storno/Neuausstellung
+  und Teilrechnungen zum selben Termin bleiben zulässig, wie im Migrationskopf gefordert.
+* **Der bestehende Normalfall funktioniert** (T1) und das **Altverhalten** des vorhandenen
+  `UNIQUE (invoice_id, appointment_id)` ist intakt (T6).
+* **Die Unique-Verletzung hinterlässt keinen halbfertigen Folgezustand** (T7a = 1, T7b = 3):
+  nach dem abgefangenen Fehler ist exakt der Stand vor dem gescheiterten INSERT wirksam.
+
+## N3.8 Aktualisiertes Mengengerüst
+
+| | nach NACHTRAG 2 | jetzt |
+|---|---|---|
+| Ledger-Einträge | 435 | **436** |
+| Ledger-Kopf | `20260917120000` | **`20260917125000`** |
+| Release-Migrationen offen | 8 (#2–#9) | **7 (#3–#9)** |
+| durch das Werkzeug erzeugte Drift | 0 | **0** ✅ |
+
+Abgeleitet (Arithmetik, nicht per CLI erhoben — für `supabase migration list` fehlt in dieser
+Umgebung das DB-Passwort): „nur lokal" 403 → **402**, beidseitig 78 → **79**, „nur remote" **357**
+unverändert. Die **historische** Drift (§3 Klasse B, 317 Einträge) besteht unverändert fort.
+
+**`db push` bleibt gesperrt** — §6 gilt unverändert.
+
+## N3.9 Ergebnis
+
+```
+MIGRATION_2_PRECHECK=PASS
+MIGRATION_2_APPLIED=YES
+MIGRATION_2_POSTCHECK=PASS
+MIGRATION_2_CANONICAL_VERSION=20260917125000
+ROWS_CHANGED=0            (Ledger: +1 Zeile; Nutzdaten: 0)
+IDEMPOTENCY_TEST=PASS
+PRODUCTION_UNEXPECTED_SIDE_EFFECTS=NONE
+LEGACY_LEDGER_DRIFT_UNCHANGED=YES
+ADVISOR_CHECK=TOOLING_BLOCKED
+SAFE_FOR_NEXT_RELEASE_STEP=YES
+```
+
+**Nächster Release-Schritt:** Migration **#3**
+`20260917130000_add_create_invoice_with_items_for_provider_v1` — setzt #2 voraus (jetzt erfüllt).
+
+**STOPP vor Migration #3.** Keine weitere Anwendung ohne ausdrückliche Freigabe.
