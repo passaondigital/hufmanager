@@ -3033,3 +3033,260 @@ manuell und sind nicht Teil der CI.
 
 **STOPP.** Keine Migration #7–#9, kein Edge-Deploy, keine Ghost-Bereinigung, keine
 Vault-Aenderung, kein Push.
+
+---
+
+# NACHTRAG 11 — Migration #7 Production Apply (2026-09-21)
+
+`20260917160000_add_create_invited_customer_with_contact_v1`
+
+Drittes Glied der Invite-Kette und die Stelle, die den vorgesehenen Zugriff **tatsaechlich
+erteilt**. Angewendet als Einzelschritt; #8/#9 bleiben aus. Ergebnis: **COMMITTED**, eine neue
+Funktion, nichts ueberschrieben, keine Bestandsdaten beruehrt, kein neuer Advisor-Befund.
+
+**Wichtigste Einordnung: #7 ist ohne Edge-Deploy inert — und ein Deploy VOR #8 waere
+gefaehrlich.** Siehe N11.7.
+
+## N11.1 Artefakt-Integritaet
+
+| Groesse | Wert |
+|---|---|
+| `MIG7_FILE` | `supabase/migrations/20260917160000_add_create_invited_customer_with_contact_v1.sql` |
+| `MIG7_MD5` | `78906327a982fbb643760065f633bfed` |
+| `MIG7_SHA256` | `8a1451a18677270cef2cf4346f2b67460c23483f34952e66a528302748e3f477` |
+| Groesse / Zeilen | 9310 Bytes / 238 |
+| Apply-Artefakt | `docs/backups/mig7_20260917160000_apply_canonical.sql` (`c857918c0c0561a4cdba0f2f4c6a133e`, 18943 Bytes) |
+| Rollback | `docs/backups/mig7_20260917160000_prestate_rollback_2026-09-21.sql` (`ba3054dc4895d314313d856fa4860dde`) |
+
+Statisches Audit: **3 DDL, 0 DML, 0 destruktiv.** Ein `CREATE OR REPLACE FUNCTION` auf einer
+Funktion, die in Production **noch nicht existierte**, plus `REVOKE` und `GRANT` auf eben
+dieser neuen Funktion. Keine Tabellen-, Index-, Trigger-, Policy- oder RLS-DDL.
+
+Alle `ON CONFLICT`-Ziele vorab gegen Production geprueft: `profiles_pkey`,
+`user_roles_user_id_role_key`, `access_grants_client_id_provider_id_key` — vorhanden und
+passend. Eine fehlende Unique-Constraint waere erst zur Laufzeit aufgefallen.
+
+## N11.2 Prestate
+
+Ledger: `total=441`, `max=20260917155000`, #5 = 1, Hardening = 1, #6 = 1, **#7 = 0**,
+#8/#9 = 0, keine Phantomversion. `auto_assign_client_to_provider` auf
+`b6f62858b4de1b61a9a7503e1668e209`, `_hm_normalize_email` auf `4f7063e0…`.
+**`create_invited_customer_with_contact` existierte nicht** — es gab also keine alte
+Definition zu sichern. Ghosts 39, Duplikat-Gruppen 4, Invite-Tabelle 0 Zeilen.
+
+Signaturvergleich: #7, #8 und #9 definieren dieselbe Signatur
+`(uuid, uuid, jsonb, jsonb)`. Eine Ueberladung existiert weder im Repo noch in Production —
+ein `DROP FUNCTION` mit dieser Signatur ist damit eindeutig.
+
+## N11.3 Probelauf und Testplan
+
+Die isolierte Instanz wurde exakt auf PROD-Stand gebracht (#5 + Hardening + #6). Apply lief
+mit allen sechs Guards durch (`EXIT=0`), Rollback anschliessend ebenfalls (`EXIT=0`).
+
+Der geforderte Testplan wurde vollstaendig nachgewiesen — jeder Fall in einer Transaktion mit
+`ROLLBACK`, Ausgabe nur Zahlen und Statuswerte:
+
+| Fall | Status | Grant richtig | Grant fremd | Fehlermeldung |
+|---|---|---|---|---|
+| ACTIVE | `completed` | 1 | 0 | — |
+| WRONG PROVIDER | — | 0 | 0 | `Invited user is not marked for this provider` |
+| EXPIRED | — | 0 | 0 | `No valid pending invite for this user` |
+| INVALIDATED | — | 0 | 0 | `No valid pending invite for this user` |
+| CONSUMED | `already_completed` | 1 | 0 | — |
+| REPLAY | `already_completed` | 1 | 0 | — |
+| UNBOUND (Selbst-Signup) | — | 0 | 0 | `No valid pending invite for this user` |
+| NORMALIZED EMAIL (Grossschreibung) | `completed` | 1 | 0 | — |
+
+**In keinem Fall entstand ein Fremd-Grant.** Der Fall UNBOUND ist der wichtigste: ein Invite,
+der nie an die `user_id` gebunden wurde, wird nicht gefunden — das ist der Schutz gegen das
+Einsammeln eines fremden Selbst-Signups.
+
+**Parallelitaetstest mit zwei echten Sessions:** Session 1 `completed`, Session 2
+`already_completed`; Endzustand exakt **1** aktiver Grant, **1** Provider, **1** Kontakt,
+**1** verbrauchter Invite. `FOR UPDATE` serialisiert wie vorgesehen.
+
+### Zwischenfall waehrend dieses Tests — Testcontainer-Trigger gegen Production
+
+Der Parallelitaetstest hat als einziger Testfall **committet** (echte Nebenlaeufigkeit braucht
+zwei Sessions, also eine sichtbare Zeile). Dabei ist ein Fehler aufgetreten, der hier
+festgehalten gehoert:
+
+Die Testinstanz `mig34-isolated-test` ist ein Klon von Production — **einschliesslich der
+Trigger-Funktionen mit fest eincodierten Produktions-URLs** — und `pg_net` ist dort
+installiert. Der `AFTER INSERT`-Trigger `trg_notify_new_registration` auf `user_roles` hat
+deshalb einen echten HTTP-Aufruf an die **Produktions**-Edge-Function
+`notify-new-registration` abgesetzt.
+
+Folge: **genau eine** Zeile in `public.notifications`
+(`015a9681-6cf8-4405-bf46-b0f2e8b47b6d`, `type=new_registration`, 2026-09-21 19:44:53 UTC,
+Inhalt „Race hat sich als Pferdebesitzer registriert"), plus sehr wahrscheinlich eine
+Admin-Benachrichtigungs-E-Mail ueber Resend. Die uebrigen 14 Testfaelle liefen in
+zurueckgerollten Transaktionen und haben nichts ausgeloest — bestaetigt durch den Treffer von
+genau 1.
+
+Die Produktions**datenbank** war und ist unberuehrt: 0 Auth-User, 0 Profile, 0 Kontakte,
+0 Grants mit Testbezug; Gesamtzahlen unveraendert.
+
+Sofortmassnahme: alle fuenf Trigger der Testinstanz, die `net.http_post` gegen Production
+absetzen, wurden deaktiviert (`trg_notify_new_registration`, `notify_admin_profile_changes`,
+`on_new_profile_created`, `on_client_first_login`, `trg_auto_create_conversation`, dazu die
+drei Autoflow-Trigger auf `appointments`/`leads`). Stand: **0 aktiv, 5 deaktiviert**.
+
+Lehre fuer die Release-Regeln: „Schreibtests nur in der isolierten Instanz" ist
+unvollstaendig. Richtig ist **„nur in einer Instanz, deren ausgehende Trigger nachweislich
+entschaerft sind"**. Das gehoert als Vorbedingung und als Hook in die Development Factory.
+
+## N11.4 Apply
+
+`psql` ueber den Session Pooler, genau ein Aufruf, keine Retry-Schleife, `PGSSLMODE=require`,
+Passwort ausschliesslich interaktiv ueber `/dev/tty`. Kein `db push`, kein `apply_migration`,
+kein `_prepared`, kein Ledger-Repair.
+
+Sechs Guards im Artefakt: Ledger-Guard (#5/Hardening/#6 = 1, #7 = 0, #8/#9 abwesend),
+Dependency-Guard (#5-Vertrag vollstaendig, #6-Funktion auf `b6f62858`), Prestate-Guard
+(Zielfunktion darf nicht existieren), md5-Guard, Poststate-Guard (Ziel-`prosrc`, SECDEF,
+`search_path`, Owner, Signatur, **kein EXECUTE fuer anon/authenticated/authenticator, kein
+PUBLIC-Grant**), Side-Effect-Guard (Invite-Tabelle leer, #6 unveraendert).
+
+## N11.5 Postcheck — Ledger
+
+| Pruefung | Ergebnis |
+|---|---|
+| `20260917160000` | exakt **1** ✅ |
+| Phantomversion (`LIKE '2026091716%'`) | **1** (nur die kanonische) ✅ |
+| `ledger_max` | `20260917160000` ✅ |
+| `ledger_total` | 441 → **442** (+1) ✅ |
+| #1–#4 / #5 / Hardening / #6 | 4 / 1 / 1 / 1 — unveraendert ✅ |
+| #8 / #9 | **0 / 0** ✅ |
+| `LEDGER_DRIFT_CREATED` | **NO** ✅ |
+
+Ledger-Zeile: `name=add_create_invited_customer_with_contact_v1`,
+`created_by=passaondigital@gmail.com`, `idempotency_key=NULL`, `rollback=NULL`,
+`md5(statements[1])=78906327a982fbb643760065f633bfed`, `octet_length=9310` — exakt die
+Repo-Datei. Die #6-Ledger-Zeile (`30ee5a9e…`, 9125) ist unveraendert.
+
+## N11.6 Postcheck — Funktion
+
+Die Live-Funktion ist **byte-identisch** mit dem Repo-Migrationskoerper: 6727 Bytes,
+`prosrc` md5 `0be8f9ca939c9e84d4d59352338d8c62` auf beiden Seiten.
+
+| Attribut | Wert | Erwartung |
+|---|---|---|
+| `prosrc` md5 / Bytes | `0be8f9ca…` / 6727 | ✅ |
+| Owner | `postgres` | ✅ |
+| Sprache / Rueckgabetyp | `plpgsql` / `jsonb` | ✅ |
+| Signatur | `p_provider_id uuid, p_user_id uuid, p_profile jsonb, p_contact jsonb` | ✅ |
+| SECURITY DEFINER | `true` | ✅ |
+| `search_path` | `public` | ✅ |
+| Volatilitaet / strict / leakproof / parallel | `v` / `f` / `f` / `u` | ✅ |
+| ACL | `postgres=X/postgres \| service_role=X/postgres` | ✅ kein PUBLIC |
+| `anon` / `authenticated` / `authenticator` EXECUTE | `false` / `false` / `false` | ✅ |
+| `service_role` EXECUTE | `true` | ✅ |
+
+## N11.7 #7 ist inert — und der naechste Schritt ist NICHT der Deploy
+
+`MIG7_P0_FIXED_BY_ITSELF=NO`.
+
+`hm_pending_client_invites` hat 0 Zeilen, nur `service_role` darf die neue Funktion ausfuehren,
+und der einzige Aufrufer waere die neue Fassung von `invite-client-with-password` — die
+**nicht deployt** ist (Version 7, `ezbr_sha256 bb7c2e47…`, ohne jeden Aufruf der neuen RPCs).
+#7 ist damit folgenlos und darf beliebig lange so stehen.
+
+**Ein Edge-Deploy nach #7, aber vor #8, waere dagegen gefaehrlich.** Das heute laufende
+`public.handle_new_user()` (`prosrc` md5 `dc89cc94bbaf69e6a41f55b60b594723`, im Postcheck als
+unveraendert bestaetigt) enthaelt eine **bedingungslose** Ghost-Merge-Schleife, die
+`access_grants` jedes Nicht-Demo-Providers auf den neuen Auth-User umhaengt. Erst #8 schaltet
+sie im Invite-Pfad ab.
+
+#7 wuerde den dadurch entstehenden Fremd-Grant zwar erkennen und mit
+`Invited customer already has access granted to another provider` abbrechen — aber der Schaden
+ist eine Transaktion frueher zusammen mit dem `auth.users`-INSERT committet und laesst sich
+nicht zurueckdrehen. Read-only gemessen: **25 Ghost-Profile** tragen einen aktiven Grant eines
+echten Providers und waeren exponiert.
+
+Verbindliche Reihenfolge: **#7 → #8 → #9 → Ghost-Review → Edge-Deploy.**
+
+## N11.8 Side-Effect-Matrix
+
+Gegen den in NACHTRAG 10 protokollierten Stand nach #6:
+
+| Metrik | Vor #7 | Nach #7 | Δ |
+|---|---|---|---|
+| Ledger gesamt | 441 | **442** | +1 (nur #7) |
+| **Routinen `public`** | 195 | **196** | **+1** (genau die neue Funktion) |
+| Tabellen `public` | 293 | **293** | **0** |
+| Policies `public` | 753 | **753** | **0** |
+| Trigger `public` / `auth` | 190 / 1 | **190 / 1** | **0** |
+| profiles | 103 | **103** | **0** |
+| contacts | 44 | **44** | **0** |
+| access_grants gesamt / aktiv | 57 / 43 | **57 / 43** | **0** |
+| user_roles | 64 | **64** | **0** |
+| auth.users | 64 | **64** | **0** |
+| **Ghost-Profile** | **39** | **39** | **0** ✅ |
+| **Duplikat-E-Mail-Gruppen** | **4** | **4** | **0** ✅ |
+| `hm_pending_client_invites` Zeilen | 0 | **0** | **0** ✅ |
+| Funktionen ohne festen `search_path` | 0 | **0** | **0** |
+| `auto_assign_client_to_provider` (#6) | `b6f62858…` | **unveraendert** | ✅ |
+| `handle_new_user` | `dc89cc94…` | **unveraendert** | ✅ (erwartet — #8 aendert sie) |
+
+`MIG7_EXISTING_DATA_MUTATED=NO`.
+
+## N11.9 Advisor-Diff
+
+| Kategorie | nach #6 | nach #7 | |
+|---|---|---|---|
+| `anon_security_definer_function_executable` | 149 | **149** | unveraendert |
+| `authenticated_security_definer_function_executable` | 156 | **156** | unveraendert |
+| `rls_enabled_no_policy` | 5 | **5** | unveraendert, beabsichtigt |
+| `extension_in_public`, `auth_leaked_password_protection` | — | unveraendert | Altbefunde |
+
+`NEW_SECURITY_FINDINGS_FROM_MIG7=NONE`. Keine neue Kategorie, kein veraenderter Zaehlerstand.
+
+**Die neue #7-Funktion taucht in keiner der beiden SECDEF-Kategorien auf** — korrekt, denn
+`anon` und `authenticated` haben kein `EXECUTE`. Das war die ausdrueckliche Anforderung und
+ist damit erfuellt.
+
+## N11.10 Rollback-Pfad
+
+`docs/backups/mig7_20260917160000_prestate_rollback_2026-09-21.sql` — **nicht ausgefuehrt**,
+in der isolierten Instanz erprobt (`EXIT=0`).
+
+Umfang exakt: ein `DROP FUNCTION` mit voller Signatur (kein `CASCADE`) plus `DELETE` genau der
+Ledger-Zeile `20260917160000`. Drei Guards: #8/#9 duerfen nicht angewendet sein (sie
+definieren dieselbe Funktion neu — ein Drop wuerde sonst deren Korrektur entfernen);
+`prosrc`-md5 muss die #7-Fassung sein; es darf keinen verbrauchten Invite geben. Postcheck im
+selben Block prueft, dass #5, Hardening und #6 intakt bleiben. Kein DML, nichts zu verlieren.
+
+## N11.11 Ergebnis
+
+```
+MIG7_APPLIED=YES
+MIG7_APPLY_STATE=COMMITTED
+MIG7_LEDGER_VERSION=20260917160000
+LEDGER_DRIFT_CREATED=NO
+
+MIG7_PROSRC_MD5=0be8f9ca939c9e84d4d59352338d8c62
+MIG7_OBJECTS_CREATED=PASS
+MIG7_GRANT_CONTRACT=PASS   (anon/authenticated/authenticator ohne EXECUTE, kein PUBLIC)
+MIG7_SECURITY_REVIEW=PASS
+MIG7_TENANT_REVIEW=PASS
+
+MIG7_EXISTING_DATA_MUTATED=NO
+GHOST_PROFILE_COUNT_AFTER=39
+DUPLICATE_EMAIL_GROUPS_AFTER=4
+PENDING_INVITE_ROWS_AFTER=0
+ROUTINES_DELTA=+1
+
+NEW_SECURITY_FINDINGS_FROM_MIG7=NONE
+MIG7_P0_FIXED_BY_ITSELF=NO
+
+MIG8_APPLIED=NO   MIG9_APPLIED=NO
+RELATED_NEW_EDGE_FUNCTION_DEPLOYED=NO
+
+CHAIN_CAN_PAUSE_AFTER_MIG7=YES
+EDGE_DEPLOY_EARLIEST_AFTER=#9 + Ghost-Review
+SAFE_TO_PREPARE_MIG8=YES
+```
+
+**STOPP.** Keine Migration #8/#9, kein Edge-Deploy, keine Ghost-Bereinigung, keine
+Vault-Aenderung, kein Push.
