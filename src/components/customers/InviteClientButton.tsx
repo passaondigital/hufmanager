@@ -246,13 +246,29 @@ export function InviteClientButton({
     }
     setCreateAccountLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("invite-client", {
-        body: { email: createAccountEmail.trim(), fullName: createAccountName.trim() },
+      // Kanonischer Invite-Vertrag (20260917150000 … 20260920190000): diese
+      // Function legt den Pending Invite VOR auth.admin.createUser an, bindet
+      // ihn danach an die erzeugte user_id und erteilt den Zugriff
+      // ausschliesslich ueber create_invited_customer_with_contact.
+      // Der frueher hier verwendete Endpoint invite-client lief an diesem
+      // Vertrag vorbei und liess den generischen "erster Provider"-Fallback
+      // greifen — siehe NACHTRAG 13.
+      const email = createAccountEmail.trim().toLowerCase();
+      const { data, error } = await supabase.functions.invoke("invite-client-with-password", {
+        body: { email, fullName: createAccountName.trim() },
       });
       if (error || data?.error) {
         toast.error(data?.error || error?.message || "Fehler beim Erstellen des Kontos");
+      } else if (data?.emailSent === false) {
+        // Konto existiert, nur der Mailversand hat nicht geklappt. Das
+        // Einmalpasswort darf nicht verlorengehen.
+        toast.warning(
+          `Konto erstellt, die E-Mail konnte aber nicht versendet werden. Einmalpasswort: ${data.tempPassword}`,
+          { duration: 30000 },
+        );
+        setCreateAccountOpen(false);
       } else {
-        toast.success(`Konto erstellt – Zugangsdaten wurden an ${createAccountEmail} gesendet`);
+        toast.success(`Konto erstellt – Zugangsdaten wurden an ${email} gesendet`);
         setCreateAccountOpen(false);
       }
     } catch (err) {

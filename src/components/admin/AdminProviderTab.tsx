@@ -272,9 +272,19 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
   };
 
   const generatePassword = () => {
+    // Kryptografisch sicher statt Math.random(): dieses Passwort ist der
+    // Erstzugang eines Kundenkontos und darf nicht vorhersagbar sein.
+    // Modulo-Bias wird durch Verwerfen der ueberzaehligen Werte vermieden.
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+    const max = Math.floor(256 / chars.length) * chars.length;
     let pw = "";
-    for (let i = 0; i < 12; i++) pw += chars.charAt(Math.floor(Math.random() * chars.length));
+    while (pw.length < 12) {
+      const buf = new Uint8Array(16);
+      crypto.getRandomValues(buf);
+      for (const b of buf) {
+        if (b < max && pw.length < 12) pw += chars.charAt(b % chars.length);
+      }
+    }
     return pw;
   };
 
