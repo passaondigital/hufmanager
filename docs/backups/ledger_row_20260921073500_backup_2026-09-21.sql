@@ -1,0 +1,157 @@
+-- BACKUP des Ledger-Datensatzes supabase_migrations.schema_migrations
+-- Projekt: vnschgjxkzzwzefqlrji (HufManager)
+-- Erstellt: 2026-09-21 (read-only Snapshot VOR der Versionskorrektur)
+--
+-- Gesicherte Spaltenwerte (vollstaendig, alle 6 Spalten der Tabelle):
+--   version         = '20260921073500'
+--   name            = 'add_create_customer_with_contact_v1'
+--   statements      = ARRAY[<1 Element>]  md5=5df63e4ff759f7df487080626a9b683f  len=5568 Zeichen
+--   created_by      = 'passaondigital@gmail.com'
+--   idempotency_key = NULL
+--   rollback        = NULL
+--
+-- Der statements-Inhalt ist byte-identisch zum Repo-Artefakt
+--   supabase/migrations/20260917120000_add_create_customer_with_contact_v1.sql
+--   (ohne trailing newline; 5582 Bytes = 5568 UTF-8 Zeichen)
+-- und wird hier woertlich eingebettet.
+
+-- RESTORE (stellt den Zustand VOR der Korrektur exakt wieder her):
+begin;
+delete from supabase_migrations.schema_migrations where version in ('20260917120000','20260921073500');
+insert into supabase_migrations.schema_migrations (version, name, statements, created_by, idempotency_key, rollback)
+values ('20260921073500', 'add_create_customer_with_contact_v1', ARRAY[
+$LEDGERBK$
+-- P1-1 correction (Codex review of Revenue Slice 1/2, 2026-09-17).
+--
+-- AddCustomerModal did two separate client-side writes (profiles insert,
+-- then contacts insert) with a client-side compensating delete on failure.
+-- That compensating delete is not actually atomic: if the connection drops
+-- between the two writes, the compensating delete never runs and an
+-- orphaned profile is left behind.
+--
+-- Checked first, per instruction, whether an atomic customer-create path
+-- already exists: no CREATE FUNCTION matching
+-- create_customer/add_customer/create_client anywhere in
+-- supabase/migrations, and no such helper in src/services or src/lib
+-- (grep run 2026-09-17). Kunden.tsx's "Neuer Kunde"-Dialog has the exact
+-- same two-write, non-atomic pattern — out of scope for this pass, not
+-- touched, flagged separately.
+--
+-- This mirrors the existing create_invoice_with_items pattern
+-- (20260908155536_atomic_invoice_with_items.sql): a single SECURITY DEFINER
+-- function, both inserts in one Postgres function body, which is one
+-- transaction — if the contacts insert fails, the profiles insert is rolled
+-- back automatically by Postgres. No client-side compensating delete is
+-- needed anymore once the app is switched to call this RPC.
+--
+-- Access contract matches the EXISTING, unmodified RLS policies exactly —
+-- no entitlement gate is added here. The current profiles INSERT policy
+-- ("Providers can create client profiles",
+-- 20251205183654_...sql) only requires has_role(auth.uid(),'provider'),
+-- and the contacts INSERT policy
+-- (20251208112203_...sql) only requires auth.uid() = provider_id. Unlike
+-- create_invoice_with_items, customer creation has never had an
+-- entitlement check in this codebase, and this pass is explicitly not
+-- allowed to change entitlement behavior — so none is added here. If an
+-- entitlement gate on customer creation is wanted, that is a separate,
+-- deliberate product decision, not something to smuggle into an atomicity
+-- fix.
+--
+-- PREPARED ONLY: this migration is not applied to any environment in this
+-- pass. No RLS policy is loosened; no existing policy or constraint is
+-- changed.
+--
+-- P1-A/P2 correction (Codex rereview, 2026-09-17): hardened per Codex P2
+-- finding, still within this same not-yet-applied file (no environment has
+-- ever seen the earlier version, so this is an in-place edit, not a
+-- follow-up migration):
+--   1. The client could previously supply the new profile's UUID
+--      (p_profile->>'id'). Removed — the id is always server-generated via
+--      gen_random_uuid(), matching how every other id in this schema is
+--      generated. There was no legitimate reason for a caller to pick the id.
+--   2. The function returned the FULL profiles row (to_jsonb(v_profile)),
+--      exposing every column (including ones unrelated to the "just
+--      created a customer" use case). It now returns only
+--      {profile_id, contact_id, full_name} — exactly what
+--      AddCustomerModal/Kunden.tsx need to select the new customer and show
+--      its name.
+
+CREATE OR REPLACE FUNCTION public.create_customer_with_contact(
+  p_profile jsonb,
+  p_contact jsonb DEFAULT '{}'::jsonb
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_actor uuid := auth.uid();
+  v_profile_id uuid := gen_random_uuid();
+  v_contact_id uuid;
+  v_full_name text;
+  v_email text;
+  v_phone text;
+  v_street text;
+  v_zip_code text;
+  v_city text;
+BEGIN
+  IF v_actor IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  IF jsonb_typeof(p_profile) <> 'object' THEN
+    RAISE EXCEPTION 'Customer profile must be a JSON object';
+  END IF;
+
+  -- Same access contract as the current RLS INSERT policy on profiles
+  -- ("Providers can create client profiles"): provider role only.
+  IF NOT public.has_role(v_actor, 'provider'::app_role) THEN
+    RAISE EXCEPTION 'Only providers may create customer profiles';
+  END IF;
+
+  v_full_name := nullif(btrim(coalesce(p_profile->>'full_name', '')), '');
+  IF v_full_name IS NULL THEN
+    RAISE EXCEPTION 'Customer full_name is required';
+  END IF;
+
+  v_email := nullif(btrim(coalesce(p_profile->>'email', '')), '');
+  v_phone := nullif(btrim(coalesce(p_profile->>'phone', '')), '');
+  v_street := nullif(btrim(coalesce(p_profile->>'street', '')), '');
+  v_zip_code := nullif(btrim(coalesce(p_profile->>'zip_code', '')), '');
+  v_city := nullif(btrim(coalesce(p_profile->>'city', '')), '');
+
+  INSERT INTO public.profiles (
+    id, full_name, email, phone, street, zip_code, city,
+    created_by_provider_id, onboarding_completed, has_logged_in
+  )
+  VALUES (
+    v_profile_id, v_full_name, v_email, v_phone, v_street, v_zip_code, v_city,
+    v_actor, false, false
+  );
+
+  -- Same insert the client used to do separately; now part of the same
+  -- transaction as the profiles insert above. A failure here rolls back
+  -- the profiles insert too — no orphaned profile can remain.
+  INSERT INTO public.contacts (
+    provider_id, profile_id, full_name, email, phone, category
+  )
+  VALUES (
+    v_actor, v_profile_id, v_full_name, v_email, v_phone,
+    coalesce(nullif(p_contact->>'category', ''), 'client')::contact_category
+  )
+  RETURNING id INTO v_contact_id;
+
+  RETURN jsonb_build_object(
+    'profile_id', v_profile_id,
+    'contact_id', v_contact_id,
+    'full_name', v_full_name
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.create_customer_with_contact(jsonb, jsonb) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_customer_with_contact(jsonb, jsonb) TO authenticated, service_role;
+$LEDGERBK$
+]::text[], 'passaondigital@gmail.com', NULL, NULL);
+commit;
