@@ -3290,3 +3290,239 @@ SAFE_TO_PREPARE_MIG8=YES
 
 **STOPP.** Keine Migration #8/#9, kein Edge-Deploy, keine Ghost-Bereinigung, keine
 Vault-Aenderung, kein Push.
+
+---
+
+# NACHTRAG 12 — Migration #8 Production Apply (2026-09-21)
+
+`20260920120000_fix_pending_invite_ghost_merge_v1`
+
+Viertes Glied der Invite-Kette und das einzige, das **sofort** wirkt. Angewendet als
+Einzelschritt; #9 bleibt aus. Ergebnis: **COMMITTED**, drei Funktionen ersetzt, keine
+Bestandsdaten beruehrt, kein neuer Advisor-Befund.
+
+## N12.1 Artefakt-Integritaet
+
+| Groesse | Wert |
+|---|---|
+| `MIG8_FILE` | `supabase/migrations/20260920120000_fix_pending_invite_ghost_merge_v1.sql` |
+| `MIG8_MD5` | `5d426ae10ca2831cb4c0cd016d93d348` |
+| Groesse / Zeilen | 23974 Bytes / 573 |
+| Apply-Artefakt | `docs/backups/mig8_20260920120000_apply_canonical.sql` (`3200b8256c3663343e81847701e4b5f5`, 35179 Bytes) |
+| Rollback | `docs/backups/mig8_20260920120000_prestate_rollback_2026-09-21.sql` (`cf9a68f2f10aea432f47fa232107cc63`) |
+
+Statisches Audit: **7 DDL, 0 DML.** Drei `CREATE OR REPLACE FUNCTION` plus zwei
+REVOKE/GRANT-Paare. Keine Tabellen-, Index-, Trigger-, Policy- oder RLS-DDL.
+
+## N12.2 Prestate
+
+Ledger `total=442`, `max=20260917160000`, #5/Hardening/#6/#7 je 1, **#8 = 0**, #9 = 0.
+
+| Funktion | `prosrc` md5 vorher | Bytes |
+|---|---|---|
+| `handle_new_user()` | `dc89cc94bbaf69e6a41f55b60b594723` | 4428 |
+| `create_pending_client_invite_v1(...)` | `098ba120e40e3e51019e74c827959d84` | 3172 |
+| `create_invited_customer_with_contact(...)` | `0be8f9ca939c9e84d4d59352338d8c62` | 6727 |
+
+Fuer den Rollback wurde `handle_new_user` woertlich als `pg_get_functiondef` aus Production
+gesichert (md5 `8af001b16380a9d5b8347dd06dd55024`, 4586 Bytes); die beiden anderen stammen
+aus den Repo-Statements von #5 bzw. #7, deren `prosrc`-md5 vorab gegen Production verifiziert
+wurde.
+
+## N12.3 Was #8 korrigiert
+
+**1. `handle_new_user()` — zwei unabhaengige Fixes.**
+
+*a) Ghost-Merge im Invite-Pfad ausgesetzt.* Die Vorfassung merged bedingungslos und haengt
+`access_grants` **jedes** Nicht-Demo-Providers auf den neuen Auth-User um — ohne Pruefung, ob
+das der einladende Provider ist. Das ist die Cross-Provider-Uebernahme, die #9s Kopfkommentar
+als reproduziertes Browser-E2E beschreibt. #8 kapselt die Schleife in `IF NOT invite_pending`.
+
+*b) Rollen-Eskalation geschlossen.* Die Vorfassung las die Rolle aus
+`raw_user_meta_data->>'role'` — einem Feld, das bei `supabase.auth.signUp()` vom Client frei
+gesetzt wird (das Frontend belegt das selbst: `ConnectForm.tsx:153` sendet `role: "client"`).
+Ein Signup mit `{"data":{"role":"admin"}}` ergab damit `assigned_role = 'admin'` in
+`public.user_roles`. Gegengeprueft: keiner der drei Trigger auf `user_roles` validiert die
+Rolle, `sync_trusted_app_role` existiert in Production nicht, und RLS greift nicht, weil die
+Funktion SECURITY DEFINER ist. #8 laesst privilegierte Rollen nur noch aus
+`raw_app_meta_data` zu, das serverseitig gesetzt wird.
+
+Dieser zweite Fix hat **nichts mit der Invite-Kette zu tun** und wirkt ab dem Apply sofort
+fuer jede neue Registrierung.
+
+**2. `create_pending_client_invite_v1()` — TTL nicht mehr aufruferkontrolliert.** Vorher
+`greatest(1, least(coalesce(p_ttl_minutes,15),60))`, jetzt fest `interval '15 minutes'`. Der
+Parameter bleibt in der Signatur, wirkt aber nicht mehr — eine kleine API-Unsauberkeit,
+sicherheitlich eine Verschaerfung.
+
+**3. `create_invited_customer_with_contact()` — E-Mail-Dreieck und Ghost-Finalisierung.**
+Die Profil-E-Mail muss zur Auth-E-Mail passen; die Ghost-Uebernahme wandert aus
+`handle_new_user` hierher und laeuft mit Cross-Provider-Guards.
+
+## N12.4 Probelauf
+
+Testinstanz exakt auf PROD-Stand gebracht (alle vier Funktions-md5 identisch). **Vor jedem
+Test die Trigger-Isolation verifiziert: 0 aktive Trigger mit `net.http_post`, 5 deaktiviert**
+— die Konsequenz aus dem in N11.3 dokumentierten Zwischenfall.
+
+Der ACL-Guard des Artefakts hat dabei zunaechst korrekt abgebrochen, weil die
+Container-Erwartung unvollstaendig war. Nach Korrektur: Apply `EXIT=0`, alle Guards passiert.
+
+Sieben Verhaltensproben, jede in einer Transaktion mit `ROLLBACK`:
+
+| Fall | Ergebnis |
+|---|---|
+| `role_admin_usermeta` | **`provider`** statt `admin` — Eskalation geschlossen ✅ |
+| `role_admin_appmeta` | `admin` — serverseitiger Pfad intakt ✅ |
+| `ttl_fixed` | 60 Min angefordert → **15 Min** tatsaechlich ✅ |
+| `ghost_normal_signup` | Ghost gemerged — Legacy fuer normale Signups erhalten ✅ |
+| **`ghost_invite_skipped`** | **Ghost unangetastet — der Kernfix wirkt** ✅ |
+| `ghost_cross_provider` | `An existing customer record for this email belongs to another provider` ✅ |
+| `email_triangle` | `Customer email does not match the invited user` ✅ |
+
+Rollback anschliessend erprobt: `EXIT=0`, alle drei Funktionen zurueck auf ihre Vor-#8-md5.
+Keine Testrueckstaende.
+
+## N12.5 Postcheck — Ledger
+
+| Pruefung | Ergebnis |
+|---|---|
+| `20260920120000` | exakt **1** ✅ |
+| Phantomversion (`LIKE '2026092012%'`) | **1** (nur die kanonische) ✅ |
+| `ledger_max` | `20260920120000` ✅ |
+| `ledger_total` | 442 → **443** (+1) ✅ |
+| #1–#4 / #5–#7 | 4 / 4 — unveraendert ✅ |
+| #9 | **0** ✅ |
+| `LEDGER_DRIFT_CREATED` | **NO** ✅ |
+
+Ledger-Zeile: `name=fix_pending_invite_ghost_merge_v1`, `created_by=passaondigital@gmail.com`,
+`md5(statements[1])=5d426ae10ca2831cb4c0cd016d93d348`, `octet_length=23974` — exakt die
+Repo-Datei. Die #7-Zeile ist unveraendert.
+
+## N12.6 Postcheck — Funktionen
+
+| Funktion | md5 nachher | Bytes | Ziel getroffen |
+|---|---|---|---|
+| `handle_new_user` | `5cb9eee610c378ead795a285475ccd08` | 5099 | ✅ |
+| `create_pending_client_invite_v1` | `cd138b57c0236f214dd8307d024717cb` | 2935 | ✅ |
+| `create_invited_customer_with_contact` | `fabfebb739ca83ad11c8fcae60fac2a6` | 8783 | ✅ |
+| `auto_assign_client_to_provider` (#6) | `b6f62858b4de1b61a9a7503e1668e209` | 2825 | unveraendert ✅ |
+
+Alle drei: Owner `postgres`, SECURITY DEFINER, `search_path=public`, Volatilitaet `v`,
+Signaturen unveraendert.
+
+ACLs:
+* `create_pending_client_invite_v1` und `create_invited_customer_with_contact`:
+  `postgres=X \| service_role=X` — `anon`/`authenticated`/`authenticator` ohne EXECUTE ✅
+* `handle_new_user`: unveraendert inkl. der Alt-ACL mit PUBLIC/anon/authenticated. #8 fasst
+  deren Grants bewusst nicht an; die Funktion ist `RETURNS trigger` und damit nicht direkt
+  aufrufbar.
+
+### Semantische Gegenproben (rein lesend auf `pg_proc.prosrc`, kein Schreibtest)
+
+```
+ttl_fest_15min            = true   (interval '15 minutes' da, make_interval(mins=>v_ttl) weg)
+email_dreieck             = true   ('Customer email does not match the invited user')
+ghost_cross_guard         = true   ('...belongs to another provider')
+rolle_aus_appmeta         = true   (requested_app_role vorhanden)
+alte_eskalation_entfernt  = true   (user_role_from_meta = 'admin' nicht mehr vorhanden)
+ghost_merge_gated         = true   (IF NOT invite_pending THEN)
+```
+
+Damit sind die vier geforderten Bestaetigungen erbracht: #5-TTL, #7-E-Mail-Dreieck,
+Ghost-Finalisierung und Rollen-Eskalation.
+
+## N12.7 Side-Effect-Matrix
+
+| Metrik | Vor #8 | Nach #8 | Δ |
+|---|---|---|---|
+| Ledger gesamt | 442 | **443** | +1 (nur #8) |
+| Tabellen `public` | 293 | **293** | **0** |
+| Routinen `public` | 196 | **196** | **0** (drei ersetzt, keine neu) |
+| Policies `public` | 753 | **753** | **0** |
+| Trigger `public`+`auth` | 191 | **191** | **0** |
+| profiles | 103 | **103** | **0** |
+| profiles soft-deleted | 10 | **10** | **0** |
+| contacts | 44 | **44** | **0** |
+| access_grants gesamt / aktiv | 57 / 43 | **57 / 43** | **0** |
+| user_roles gesamt / `admin` | 64 / 2 | **64 / 2** | **0** |
+| auth.users | 64 | **64** | **0** |
+| horses | 78 | **78** | **0** |
+| appointments | 295 | **295** | **0** |
+| **Ghost-Profile** | **39** | **39** | **0** ✅ |
+| **Duplikat-E-Mail-Gruppen** | **4** | **4** | **0** ✅ |
+| `hm_pending_client_invites` | 0 | **0** | **0** ✅ |
+| Funktionen ohne festen `search_path` | 0 | **0** | **0** |
+
+`MIG8_EXISTING_DATA_MUTATED=NO`.
+
+## N12.8 Advisor-Diff
+
+| Kategorie | nach #7 | nach #8 | |
+|---|---|---|---|
+| `anon_security_definer_function_executable` | 149 | **149** | unveraendert |
+| `authenticated_security_definer_function_executable` | 156 | **156** | unveraendert |
+| `rls_enabled_no_policy` | 5 | **5** | unveraendert, beabsichtigt |
+| `extension_in_public`, `auth_leaked_password_protection` | — | unveraendert | Altbefunde |
+
+`NEW_SECURITY_FINDINGS_FROM_MIG8=NONE`.
+
+**Klassifikation `handle_new_user`:** Die Funktion steht in beiden SECDEF-Kategorien — aber
+ueber **alle fuenf** Advisor-Snapshots hinweg (nach #5, nach Hardening, nach #6, nach #7,
+nach #8). Damit eindeutig **`PREEXISTING_LEGACY`**, nicht durch #8 verursacht. `CREATE OR
+REPLACE` setzt ACLs nicht zurueck; der Poststate-Guard hat das erzwungen.
+
+## N12.9 Wirkung und naechster Schritt
+
+Anders als #5–#7 ist #8 **nicht vollstaendig inert**:
+
+* Der **Invite-Teil** bleibt inert — `hm_pending_client_invites` ist leer und die neue Edge
+  Function ist nicht deployt.
+* Die **Rollen-Eskalationskorrektur wirkt sofort** fuer jede neue Registrierung. Das war der
+  Grund, #8 nicht liegenzulassen.
+
+Verbleibende Reihenfolge: **#9 → Ghost-Review (25 exponierte Profile) → Edge-Deploy → E2E →
+`invite-client`-Gap.**
+
+## N12.10 Rollback-Pfad
+
+`docs/backups/mig8_20260920120000_prestate_rollback_2026-09-21.sql` — **nicht ausgefuehrt**,
+erprobt (`EXIT=0`). Drei `CREATE OR REPLACE` plus `DELETE` genau der Ledger-Zeile. Guards:
+#9 darf nicht angewendet sein; alle drei Funktionen muessen auf dem #8- oder Pre-Stand
+stehen; die Invite-Tabelle muss leer sein.
+
+**Ausdrueckliche Warnung im Kopf der Datei:** Ein Rollback von #8 stellt den Vorzustand her
+und schaltet damit **beide** geschlossenen Luecken wieder scharf — den bedingungslosen
+Ghost-Merge **und** die Rollen-Eskalation. Er ist nur vertretbar, wenn #8 selbst Schaden
+anrichtet; sonst ist Vorwaertsrollen die bessere Antwort.
+
+## N12.11 Ergebnis
+
+```
+MIG8_APPLIED=YES
+MIG8_APPLY_STATE=COMMITTED
+MIG8_LEDGER_VERSION=20260920120000
+MIG8_CANONICAL_MD5_VERIFIED=YES (5d426ae10ca2831cb4c0cd016d93d348)
+LEDGER_DRIFT_CREATED=NO
+
+MIG8_FUNCTIONS_VERIFIED=3/3
+  handle_new_user                      dc89cc94… -> 5cb9eee6…
+  create_pending_client_invite_v1      098ba120… -> cd138b57…
+  create_invited_customer_with_contact 0be8f9ca… -> fabfebb7…
+
+MIG8_TTL_FIXED=YES          MIG8_EMAIL_TRIANGLE=YES
+MIG8_GHOST_GUARD=YES        MIG8_ROLE_ESCALATION_CLOSED=YES
+
+MIG8_EXISTING_DATA_MUTATED=NO
+GHOST_PROFILE_COUNT_AFTER=39
+DUPLICATE_EMAIL_GROUPS_AFTER=4
+PENDING_INVITE_ROWS_AFTER=0
+
+NEW_SECURITY_FINDINGS_FROM_MIG8=NONE
+MIG9_APPLIED=NO
+RELATED_NEW_EDGE_FUNCTION_DEPLOYED=NO
+CHAIN_CAN_PAUSE_AFTER_MIG8=YES
+```
+
+**STOPP.** Keine Migration #9, kein Edge-Deploy, keine Ghost-Bereinigung, keine
+Vault-Aenderung, kein Push.
