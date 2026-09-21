@@ -2416,3 +2416,269 @@ sonst zu 100 % durchgehaltenen Projektkonvention.
 
 **STOPP.** Keine Migration #6–#9, kein Edge-Deploy, keine Ghost-Bereinigung, keine
 Vault-Änderung, kein Push.
+
+---
+
+# NACHTRAG 9 — Micro Hardening after Migration #5 (2026-09-21)
+
+`20260917152500_fix_hm_normalize_email_search_path_v1`
+
+Schliesst den in NACHTRAG 8 dokumentierten Restbefund
+`function_search_path_mutable` auf `public._hm_normalize_email(text)`. Bewusst als eigene,
+winzige Migration **zwischen** #5 und #6 — nicht durch Aenderung der bereits angewendeten
+#5-Datei. Ergebnis: **COMMITTED**, Advisor-Befund weg, ausschliesslich `proconfig` veraendert.
+
+## N9.1 Warum ueberhaupt
+
+Der Befund war in NACHTRAG 8 als `REAL_BUT_NOT_EXPLOITABLE_DOCUMENTED_RESIDUAL` eingestuft und
+hat #5 zu Recht nicht blockiert: kein untrusted Principal konnte ihn ausloesen. Geschlossen
+wird er trotzdem, weil `_hm_normalize_email` die **einzige** von 195 Routinen in `public` ohne
+festen `search_path` war — die einzige Abweichung von einer sonst vollstaendig durchgehaltenen
+Konvention. Ein dauerhaft offener Restbefund weicht genau den Massstab auf, an dem spaetere
+Reviews sich orientieren.
+
+## N9.2 Artefakt-Integritaet
+
+| Groesse | Wert |
+|---|---|
+| `HARDENING_VERSION` | `20260917152500` |
+| `HARDENING_FILE` | `supabase/migrations/20260917152500_fix_hm_normalize_email_search_path_v1.sql` |
+| `HARDENING_MD5` | `948bd6454f4ac125eb0ca576850e93b4` |
+| `HARDENING_SHA256` | `957da901b4974c7fcb6692da8d04c5ebc85e45617aab3f975c4fa95ce630d03e` |
+| Groesse / Zeilen | 4388 Bytes / 70 |
+| Apply-Artefakt | `docs/backups/mig_hardening_20260917152500_apply_canonical.sql` (`2504ca57ddf910bd424fefd62cf52a1e`, 9000 Bytes) |
+| Rollback | `docs/backups/mig_hardening_20260917152500_prestate_rollback_2026-09-21.sql` (`08a544e2033c38b7dc4b6c817f2e5436`) |
+
+Versionswahl: `20260917152500` war **in Ledger und Repo frei** — zwischen `20260917150000`
+und `20260917155000` existierte weder eine Ledger-Zeile noch eine Datei.
+
+**Migrationsinhalt: genau ein Statement** (Dollar-Quote-bewusst tokenisiert, `TOPLEVEL_TOTAL=1`):
+
+```sql
+ALTER FUNCTION public._hm_normalize_email(text) SET search_path = public;
+```
+
+### Warum `ALTER FUNCTION` statt `CREATE OR REPLACE`
+
+`ALTER FUNCTION ... SET` beruehrt ausschliesslich `pg_proc.proconfig`. Body, Sprache,
+Volatilitaet, Rueckgabetyp, Strictness, Owner und ACL bleiben unangetastet — und genau das ist
+per `prosrc`-md5 vor und nach dem Apply **beweisbar**. `CREATE OR REPLACE` haette den Body neu
+geschrieben und diesen Beweis ohne Not aufgegeben. Die Migration ist idempotent.
+
+### Warum `search_path = public` und nicht `pg_catalog, public`
+
+Sobald der `search_path` fest am Objekt haengt, kann ein Aufrufer ueberhaupt kein fremdes
+Schema mehr davorschieben — der in N8.7 gezeigte Angriffspfad existiert dann nicht mehr.
+`pg_catalog` bleibt implizit an erster Stelle. `public` ist damit ebenso sicher wie
+`pg_catalog, public` und identisch zu dem, was die fuenf SECURITY-DEFINER-Funktionen aus #5
+und die uebrigen Routinen verwenden. Konsistenz schlaegt Sonderweg.
+
+## N9.3 Probelauf vor Production
+
+Vollstaendiger Rundlauf in `mig34-isolated-test`. Der dortige Prestate war **byte-identisch
+zu Production** (`prosrc_md5=4f7063e0…`, `proconfig=NULL`, `secdef=f`, `vol=i`, ACL gleich).
+
+| Schritt | Ergebnis |
+|---|---|
+| Apply inkl. Pre-/Poststate-Guard | `EXIT=0` |
+| `proconfig` danach | `search_path=public` |
+| `prosrc` md5 danach | `4f7063e0…` — **unveraendert** |
+| ACL / SECDEF / Volatilitaet | unveraendert |
+| Semantikproben | `mixed@example.com`, `''→NULL`, `NULL→NULL` — identisch |
+| **Angriffspfad `evil2, pg_catalog, public`** | liefert **korrektes** Ergebnis |
+| Rollback | `EXIT=0`, `proconfig` zurueck auf `NULL`, Rest unveraendert |
+
+Der vorletzte Punkt ist der eigentliche Wirksamkeitsnachweis: **genau der Vektor, der im
+#5-Review noch `PWNED-lower` zurueckgab, ist geschlossen.**
+
+Repo-Checks vor dem Apply: `npm test` 273/273 · Migration-Baseline PASS · Secret-Scan PASS
+(2764 Dateien) · `git diff --check` clean.
+
+## N9.4 Apply
+
+Gleicher Vertrag wie #3–#5: `psql` ueber den Session Pooler, genau ein Aufruf, keine
+Retry-Schleife, `PGSSLMODE=require`, Passwort ausschliesslich interaktiv ueber `/dev/tty`
+(nie gespeichert, geloggt, in eine Datei geschrieben oder in die Shell-History aufgenommen).
+Kein `db push`, kein `apply_migration`, kein `_prepared`, kein Migration-Repair.
+
+Das Apply-Artefakt traegt drei Sicherungen: md5-Guard auf den Migrationstext, einen
+**Prestate-Guard** (richtige Funktion, korrekte `prosrc`-md5, noch kein `search_path`, nicht
+SECURITY DEFINER) und einen **Poststate-Guard** (`proconfig` exakt `search_path=public`, Body-,
+ACL-, SECURITY- und Volatilitaets-Identitaet). Der Commit kommt nur zustande, wenn genau die
+eine gewuenschte Aenderung eingetreten ist.
+
+`PSQL_EXIT=0` — wie zuvor **nicht** als Beweis akzeptiert; der Postcheck unten ist unabhaengig
+read-only erhoben.
+
+## N9.5 Postcheck — Ledger
+
+| Pruefung | Ergebnis |
+|---|---|
+| `20260917152500` | exakt **1** ✅ |
+| Phantomversion (`LIKE '202609171525%'`) | **1** (nur die kanonische) ✅ |
+| `ledger_max` | `20260917152500` ✅ |
+| `ledger_total` | 439 → **440** (+1) ✅ |
+| #1–#4 | zusammen weiterhin **4** ✅ |
+| #5 `20260917150000` | weiterhin **1**, `statements[1]` md5 `d0f8b9bd…`, 16586 Bytes — unveraendert ✅ |
+| `LEDGER_DRIFT_CREATED` | **NO** ✅ |
+
+Ledger-Zeile: `name=fix_hm_normalize_email_search_path_v1`,
+`created_by=passaondigital@gmail.com`, `idempotency_key=NULL`, `rollback=NULL`,
+`array_length(statements)=1`, `md5(statements[1])=948bd6454f4ac125eb0ca576850e93b4`,
+`octet_length(statements[1])=4388` — beides exakt die Repo-Datei.
+
+## N9.6 Postcheck — nur `proconfig` hat sich geaendert
+
+Vollstaendiger Attributvergleich gegen den in N9.2 festgehaltenen Prestate:
+
+| Attribut | Vorher | Nachher | |
+|---|---|---|---|
+| `prosrc` md5 | `4f7063e091f7c6a30525e78ce68da4ae` | `4f7063e091f7c6a30525e78ce68da4ae` | ✅ gleich |
+| `prosrc` (Text) | `SELECT nullif(lower(btrim(coalesce(p_email, ''))), '');` | identisch | ✅ |
+| **`proconfig`** | **`NULL`** | **`search_path=public`** | ← **die eine Aenderung** |
+| Owner | `postgres` | `postgres` | ✅ |
+| Sprache | `sql` | `sql` | ✅ |
+| Volatilitaet | `i` (IMMUTABLE) | `i` | ✅ |
+| `prosecdef` | `false` (INVOKER) | `false` | ✅ |
+| ACL | `postgres=X/postgres \| service_role=X/postgres` | identisch | ✅ |
+| `proisstrict` | `false` | `false` | ✅ |
+| `proleakproof` | `false` | `false` | ✅ |
+| `proparallel` | `u` | `u` | ✅ |
+| `pronargs` / Rueckgabetyp | 1 / `text` | 1 / `text` | ✅ |
+| `postgres` EXECUTE | `true` | `true` | ✅ |
+| `anon` EXECUTE | `false` | `false` | ✅ |
+| `authenticated` EXECUTE | `false` | `false` | ✅ |
+| `authenticator` EXECUTE | `false` | `false` | ✅ |
+| `service_role` EXECUTE | `true` | `true` | ✅ |
+
+`pg_get_functiondef` zeigt jetzt genau eine zusaetzliche Zeile: `SET search_path TO 'public'`.
+
+**Funktionale Gegenprobe in Production (read-only):**
+`'  MiXeD@Example.COM '` → `mixed@example.com`; `''` → `NULL`; `'   '` → `NULL`; `NULL` → `NULL`;
+`'A@B.DE'` → `'a@b.de'`. Semantik unveraendert.
+
+## N9.7 Advisor — Vorher/Nachher
+
+Beide Advisor-Laeufe (nach #5 und nach dem Hardening) wurden maschinell verglichen:
+
+| Kategorie | Level | Entities vorher → nachher | |
+|---|---|---|---|
+| `function_search_path_mutable` | WARN | **1 → 0** | **Befund verschwunden** ✅ |
+| `rls_enabled_no_policy` | INFO | 5 → 5 | unveraendert, beabsichtigt ✅ |
+| `anon_security_definer_function_executable` | WARN | 149 → 149 | Altbefund, unveraendert |
+| `authenticated_security_definer_function_executable` | WARN | 156 → 156 | Altbefund, unveraendert |
+| `extension_in_public` | WARN | unveraendert | Altbefund |
+| `auth_leaked_password_protection` | WARN | unveraendert | Altbefund |
+
+`function_search_path_mutable` ist als Kategorie **vollstaendig entfallen** — vorher war
+`_hm_normalize_email` ihr einziger Eintrag. Gegenprobe in `pg_proc`: Funktionen in `public`
+ohne festen `search_path`: **1 → 0**.
+
+`rls_enabled_no_policy` fuer `hm_pending_client_invites` **bleibt bestehen und ist kein
+Fehler** — der in N8.8 begruendete Default-Deny-Vertrag. Die Tabelle wurde nicht angefasst:
+Owner `postgres`, RLS an, FORCE RLS an, 0 Policies, ACL unveraendert, 5 Indizes, 5 Constraints,
+`anon`/`authenticated` ohne `SELECT`. `INTENTIONAL_RLS_NO_POLICY_UNCHANGED=YES`.
+
+## N9.8 Side-Effect-Matrix
+
+Diesmal mit echter Vorher-Basis: alle Werte sind gegen den in N8.10 protokollierten
+Post-#5-Stand verglichen.
+
+| Metrik | Nach #5 | Nach Hardening | Δ |
+|---|---|---|---|
+| Ledger gesamt | 439 | **440** | +1 (nur das Hardening) |
+| Tabellen `public` | 293 | **293** | **0** |
+| Routinen `public` | 195 | **195** | **0** |
+| Policies `public` | 753 | **753** | **0** |
+| Trigger `public` | 190 | **190** | **0** |
+| Trigger `auth` | 1 | **1** | **0** |
+| profiles gesamt / nicht geloescht | 103 / 93 | **103 / 93** | **0** |
+| contacts | 44 | **44** | **0** |
+| access_grants gesamt / aktiv | 57 / 43 | **57 / 43** | **0** |
+| hm_connect_invitations | 0 | **0** | **0** |
+| user_roles | 64 | **64** | **0** |
+| auth.users | 64 | **64** | **0** |
+| **Ghost-Profile** | **39** | **39** | **0** ✅ |
+| **Duplikat-E-Mail-Gruppen** | **4** | **4** | **0** ✅ |
+| `hm_pending_client_invites` Zeilen | 0 | **0** | **0** |
+| Funktionen ohne festen `search_path` | 1 | **0** | −1 (Ziel) |
+
+Die uebrigen fuenf #5-Funktionen sind unveraendert — `prosrc` md5, `prosecdef`,
+`proconfig=search_path=public`, ACL und Owner identisch zu N8.6:
+`_hm_expire_pending_client_invites` `480bc920…`, `_hm_has_active_pending_client_invite`
+`2d7a311c…`, `create_pending_client_invite_v1` `098ba120…`, `bind_pending_client_invite_v1`
+`f3f54e2f…`, `invalidate_pending_client_invite_v1` `c1566e59…`.
+
+`UNEXPECTED_PROD_SIDE_EFFECTS=NONE`. Keine Datenmutation, keine Ghost-Bereinigung, keine
+E-Mail-Zuordnung geaendert.
+
+## N9.9 Kette weiterhin pausiert
+
+| Pruefung | Ergebnis |
+|---|---|
+| #5 `20260917150000` | **applied**, unveraendert ✅ |
+| #6 `20260917155000` | **nicht angewendet** ✅ |
+| #7 `20260917160000` | **nicht angewendet** ✅ |
+| #8 `20260920120000` | **nicht angewendet** ✅ |
+| #9 `20260920190000` | **nicht angewendet** ✅ |
+| Edge-Function-Deploy | **keiner** ✅ |
+| Vault | **nicht angefasst** ✅ |
+
+#5 bleibt inert: nichts in Production liest den Invite-Vertrag (Begruendung und Beweis in
+N8.11, durch dieses Hardening unveraendert — es hat weder Triggerkette noch Edge Functions
+noch Grants angefasst).
+
+## N9.10 Rollback-Pfad
+
+`docs/backups/mig_hardening_20260917152500_prestate_rollback_2026-09-21.sql` — **nicht
+ausgefuehrt**, aber in der isolierten Instanz **erprobt** (`EXIT=0`, `proconfig` zurueck auf
+`NULL`).
+
+Umfang exakt: ein `ALTER FUNCTION public._hm_normalize_email(text) RESET search_path` plus
+`DELETE` genau der Ledger-Zeile `20260917152500`. Zwei Guards vorweg (Body-md5, SECURITY,
+Volatilitaet muessen dem #5-Stand entsprechen; `proconfig` muss `search_path=public` sein),
+ein Postcheck im selben Transaktionsblock (`proconfig=NULL`, Body/ACL/SECURITY unveraendert,
+#5 weiterhin genau einmal im Ledger).
+
+Kein Datenbackup noetig — die Migration mutiert nichts.
+
+## N9.11 Ergebnis
+
+```
+HARDENING_APPLIED=YES
+APPLY_STATE=COMMITTED
+LEDGER_VERSION=20260917152500
+LEDGER_DRIFT_CREATED=NO
+
+NORMALIZE_EMAIL_BODY_UNCHANGED=YES
+NORMALIZE_EMAIL_PROSRC_MD5_BEFORE=4f7063e091f7c6a30525e78ce68da4ae
+NORMALIZE_EMAIL_PROSRC_MD5_AFTER=4f7063e091f7c6a30525e78ce68da4ae
+
+SEARCH_PATH_BEFORE=NULL
+SEARCH_PATH_AFTER=public
+
+ACL_UNCHANGED=YES
+SECURITY_INVOKER_UNCHANGED=YES
+VOLATILITY_UNCHANGED=YES
+OWNER_UNCHANGED=YES
+
+SEARCH_PATH_ADVISOR_FINDING_AFTER=GONE
+INTENTIONAL_RLS_NO_POLICY_UNCHANGED=YES
+
+UNEXPECTED_PROD_SIDE_EFFECTS=NONE
+
+MIG6_APPLIED=NO
+MIG7_APPLIED=NO
+MIG8_APPLIED=NO
+MIG9_APPLIED=NO
+RELATED_EDGE_FUNCTION_DEPLOYED=NO
+
+SAFE_TO_ANALYZE_MIG6=YES
+```
+
+Der in NACHTRAG 8 offene Punkt ist damit geschlossen. `MIG5_SECURITY_REVIEW` waere nach
+heutigem Stand **PASS** statt `PASS_WITH_DOCUMENTED_FINDING`; die Einstufung in NACHTRAG 8
+bleibt als historisch korrekte Momentaufnahme stehen.
+
+**STOPP.** Keine Migration #6–#9, kein Edge-Deploy, keine Ghost-Bereinigung, keine
+Vault-Aenderung, kein Push.
