@@ -961,3 +961,371 @@ SAFE_FOR_NEXT_RELEASE_STEP=YES
 `20260917130000_add_create_invoice_with_items_for_provider_v1` — setzt #2 voraus (jetzt erfüllt).
 
 **STOPP vor Migration #3.** Keine weitere Anwendung ohne ausdrückliche Freigabe.
+
+---
+
+# NACHTRAG 4 — Migration #3 angewendet (2026-09-21)
+
+**Status:** `MIGRATION_3_APPLIED`
+Angewendet: **ausschließlich** `20260917130000_add_create_invoice_with_items_for_provider_v1.sql`,
+unter der kanonischen Ledger-Version **`20260917130000`**.
+Kein `db push`, kein `migration repair`, keine `_prepared`-Migration, keine Migration #4–#9,
+keine Edge-/Scheduler-/Service-Aktion, kein Commit, kein Push.
+## N4.1 Analyse von #3 — SQL vollständig gelesen
+
+Erzeugtes Objekt — **eine** neue Funktion, sonst nichts:
+
+```
+public.create_invoice_with_items_for_provider(
+  p_provider_id uuid, p_appointment_id uuid, p_invoice jsonb, p_items jsonb DEFAULT '[]'::jsonb
+) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+```
+
+| Aspekt | Befund |
+|---|---|
+| **Gelesene Tabellen** | `profiles`, `access_grants`, `horses`, `appointments`, `inventory_items` |
+| **Geschriebene Tabellen** | `invoices`, `invoice_items`, `invoice_appointments` |
+| **Aufgerufene Funktionen** | `_hm_has_hufmanager_access_v1(uuid)`, `is_admin(uuid)` |
+| **Grants** | `REVOKE ALL … FROM PUBLIC, anon, authenticated` · `GRANT EXECUTE … TO service_role` |
+| **Abhängigkeit #2** | **hart** — schreibt `invoice_appointments.source='autoflow'` und verlässt sich auf `idx_invoice_appointments_autoflow_unique` |
+| **Abhängigkeit #1** | keine direkte — `create_customer_with_contact` wird nicht aufgerufen |
+| **Überschreibt Bestehendes?** | **nein** — `CREATE OR REPLACE`, aber die Signatur existiert in Production nicht (0 Treffer). Die kanonische `create_invoice_with_items(jsonb,jsonb)` hat einen anderen Namen und wird nicht berührt. |
+
+## N4.2 Precheck — PASS
+
+| Prüfung | Ergebnis |
+|---|---|
+| `git status` / `git diff HEAD` des Artefakts | leer — unverändert seit `110dffc5` |
+| md5 roh | `216b7b4827f452c4b6a51ee5a9be34d9` |
+| **md5 ohne trailing NL** | **`427b0dfbfa98b518f92eaeacc6d3b086`** |
+| sha256 roh | `7b15c78ab1a78904f6a18892fb33e939850ade147c3b848ed934d42cd8a24670` |
+| Größe | 12375 B roh / 12374 B ohne NL / **12342 UTF-8-Zeichen** |
+| Ledger #1 `20260917120000` | genau **1×** ✅ |
+| Ledger #2 `20260917125000` | genau **1×** ✅ |
+| Ledger #3 `20260917130000` | **0×** ✅ |
+| Ledger gesamt / Kopf | 436 / `20260917125000` |
+| Signaturkollision | **0** ✅ |
+| Abhängige Funktionen vorhanden | `_hm_has_hufmanager_access_v1(uuid)`→bool ✅, `is_admin(uuid)`→bool ✅ |
+| Benötigte Spalten (12 geprüft) | **12 von 12 vorhanden** ✅ |
+| `invoices`-Zielspalten (13) | **13 von 13 vorhanden**, `invoice_number` nullable ✅ |
+| `invoice_items`-Zielspalten (6) | **6 von 6 vorhanden** ✅ |
+| Strukturen aus #2 | `source` + beide Indizes vorhanden ✅ |
+
+**Trigger-Vorprüfung:** `invoices` trägt 3 Trigger (`trg_validate_invoice`,
+`trg_invoice_notification`, `update_invoices_updated_at`). Alle drei wurden gegen
+`net.http*` / `pg_net` geprüft — **keiner macht HTTP-Aufrufe**, alle sind rein
+transaktional. Ein Rollback-Test kann also keine Mail/Webhook auslösen.
+`validate_invoice_data` erlaubt Status `draft` und verbietet negative Totals.
+
+## N4.3 Security- und Money-Review — PASS, kein P0
+
+### AUTH / TENANT
+
+| Anforderung | Umsetzung in #3 | Bewertung |
+|---|---|---|
+| `anon` darf die RPC nicht nutzen | `REVOKE ALL … FROM PUBLIC, anon, authenticated`, nur `service_role` | ✅ |
+| Provider-Identität nicht clientseitig fälschbar | `p_provider_id` ist Parameter — die Isolation ruht **vollständig auf dem Grant**. `authenticated`/`anon` haben kein EXECUTE und können `service_role` nicht erlangen. | ✅ (siehe Anmerkung) |
+| Provider A darf nicht für Provider B abrechnen | `v_provider_id <> p_provider_id` → Abbruch | ✅ |
+| Kunde gehört zum Provider | `profiles.created_by_provider_id = p_provider_id` **oder** aktiver `access_grants`-Eintrag; zusätzlich `deleted_at IS NULL` | ✅ |
+| Pferd gehört zum Kunden | `horses.owner_id = v_client_id AND deleted_at IS NULL` | ✅ |
+| Material gehört zum Provider | `inventory_items.user_id = p_provider_id` | ✅ |
+| Appointment gehört zum Provider | `appointments.provider_id = p_provider_id` | ✅ |
+| Entitlement-Gate | `_hm_has_hufmanager_access_v1(p_provider_id) OR is_admin(p_provider_id)` | ✅ |
+
+> **Anmerkung (bewusste Designentscheidung, kein Fund):** Anders als die kanonische
+> `create_invoice_with_items` leitet diese Funktion den handelnden Provider **nicht**
+> aus `auth.uid()` ab, sondern aus einem Parameter — weil es im Trigger-/Edge-Kontext
+> keine Session gibt. Die Mandantentrennung hängt damit am Grant. Das ist im
+> Migrationskopf explizit begründet. `is_master_admin()` wird bewusst **nicht**
+> wiederverwendet; das entfernt einen möglichen Bypass, statt einen hinzuzufügen.
+
+### MONEY
+
+| Anforderung | Umsetzung | Bewertung |
+|---|---|---|
+| `quantity > 0` | `IF v_item.quantity IS NULL OR v_item.quantity <= 0 THEN RAISE` | ✅ |
+| `price >= 0` | `IF v_item.unit_price IS NULL OR v_item.unit_price < 0 THEN RAISE` | ✅ |
+| `line_total` nicht manipulierbar | Client-Wert wird gegen `round(qty*price,2)` geprüft (`IS DISTINCT FROM` → Abbruch) **und** beim INSERT wird der **serverseitig berechnete** Wert geschrieben, nicht der Client-Wert | ✅ doppelt abgesichert |
+| `invoice_total` serverseitig | Client-Wert wird gegen die Positionssumme geprüft; geschrieben wird `v_items_total` (serverseitig) | ✅ |
+| keine negativen/inkonsistenten Totals | `< 0` verboten, max. 2 Nachkommastellen, Summengleichheit erzwungen; zusätzlich Trigger `validate_invoice_data` | ✅ |
+
+### ATOMICITY
+
+Rechnungskopf, Positionen und Autoflow-Verknüpfung liegen in **einer** plpgsql-Funktion,
+also in einer Transaktion. Jedes `RAISE` rollt alles zurück. Der innere
+`EXCEPTION WHEN unique_violation`-Block bei der Verknüpfung fängt **nicht ab**, sondern
+**re-raised** mit `HINT='autoflow_duplicate'` — es gibt also bewusst kein
+`ON CONFLICT DO NOTHING` und damit keine Rechnung ohne Verknüpfung.
+
+### SECURITY DEFINER
+
+`SET search_path = public` ✅ · **alle** Objektreferenzen schema-qualifiziert
+(`public.profiles`, `public.horses`, …) → auch ein untergeschobenes `pg_temp`-Objekt
+kann nichts shadowen ✅ · Grants minimal (`service_role` only) ✅.
+
+## N4.4 Ausführungsweg — drei blockierte MCP-Versuche, dann psql
+
+`apply_migration` hätte erneut eine serverseitige Version vergeben → **nicht verwendet**.
+
+Der erste Weg war derselbe wie bei #2: eine Transaktion über den MCP-`execute_sql`,
+Migrationstext einmal in einer `temp table`, von dort ausgeführt **und** in `statements`
+geschrieben, mit md5-Guard. **Drei Versuche, drei Connector-Timeouts.** Nach jedem Versuch
+wurde gemäß N.3 erst read-only der Zustand erhoben, nie blind wiederholt:
+
+| Versuch | Zustandsprüfung danach |
+|---|---|
+| 1–3 | `fn_da=0 · ledger_mig3=0 · ledger_total=436 · fns=187` → jeweils vollständig zurückgerollt |
+
+Nutzlast ~13 KB. Beobachtet in dieser Sitzung: ~4 KB ging durch (#2), ~7 KB scheiterte,
+~13 KB scheiterte 3/3 — strukturell, nicht transient. Der MCP-`execute_sql`-Pfad ist für ein
+Artefakt dieser Größe nicht zuverlässig.
+
+**Bewusst nicht ausgewichen** auf `apply_migration` (Drift), auf ein Aufteilen in DDL-Call +
+Ledger-Call (gäbe die Atomarität auf und erzeugte die „Kategorie 3"-Lücke aus §4a) oder auf
+das Strippen des Kommentarkopfs (bräche `md5(statements) = md5(Repo-Datei)`, die Invariante
+der gesamten Abgleichmethodik aus §2/§8).
+
+Gewählter Weg: **direktes `psql` über den Session-Pooler**, mit dem lokal aus den echten
+Repo-Bytes generierten Skript `docs/backups/mig3_20260917130000_apply_canonical.sql`.
+
+### N4.4a Zwei Fehler auf dem Weg dorthin — beide gefunden und behoben
+
+**1. Wrapper meldete Erfolg bei Fehlschlag.** Die erste Fassung des Runners wertete
+`RC=${PIPESTATUS[1]}` aus — das ist der Exitcode von `tee`, nicht von `psql`. `tee` liefert 0,
+auch wenn `psql` mit `FATAL: password authentication failed` abbricht. Der Wrapper meldete
+deshalb „COMMIT erfolgreich", obwohl nichts angewendet wurde. Der tatsächliche DB-Zustand
+(read-only geprüft) war zu keinem Zeitpunkt betroffen.
+
+Behoben mit `set -o pipefail` + `PSQL_RC=${PIPESTATUS[0]}`, und **nachgewiesen statt behauptet**
+gegen ein simuliert fehlschlagendes `psql`:
+
+| Muster | simuliertes `psql` exit 2 | Meldung |
+|---|---|---|
+| alt (`PIPESTATUS[1]`, kein pipefail) | RC=0 | „COMMIT erfolgreich" — falsch |
+| neu (`pipefail` + `PIPESTATUS[0]`) | RC=2 | „FEHLER, nicht erneut ausführen" — korrekt |
+| neu, Erfolgsfall | RC=0 | Erfolg korrekt erkannt |
+
+**2. `sslmode` fehlte.** Der Connection-String kam ohne `sslmode`, der Pooler verlangt SSL.
+Behoben durch `sslmode=require`; damit ist eine zustande gekommene Verbindung zwingend
+verschlüsselt. Host, Port, User und DB werden seitdem aus `supabase/.temp/pooler-url`
+**geparst** statt konstruiert, mit Abbruch falls der User nicht exakt `postgres.<project-ref>` ist.
+
+### N4.4b Verbindungsdiagnose (read-only, keine Writes)
+
+| Prüfung | Ergebnis |
+|---|---|
+| `db.<ref>.supabase.co` DNS | nur **AAAA** — der Direct Host ist IPv6-only, kein A-Record |
+| Pooler DNS | nur **A** (3 Adressen), IPv4-only |
+| IPv6 des Servers | globale Adresse + Default-Route, Internet-IPv6 funktioniert |
+| TCP :5432 Direct / Pooler | **beide offen** (6543 ebenfalls) |
+| `DIRECT_CONNECTION_TEST` | **PASS** (`current_user=postgres`, PostgreSQL 17.6) |
+| `POOLER_CONNECTION_TEST` | **PASS** (`current_user=postgres`) |
+
+Damit war `UNREACHABLE_IPV6` ausgeschlossen und das Passwort validiert. Nebenbefund, der die
+ursprüngliche Fehlermeldung erklärt: der Pooler meldet als `current_user` die zugrundeliegende
+Rolle **`postgres`** — daher stand im FATAL „for user postgres", obwohl korrekt
+`postgres.vnschgjxkzzwzefqlrji` übergeben wurde. Das war also nie ein falscher Benutzer.
+
+Das Passwort wurde ausschließlich interaktiv über `/dev/tty` eingelesen, nur an `psql`
+übergeben und danach aus der Umgebung entfernt — es erscheint nicht am Bildschirm, nicht in
+der History, nicht in einer Datei, nicht im Log und in keiner Dokumentation.
+
+## N4.5 Apply
+
+`psql` über den Session-Pooler (`Port 5432`, `postgres.vnschgjxkzzwzefqlrji`, `sslmode=require`),
+genau **ein** Versuch, kein Retry. Client-Protokoll:
+
+```
+BEGIN
+CREATE TABLE
+INSERT 0 1
+DO
+INSERT 0 1
+COMMIT
+```
+
+Das ist die Client-Sicht; maßgeblich ist der anschließend read-only erhobene DB-Zustand (N4.6).
+
+Das Skript enthält den Migrationstext **einmal**: er wird von dort per `EXECUTE` ausgeführt
+**und** von dort in `statements` geschrieben — ausgeführter und protokollierter Text sind
+derselbe Wert, nicht zwei verglichene Kopien. Ein md5-Guard hätte vor jedem Commit abgebrochen,
+falls der Text nicht `427b0dfbfa98b518f92eaeacc6d3b086` entspricht.
+
+> Bei der Generierung des Skripts hatten sich zunächst ein führendes und ein abschließendes
+> `\n` in den dollar-quoted Text geschmuggelt (Zeilenumbrüche um die Marker). Das fiel bei der
+> md5-Verifikation auf und wurde vor jedem Produktionskontakt korrigiert.
+
+## N4.6 Postcheck — PASS
+
+### Ledger
+
+| Prüfung | Erwartet | Gemessen | Ergebnis |
+|---|---|---|---|
+| `version` | `20260917130000` | `20260917130000` | ✅ **kanonisch** |
+| Häufigkeit | genau 1 | 1 | ✅ |
+| **zusätzliche automatisch erzeugte Version** | 0 | **0** | ✅ kein Drift |
+| `name` | `add_create_invoice_with_items_for_provider_v1` | identisch | ✅ |
+| `statements` md5 / Länge | `427b0dfbfa98b518f92eaeacc6d3b086` / 12342 | identisch | ✅ |
+| `array_length(statements,1)` | 1 | 1 | ✅ |
+| `idempotency_key` / `rollback` | NULL / NULL | NULL / NULL | ✅ |
+| Ledger gesamt | 437 | **437** | ✅ exakt +1 |
+| Ledger-Kopf | `20260917130000` | identisch | ✅ |
+| #1 `20260917120000` / #2 `20260917125000` | je 1 | je **1** | ✅ |
+
+### Funktion
+
+| Attribut | Erwartet | Gemessen | Ergebnis |
+|---|---|---|---|
+| Signatur | `create_invoice_with_items_for_provider(uuid,uuid,jsonb,jsonb)` | identisch | ✅ |
+| Parameter | `p_provider_id, p_appointment_id, p_invoice, p_items` | identisch | ✅ |
+| Rückgabetyp / Sprache | `jsonb` / `plpgsql` | identisch | ✅ |
+| **Body md5** | `31ff1f228992a5b3ee2e6093ee773c45` (6853 Zeichen) | identisch | ✅ **byte-identisch zum Artefakt** |
+| `SECURITY DEFINER` | true | true | ✅ |
+| `proconfig` | `search_path=public` | identisch | ✅ |
+| Owner | `postgres` | `postgres` | ✅ |
+
+Der Body-md5 wurde lokal aus dem Repo-Artefakt zwischen `AS $$` und `$$;` extrahiert und gegen
+`pg_proc.prosrc` verglichen — keine Namensgleichheit, sondern Inhaltsgleichheit.
+
+### Grants — vorher / nachher
+
+| | vor #3 | nach #3 |
+|---|---|---|
+| Funktion existierte | **nein** (0 Treffer) | ja |
+| ACL | — | `postgres=X/postgres \| service_role=X/postgres` |
+
+| Rolle | EXECUTE | Soll |
+|---|---|---|
+| `anon` | **false** | revoked ✅ |
+| `authenticated` | **false** | revoked ✅ |
+| `PUBLIC` | nicht in der ACL | revoked ✅ |
+| `service_role` | **true** | granted ✅ |
+| `postgres` (Owner) | true | Owner-Default ✅ |
+
+### Keine unerwarteten Schemaänderungen
+
+| Katalog | Pre | Post | Ergebnis |
+|---|---|---|---|
+| public functions | 187 | **188** | ✅ exakt +1 |
+| public tables | 292 | **292** | ✅ |
+| Policies gesamt | 835 | **835** | ✅ |
+| `invoices` / `invoice_items` / `invoice_appointments` | 11 / 12 / 0 | identisch | ✅ keine Datenänderung |
+| Migration #1 Body-md5 | `7bea6a4333eb55a8a9bb314fa9f586a4` | identisch | ✅ **#1 unverändert** |
+| Migration #2 Indizes | 2 | **2** | ✅ **#2 unverändert** |
+| kanonische `create_invoice_with_items` Body-md5 | `dcc2f55383ab7a207a7ced61167e7896` | identisch | ✅ **nicht überschrieben** |
+| Temp-Reste (`_mig%`, `pg_temp%`) | — | **0** | ✅ |
+| `_prepared`-Objekte | 0 | **0** | ✅ nichts aktiviert |
+| #4–#9: Funktionen / Ledger-Einträge | 0 / 0 | **0 / 0** | ✅ kein weiterer Release-Step |
+
+### Legacy-Ledger-Drift unverändert
+
+Fingerprint über alle übrigen Ledger-Zeilen (`where version <> '20260917130000'`):
+
+| | Pre | Post |
+|---|---|---|
+| `ledger_others_md5` | `b6c94dd83ef0891b8131202eadd3f5c3` | **`b6c94dd83ef0891b8131202eadd3f5c3`** ✅ |
+| `n_others` | 436 | **436** ✅ |
+
+**Bit-identisch** → keine andere Ledger-Zeile verändert, keine historische Drift repariert.
+
+## N4.7 Testmatrix — PASS
+
+Eine Transaktion, die sich per `RAISE EXCEPTION` zwingend selbst zurückrollt; Ergebnis über die
+Fehlermeldung. Fixtures: **zwei verschiedene echte Provider** mit je eigenem Kunden, Pferd,
+Material und Termin — Cross-Tenant wurde also gegen echte Mandantengrenzen geprüft, nicht simuliert.
+
+| # | Fall | Erwartet | Ergebnis |
+|---|---|---|---|
+| **T1** | Erfolgsfall: eigener Provider, Kunde, Pferd, Material, 2 Positionen, Termin | Rechnung + Positionen + Autoflow-Link | `OK` — `total=35.00` **serverseitig berechnet**, `provider_id` korrekt, **2** Positionen, **1** Autoflow-Link ✅ |
+| **T2** | Aufruf als `anon` | verweigert | `DENIED(insufficient_privilege)` ✅ |
+| **T3** | fremder Kunde (Provider A → Kunde von B) | verweigert | `DENIED(Invoice client is not accessible…)` ✅ |
+| **T4** | fremdes Pferd | verweigert | `DENIED(Invoice horse does not belong…)` ✅ |
+| **T5** | fremdes Material | verweigert | `DENIED(Invoice material does not belong…)` ✅ |
+| **T6** | fremder Termin | verweigert | `DENIED(Appointment does not belong…)` ✅ |
+| **T7** | manipuliertes `line_total` | verweigert | `DENIED(Invoice item total does not match…)` ✅ |
+| **T8** | manipuliertes `invoice_total` | verweigert | `DENIED(Invoice total does not match…)` ✅ |
+| **T9** | negative Menge | verweigert | `DENIED(quantity must be greater than zero)` ✅ |
+| **T10** | negativer Preis | verweigert | `DENIED(price cannot be negative)` ✅ |
+| **T11** | Atomicity: 2. Position ungültig | kein Kopf, keine Teil-Position | `DENIED` ✅ |
+| **T12** | Idempotenz-Integration mit #2: derselbe Termin erneut | verweigert | `DENIED(autoflow_duplicate)` ✅ |
+
+**Bilanz innerhalb der Testtransaktion:** `INV=12 (soll 12)`, `ITEMS=14 (soll 14)`, `LINKS=1 (soll 1)` —
+nur T1 hat geschrieben, **alle** fehlgeschlagenen Aufrufe haben nichts hinterlassen. Das ist der
+Atomicity-Nachweis: kein kopfloser Rechnungskopf, keine verwaiste Position.
+
+**Nach dem Rollback verifiziert:** `invoices=11`, `invoice_items=12`, `invoice_appointments=0`,
+0 Positionen mit Testtiteln, `profiles=103`, `contacts=44` — **keine Testdaten in Production,
+keine Kundendaten verändert.**
+
+## N4.8 Advisors — diesmal erreichbar
+
+Anders als bei #1 und #2 lieferte `get_advisors` diesmal Ergebnisse. **`TOOLING_BLOCKED=NO`.**
+
+| Advisor | Gruppen | Findings | ERROR-Level | betrifft #3 |
+|---|---|---|---|---|
+| Security | 5 | 311 | **0** | **0** |
+| Performance | 6 | 2188 | **0** | **0** |
+
+Security-Verteilung: `anon_security_definer_function_executable` 149 · `authenticated_…` 156 ·
+`rls_enabled_no_policy` 4 (INFO) · `extension_in_public` 1 · `auth_leaked_password_protection` 1.
+Performance: `multiple_permissive_policies` 1085 · `auth_rls_initplan` 668 ·
+`unindexed_foreign_keys` 267 · `unused_index` 160 · `duplicate_index` 7 · `table_bloat` 1.
+
+**Entscheidend:** `create_invoice_with_items_for_provider` taucht in **keinem** Finding auf —
+insbesondere **nicht** in den beiden SECURITY-DEFINER-Listen. Das bestätigt unabhängig, dass die
+`REVOKE`-Anweisung gegriffen hat. Auch die #2-Indizes werden weder als `unused_index` noch als
+`duplicate_index` geführt.
+
+Sämtliche 2499 Findings sind projektweite Altlasten, die vor #3 bestanden; #3 hat kein einziges
+hinzugefügt. Sie sind nicht Gegenstand dieses Release-Schritts.
+
+## N4.9 Ergebnis
+
+```
+MIGRATION_3_FILE_INTEGRITY=PASS
+MIGRATION_3_PRECHECK=PASS
+MIGRATION_3_SECURITY_REVIEW=PASS
+MIGRATION_3_APPLIED=YES
+MIGRATION_3_APPLY_METHOD=PSQL
+MIGRATION_3_POSTCHECK=PASS
+MIGRATION_3_CANONICAL_VERSION=20260917130000
+
+INVOICE_SUCCESS_TEST=PASS
+ANON_TEST=PASS
+CROSS_TENANT_CLIENT_TEST=PASS
+CROSS_TENANT_HORSE_TEST=PASS
+CROSS_TENANT_INVENTORY_TEST=PASS
+CROSS_TENANT_APPOINTMENT_TEST=PASS
+LINE_TOTAL_MANIPULATION_TEST=PASS
+INVOICE_TOTAL_MANIPULATION_TEST=PASS
+NEGATIVE_VALUE_TEST=PASS
+ATOMICITY_TEST=PASS
+IDEMPOTENCY_INTEGRATION_TEST=PASS
+
+TOOLING_BLOCKED=NO
+PRODUCTION_UNEXPECTED_SIDE_EFFECTS=NONE
+LEDGER_DRIFT_CREATED=NO
+LEGACY_LEDGER_DRIFT_UNCHANGED=YES
+SAFE_FOR_NEXT_RELEASE_STEP=YES
+```
+
+## N4.10 Aktualisiertes Mengengerüst
+
+| | nach NACHTRAG 3 | jetzt |
+|---|---|---|
+| Ledger-Einträge | 436 | **437** |
+| Ledger-Kopf | `20260917125000` | **`20260917130000`** |
+| Release-Migrationen offen | 7 (#3–#9) | **6 (#4–#9)** |
+| durch das Werkzeug erzeugte Drift | 0 | **0** ✅ |
+
+Abgeleitet (Arithmetik, nicht per CLI erhoben): „nur lokal" 402 → **401**, beidseitig 79 → **80**,
+„nur remote" **357** unverändert. Die historische Drift (§3 Klasse B, 317 Einträge) besteht fort.
+**`db push` bleibt gesperrt** — §6 gilt unverändert.
+
+**Nächster Release-Schritt:** Migration **#4**
+`20260917140000_fix_autoflow_trigger_auth_vault_v1` — ersetzt den aktiven Trigger
+`autoflow_on_appointment_completed/_signed`; laut §5 Risiko **mittel**, Vault ist leer, der
+HTTP-Call wird also übersprungen (`RAISE WARNING`).
+
+**STOPP vor Migration #4.** Keine weitere Anwendung ohne ausdrückliche Freigabe.
