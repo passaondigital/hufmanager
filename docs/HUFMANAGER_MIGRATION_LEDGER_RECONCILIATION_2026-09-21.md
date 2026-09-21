@@ -2682,3 +2682,354 @@ bleibt als historisch korrekte Momentaufnahme stehen.
 
 **STOPP.** Keine Migration #6–#9, kein Edge-Deploy, keine Ghost-Bereinigung, keine
 Vault-Aenderung, kein Push.
+
+---
+
+# NACHTRAG 10 — Migration #6 Production Apply (2026-09-21)
+
+`20260917155000_fix_invite_tenant_auto_assign_v1`
+
+Zweites Glied der Invite-/Ghost-Kette. Angewendet als Einzelschritt; #7–#9 bleiben aus.
+Ergebnis: **COMMITTED**, exakt eine Funktionsdefinition ersetzt, ACL nachweislich
+unveraendert, keine Bestandsdaten beruehrt, kein neuer Advisor-Befund.
+
+**Wichtigste Einordnung vorweg: #6 schliesst die P0-Luecke NICHT allein.**
+Siehe N10.8.
+
+## N10.1 Artefakt-Integritaet
+
+| Groesse | Wert |
+|---|---|
+| `MIG6_FILE` | `supabase/migrations/20260917155000_fix_invite_tenant_auto_assign_v1.sql` |
+| `MIG6_MD5` | `30ee5a9e435a53c6371adc5a482c3f3f` |
+| `MIG6_SHA256` | `09e5f54921e65368af92434ddae3b2cd651773b20efed8072f92645af59e3420` |
+| Groesse / Zeilen | 9125 Bytes / 224 (davon 103 Kopfkommentar) |
+| Apply-Artefakt | `docs/backups/mig6_20260917155000_apply_canonical.sql` (`5625b672e72a7506ef7841a0f6c6dfeb`, 17591 Bytes) |
+| Rollback | `docs/backups/mig6_20260917155000_prestate_rollback_2026-09-21.sql` (`3c5b7197d8f59874597c6467370dc27f`) |
+
+Statisches Audit: **1 DDL-Statement, 0 DML, 0 destruktiv**. Das
+`INSERT INTO access_grants` steht im Funktionskoerper und laeuft zur Triggerlaufzeit,
+nicht beim Apply. Keine Grants, keine RLS, keine Trigger-DDL, keine Tabellen-DDL.
+
+## N10.2 Prestate (read-only, vor dem Apply)
+
+Ledger: `total=440`, `max=20260917152500`, #5 = 1, Hardening = 1, **#6 = 0**, #7–#9 = 0.
+
+`public.auto_assign_client_to_provider()` vor dem Apply:
+
+| Attribut | Wert |
+|---|---|
+| `prosrc` md5 | `b015f90bd1e72e9680f8ad91129f7591` (1834 Bytes) |
+| `pg_get_functiondef` md5 | `8e37ff3a5a0fadbf2fcfe7c08bd311fe` (2007 Bytes) |
+| Owner / Sprache / Rueckgabetyp | `postgres` / `plpgsql` / `trigger`, `pronargs=0` |
+| SECURITY DEFINER / `search_path` | `true` / `search_path=public` |
+| Volatilitaet / strict / leakproof / parallel | `v` / `false` / `false` / `u` |
+| ACL | `=X/postgres \| postgres=X/postgres \| anon=X/postgres \| authenticated=X/postgres \| service_role=X/postgres` |
+
+`prosrc` und `functiondef` wurden **base64-kodiert** aus Production geholt, damit kein
+Zeichen ueber JSON-Escaping verlorengeht.
+
+## N10.3 Der exakte Diff — byte-genau verifiziert
+
+Der Kopfkommentar von #6 behauptet, der restliche Funktionskoerper sei „Zeichen fuer
+Zeichen der bisherige". Gegen `pg_proc.prosrc` gediffed:
+
+```
+Hunks: 2 · Zeilen hinzugefuegt: 20 · Zeilen ENTFERNT: 0
+```
+
+Die **gesamte semantische Aenderung sind 7 Zeilen**:
+
+```sql
+invited_email text;                                    -- Deklaration
+SELECT au.email INTO invited_email
+  FROM auth.users au WHERE au.id = NEW.user_id;        -- E-Mail lesen
+IF public._hm_has_active_pending_client_invite(invited_email) THEN
+  RETURN NEW;                                          -- Fallback unterdruecken
+END IF;
+```
+
+Alles Uebrige ist unveraendert. Die Behauptung stimmt.
+
+### Warum kein Pfad trotz Invite einen fremden Provider setzen kann
+
+Die Funktion enthaelt **genau ein** `INSERT INTO access_grants`, ganz am Ende, erreichbar
+erst nachdem saemtliche Guards durchgefallen sind. Der Invite-Check ist der **zweite**
+Guard, direkt nach der Rollenpruefung, mit sofortigem `RETURN NEW`. Es existiert damit
+kein Kontrollfluss von „aktiver Invite" zum Insert.
+
+Die zweite grant-erzeugende Triggerfunktion `auto_create_access_grant_for_client` vergibt
+ausschliesslich an `NEW.created_by_provider_id` — also nie generisch, nie an einen fremden
+Provider. `NO GRANT` bleibt erlaubt, `WRONG GRANT` ausgeschlossen.
+
+## N10.4 Probelauf vor Production
+
+Vollstaendiger Rundlauf in `mig34-isolated-test` (Schema- und Datenklon, 289 Tabellen).
+Die dortige Funktion hatte denselben `prosrc`-md5 und dieselben zwei Trigger.
+
+**Der Prestate-Guard feuert nachweislich.** Weil die Testinstanz die Funktion unter
+`supabase_admin` fuehrt, brach das unveraenderte Artefakt korrekt ab:
+`ABORT: Owner ist "supabase_admin" statt postgres.`
+
+Mit an die Instanz angepasster Owner-/ACL-Erwartung (alle `prosrc`-Guards unveraendert):
+
+| Pruefung | Ergebnis |
+|---|---|
+| Apply, alle fuenf Guards | `EXIT=0` |
+| `prosrc` md5 danach | `b6f62858b4de1b61a9a7503e1668e209` — exakt der berechnete Zielwert |
+| **ACL vor/nach** | **byte-identisch** — `CREATE OR REPLACE` fasst Rechte nicht an |
+| Owner/SECDEF/search_path/Volatilitaet/strict/leakproof/parallel/rettype | unveraendert |
+| Trigger | weiterhin 2, aktiviert |
+| Rollback | `EXIT=0`, zurueck auf `b015f90b…`, Datenklon unberuehrt |
+
+### Funktionale Verhaltensproben
+
+In Transaktionen mit `ROLLBACK`, sodass nichts zurueckblieb (Ausgabe nur Zahlen/Booleans):
+
+| Fall | Erwartung | Ergebnis |
+|---|---|---|
+| kein Invite | Legacy-Fallback greift | 1 aktiver Grant ✅ |
+| **aktiver Invite** | **kein Grant** | **0** ✅ |
+| abgelaufener Invite | zaehlt nicht als aktiv | 1 ✅ |
+| invalidierter Invite | zaehlt nicht als aktiv | 1 ✅ |
+| verbrauchter Invite | zaehlt nicht als aktiv | 1 ✅ |
+| **E-Mail in GROSSSCHREIBUNG** | Normalisierung greift | **0** ✅ |
+
+Der letzte Fall ist der aussagekraeftigste: Invite in Kleinschreibung angelegt, Auth-User
+mit Grossbuchstaben erzeugt — die Unterdrueckung greift trotzdem. Das validiert
+`_hm_normalize_email` in der echten Triggerkette.
+
+## N10.5 Apply
+
+`psql` ueber den Session Pooler, genau ein Aufruf, keine Retry-Schleife,
+`PGSSLMODE=require`, Passwort ausschliesslich interaktiv ueber `/dev/tty`. Kein `db push`,
+kein `apply_migration`, kein `_prepared`, kein Ledger-Repair, keine ACL-Aenderung.
+
+Das Artefakt trug fuenf Sicherungen: md5-Guard auf den Migrationstext, Prestate-Guard
+(`prosrc`, SECDEF, `search_path`, Owner, **ACL**), Abhaengigkeits-Guard auf den
+#5-Vertrag, Poststate-Guard (Zielwert plus Owner/SECDEF/`search_path`/Volatilitaet/**ACL
+unveraendert**) und eine Trigger-Bindungspruefung.
+
+`PSQL_EXIT=0` — wie zuvor nicht als Beweis akzeptiert.
+
+## N10.6 Postcheck — Ledger
+
+| Pruefung | Ergebnis |
+|---|---|
+| `20260917155000` | exakt **1** ✅ |
+| Phantomversion (`LIKE '2026091715500%'`) | **1** (nur die kanonische) ✅ |
+| `ledger_max` | `20260917155000` ✅ |
+| `ledger_total` | 440 → **441** (+1) ✅ |
+| #1–#4 | zusammen weiterhin 4 ✅ |
+| #5 / Hardening | je weiterhin 1, `statements[1]` md5 unveraendert ✅ |
+| #7 / #8 / #9 | **0 / 0 / 0** ✅ |
+| `LEDGER_DRIFT_CREATED` | **NO** ✅ |
+
+Ledger-Zeile: `name=fix_invite_tenant_auto_assign_v1`,
+`created_by=passaondigital@gmail.com`, `idempotency_key=NULL`, `rollback=NULL`,
+`array_length(statements)=1`, `md5(statements[1])=30ee5a9e435a53c6371adc5a482c3f3f`,
+`octet_length(statements[1])=9125` — beides exakt die Repo-Datei.
+
+## N10.7 Postcheck — Funktion
+
+**Die Live-Funktion in Production ist byte-identisch mit dem Repo-Migrationskoerper.**
+`prosrc` base64 aus PROD geholt, lokal dekodiert und gegen die Repo-Datei gediffed:
+kein einziges Zeichen Abweichung, 2825 Bytes auf beiden Seiten.
+
+| Attribut | Vorher | Nachher | |
+|---|---|---|---|
+| `prosrc` md5 | `b015f90bd1e72e9680f8ad91129f7591` | `b6f62858b4de1b61a9a7503e1668e209` | ← beabsichtigt |
+| `prosrc` Bytes | 1834 | 2825 | +991 (7 Codezeilen + Kommentar) |
+| Owner | `postgres` | `postgres` | ✅ |
+| Sprache / Rueckgabetyp / `pronargs` | `plpgsql` / `trigger` / 0 | identisch | ✅ |
+| SECURITY DEFINER | `true` | `true` | ✅ |
+| `search_path` | `public` | `public` | ✅ |
+| Volatilitaet | `v` | `v` | ✅ |
+| strict / leakproof / parallel | `f` / `f` / `u` | identisch | ✅ |
+| **ACL** | `=X/postgres \| postgres=X \| anon=X \| authenticated=X \| service_role=X` | **identisch** | ✅ |
+| `has_function_privilege` postgres/anon/authenticated/authenticator/service_role | `t/t/t/t/t` | identisch | ✅ |
+| Trigger auf der Funktion | 2 aktiv | 2 aktiv | ✅ |
+
+`ACL_UNCHANGED=YES`, `SECURITY_DEFINER_UNCHANGED=YES`, `SEARCH_PATH_UNCHANGED=YES`,
+`OWNER_UNCHANGED=YES`, `VOLATILITY_UNCHANGED=YES`.
+
+### Warum in Production kein Schreibtest stattfand
+
+Ein funktionaler Test in PROD haette einen Auth-User anlegen muessen. An derselben
+`user_roles`-Tabelle haengt `notify_new_registration`, das `net.http_post` ausfuehrt
+(ebenso `notify_admin_on_profile_change` auf `profiles`). pg_net stellt die Anfrage zwar
+transaktional in die Queue, aber der Hintergrund-Worker pollt laufend — ein `ROLLBACK`
+kann eine bereits abgeholte Admin-Benachrichtigung nicht zurueckholen. Ein Schreibtest
+waere damit nicht nebenwirkungsfrei gewesen. Die Verhaltensproben aus N10.4 liefen
+stattdessen in der isolierten Instanz gegen eine byte-identische Funktion; in PROD wurde
+read-only semantisch verifiziert:
+
+```
+_hm_has_active_pending_client_invite('unbekannt@…') = false
+_hm_has_active_pending_client_invite(NULL)          = false
+_hm_has_active_pending_client_invite('')            = false
+_hm_normalize_email('  GROSS@Example.COM ')         = 'gross@example.com'
+aktive Invites (consumed IS NULL AND invalidated IS NULL AND expires_at > now()) = 0
+```
+
+## N10.8 #6 ist inert — und schliesst die P0-Luecke NICHT allein
+
+`MIG6_P0_FIXED_BY_ITSELF=NO`. Das ist der wichtigste Satz dieses Nachtrags.
+
+`hm_pending_client_invites` hat **0 Zeilen**. Schreiben kann dort nur `service_role` bzw.
+eine SECURITY-DEFINER-Funktion; der einzige vorgesehene Schreiber ist die neue Fassung von
+`invite-client-with-password` — und die ist **nicht deployt**. Der Suppressions-Check
+liefert damit ausnahmslos `false`, der neue Zweig ist vorerst toter Code, und das
+Verhalten fuer normale Signups ist unveraendert.
+
+Die in Production laufende Edge Function wurde erneut gelesen: **Version 7,
+`ezbr_sha256=bb7c2e4794972ca150333c96c9cb934e55a24880c0328d4ff629050a590a00c8`,
+`updated_at` unveraendert**. Sie enthaelt keinen Aufruf von
+`create_pending_client_invite_v1`, `bind_pending_client_invite_v1` oder
+`invalidate_pending_client_invite_v1`.
+
+**Solange die alte Edge Function laeuft, entsteht der Fremd-Grant weiterhin.** #6 macht den
+Fix moeglich, es *ist* nicht der Fix. Der reale Schutz entsteht erst mit **#7 plus einem
+korrekt getakteten Edge-Deploy**. Bis dahin muss die Edge Function undeployt bleiben: ein
+Deploy nach #6, aber vor #7, wuerde Einladungen hart scheitern lassen, weil
+`create_invited_customer_with_contact` in Production noch nicht existiert.
+
+### Neue harte Laufzeitabhaengigkeit
+
+Ab jetzt haengt die Signup-Triggerkette an `_hm_has_active_pending_client_invite` aus #5.
+Ein Rollback von **#5** bei angewendetem #6 wuerde jede Client-Registrierung brechen. Der
+Guard in `mig5_20260917150000_prestate_rollback_2026-09-21.sql`, der bei angewendetem
+#6–#9 abbricht, ist damit tragend geworden.
+
+## N10.9 Side-Effect-Matrix
+
+Gegen den in NACHTRAG 9 protokollierten Stand nach dem Hardening:
+
+| Metrik | Vor #6 | Nach #6 | Δ |
+|---|---|---|---|
+| Ledger gesamt | 440 | **441** | +1 (nur #6) |
+| Tabellen `public` | 293 | **293** | **0** |
+| Routinen `public` | 195 | **195** | **0** |
+| Policies `public` | 753 | **753** | **0** |
+| Trigger `public` / `auth` | 190 / 1 | **190 / 1** | **0** |
+| Trigger auf `auto_assign_client_to_provider` | 2 aktiv | **2 aktiv** | **0** |
+| profiles gesamt / nicht geloescht | 103 / 93 | **103 / 93** | **0** |
+| contacts | 44 | **44** | **0** |
+| access_grants gesamt / aktiv | 57 / 43 | **57 / 43** | **0** |
+| user_roles | 64 | **64** | **0** |
+| auth.users | 64 | **64** | **0** |
+| hm_connect_invitations | 0 | **0** | **0** |
+| **Ghost-Profile** | **39** | **39** | **0** ✅ |
+| **Duplikat-E-Mail-Gruppen** | **4** | **4** | **0** ✅ |
+| `hm_pending_client_invites` Zeilen | 0 | **0** | **0** ✅ |
+| Funktionen ohne festen `search_path` | 0 | **0** | **0** |
+
+`MIG6_EXISTING_DATA_MUTATED=NO`. Keine Accounts zusammengefuehrt, keine E-Mail-Zuordnung
+geaendert, keine Ghost-Bereinigung, keine Pferde/Termine/Rechnungen verschoben.
+
+Der #5-Vertrag ist unveraendert: RLS an, FORCE RLS an, 0 Policies, ACL
+`postgres=arwdDxtm \| service_role=arwdDxtm`, 5 Indizes, 5 Constraints, 0 Zeilen.
+
+## N10.10 Advisor-Diff ueber drei Messpunkte
+
+| Kategorie | nach #5 | nach Hardening | nach #6 | |
+|---|---|---|---|---|
+| `anon_security_definer_function_executable` | 149 | 149 | **149** | unveraendert |
+| `authenticated_security_definer_function_executable` | 156 | 156 | **156** | unveraendert |
+| `function_search_path_mutable` | 1 | 0 | **0** | unveraendert |
+| `rls_enabled_no_policy` | 5 | 5 | **5** | unveraendert, beabsichtigt |
+| `extension_in_public` | — | — | unveraendert | Altbefund |
+| `auth_leaked_password_protection` | — | — | unveraendert | Altbefund |
+
+`NEW_SECURITY_FINDINGS_FROM_MIG6=NONE`. Keine neue Kategorie, kein veraenderter
+Zaehlerstand.
+
+**Klassifikation des ACL-Befunds:** `public.auto_assign_client_to_provider()` ist als
+SECURITY-DEFINER-Funktion mit `EXECUTE` fuer PUBLIC/`anon`/`authenticated` bereits **im
+#5-Snapshot** in der anon-Kategorie enthalten — also ueber alle drei Messpunkte hinweg
+**`PREEXISTING_LEGACY`**, ausdruecklich **nicht** `NEW_FROM_MIG6`. `CREATE OR REPLACE`
+setzt ACLs nicht zurueck; der Poststate-Guard hat das erzwungen und die Messung bestaetigt
+es. Praktisch ist der Befund kaum ausnutzbar, weil eine `RETURNS trigger`-Funktion sich
+nicht direkt aufrufen laesst. **In #6 wurde bewusst nichts daran geaendert** — eine
+Hardening-Entscheidung gehoert nicht in eine Tenant-Fix-Migration.
+
+## N10.11 Offener Release-Blocker: der zweite Einladepfad
+
+`INVITE_CLIENT_GAP_EXISTS=YES` · `INVITE_CLIENT_GAP_BLOCKS_MIG6=NO` ·
+`INVITE_CLIENT_GAP_BLOCKS_FEATURE_RELEASE=YES`
+
+`src/components/customers/InviteClientButton.tsx:249` ruft die Edge Function
+`invite-client` (deployt, Version 8). Diese legt **keinen** Pending Invite an: sie ruft
+`auth.admin.createUser`, wartet `setTimeout(600 ms)` auf die Triggerkette und setzt erst
+danach `created_by_provider_id` plus einen eigenen `access_grant`. Fuer diesen Pfad greift
+die #6-Unterdrueckung **nie**.
+
+Der zweite Pfad, `src/components/customers/InviteByEmailModal.tsx:63` →
+`invite-client-with-password`, ist der von der Kette abgedeckte.
+
+**Die Kette #5–#9 behebt den `invite-client`-Pfad auch nach vollstaendigem Rollout
+nicht.** Das blockiert #6 nicht und wurde hier bewusst nicht gefixt — aber es ist ein
+**Blocker fuer die Freigabe des Invite-Features** und gehoert vor diese Freigabe geloest,
+unabhaengig vom Fortgang der Migrationskette.
+
+## N10.12 Rollback-Pfad
+
+`docs/backups/mig6_20260917155000_prestate_rollback_2026-09-21.sql` — **nicht
+ausgefuehrt**, aber in der isolierten Instanz erprobt (`EXIT=0`, zurueck auf
+`b015f90b…`).
+
+Der Funktionsrumpf darin ist **nicht rekonstruiert**: es ist die woertliche
+`pg_get_functiondef`-Ausgabe aus Production (md5 `8e37ff3a…`), genau einmal enthalten.
+Umfang exakt: ein `CREATE OR REPLACE FUNCTION` plus `DELETE` genau der Ledger-Zeile
+`20260917155000`. Zwei Guards vorweg (spaetere Kettenglieder duerfen nicht angewendet
+sein; `prosrc`-md5 muss der #6-Stand oder bereits der Pre-State sein), ein Postcheck im
+selben Transaktionsblock (Pre-State-md5, Owner, SECDEF, `search_path`, **ACL**,
+Volatilitaet, Ledger-Zeile weg, #5 und Hardening intakt). Kein DML, also nichts zu
+verlieren.
+
+## N10.13 Ergebnis
+
+```
+MIG6_APPLIED=YES
+MIG6_APPLY_STATE=COMMITTED
+MIG6_LEDGER_VERSION=20260917155000
+LEDGER_DRIFT_CREATED=NO
+
+AUTO_ASSIGN_PROSRC_MD5_BEFORE=b015f90bd1e72e9680f8ad91129f7591
+AUTO_ASSIGN_PROSRC_MD5_AFTER=b6f62858b4de1b61a9a7503e1668e209
+
+ACL_UNCHANGED=YES
+SECURITY_DEFINER_UNCHANGED=YES
+SEARCH_PATH_UNCHANGED=YES
+OWNER_UNCHANGED=YES
+VOLATILITY_UNCHANGED=YES
+
+MIG6_EXISTING_DATA_MUTATED=NO
+GHOST_PROFILE_COUNT_AFTER=39
+DUPLICATE_EMAIL_GROUPS_AFTER=4
+PENDING_INVITE_ROWS_AFTER=0
+
+NEW_SECURITY_FINDINGS_FROM_MIG6=NONE
+MIG6_P0_FIXED_BY_ITSELF=NO
+
+INVITE_CLIENT_GAP_EXISTS=YES
+INVITE_CLIENT_GAP_BLOCKS_FEATURE_RELEASE=YES
+
+MIG7_APPLIED=NO
+MIG8_APPLIED=NO
+MIG9_APPLIED=NO
+RELATED_NEW_EDGE_FUNCTION_DEPLOYED=NO
+
+CHAIN_CAN_PAUSE_AFTER_MIG6=YES
+SAFE_TO_ANALYZE_MIG7=YES
+```
+
+**Offene Punkte fuer den naechsten Schritt:** (1) der `invite-client`-Pfad aus N10.11,
+(2) die Taktung von #7 und Edge-Deploy, (3) die Untersuchung der 39 Ghost-Profile und
+4 Duplikat-Gruppen, die weiterhin korrekt **vor #8** verortet ist, (4) fehlende
+CI-Testabdeckung fuer die Trigger-Semantik — `inviteTenantBinding.test.ts` prueft nur
+statisch Migrations- und Edge-Function-Text; die sechs Verhaltensproben aus N10.4 liefen
+manuell und sind nicht Teil der CI.
+
+**STOPP.** Keine Migration #7–#9, kein Edge-Deploy, keine Ghost-Bereinigung, keine
+Vault-Aenderung, kein Push.
