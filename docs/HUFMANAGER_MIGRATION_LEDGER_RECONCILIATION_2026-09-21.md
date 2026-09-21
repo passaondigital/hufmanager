@@ -2017,3 +2017,402 @@ dieser Umgebung setzen. Der `service_role`-Key wird dabei **nicht** durch ein We
 Skript oder dieses Dokument geführt; das ist ein manueller Einzelschritt.
 
 **STOPP.** Keine Vault-Secrets, kein `auto_invoice_enabled`, keine Migration #5, kein Push.
+
+---
+
+# NACHTRAG 8 — Migration #5 Production Apply (2026-09-21)
+
+`20260917150000_add_pending_client_invite_contract_v1`
+
+Erste Migration der Invite-/Ghost-Kette. Angewendet als **Einzelschritt**; #6–#9 bleiben
+bewusst aus. Ergebnis: **COMMITTED**, Ledger ohne Drift, Bestandsdaten unverändert,
+zwei neue Advisor-Befunde klassifiziert (einer davon empirisch geprüft).
+
+## N8.1 Artefakt-Integrität
+
+| Größe | Wert |
+|---|---|
+| `MIG5_FILE` | `supabase/migrations/20260917150000_add_pending_client_invite_contract_v1.sql` |
+| `MIG5_MD5` | `d0f8b9bd274a61b775f36c5e2711d45c` |
+| `MIG5_SHA256` | `43845b642545af55e3bd7c2b778acfd5415e953c49dfc8f2a816fc87f555c13d` |
+| `MIG5_BYTES` | 16586 |
+| `MIG5_LINES` | 412 |
+| Apply-Artefakt | `docs/backups/mig5_20260917150000_apply_canonical.sql` |
+| `APPLY_ARTIFACT_MD5` | `4e9a57fbd96db3392bd2e501159ea67b` |
+| `APPLY_ARTIFACT_BYTES` | 18530 |
+| Rollback | `docs/backups/mig5_20260917150000_prestate_rollback_2026-09-21.sql` (`b1dff683f42a384d50fe32a9e5bcbd16`) |
+
+Das Apply-Artefakt wurde **aus den Repo-Bytes generiert**, nicht abgeschrieben. Nachweis vor
+dem Apply: der eingebettete Text kommt genau einmal vor (`REPO_TEXT_OCCURRENCES=1`), ist
+byte-identisch (`EMBEDDED_MD5 == REPO_MD5`), und die md5-Guard-Konstante im Artefakt stimmt
+mit der Repo-Datei überein. Genau ein `begin;`, genau ein `commit;`, genau eine Ledger-Version.
+
+### Statisches Audit — bestätigt
+
+| Behauptung | Messung |
+|---|---|
+| 24 DDL-Statements | **24** ✅ |
+| 0 DML-Statements | **0** ✅ |
+| 5 SECURITY DEFINER | **5** ✅ |
+| keine Trigger-/Vault-/Edge-/Extension-Änderung | **keine** ✅ |
+| kein `DROP`/`TRUNCATE` | **keins** ✅ |
+
+**Präzisierung:** Die Datei *enthält* vier `UPDATE`-Statements. Sie liegen ausnahmslos in den
+**Funktionskörpern** von #5 und betreffen ausschließlich die neue Tabelle. Beim Apply wird
+davon nichts ausgeführt. „0 DML" gilt für die Migration, nicht für den Dateitext.
+
+## N8.2 Pre-State (read-only, vor dem Apply)
+
+Ledger: `total=438`, `max=20260917140000`, #1–#4 je exakt 1, **#5 = 0**, keine Phantomversion
+(`version LIKE '2026091715%'` → 0), #6–#9 = 0.
+
+Negativer Objekt-Prestate — alle 8 #5-Objekte nachweislich **nicht vorhanden**: Tabelle,
+Indizes, und die sechs Funktionen. Abhängigkeiten vorhanden: `public.profiles`,
+`public.has_role(_user_id uuid, _role app_role)`, Enum `app_role` (mit Label `provider`),
+`auto_assign_client_to_provider`.
+
+### Datenbasis vor dem Apply
+
+| Metrik | Wert |
+|---|---|
+| profiles (gesamt / nicht gelöscht) | 103 / 93 |
+| contacts | 44 |
+| access_grants (gesamt / aktiv) | 57 / 43 |
+| hm_connect_invitations | 0 |
+| user_roles | 64 |
+| auth.users | 64 |
+| **Ghost-Profile** | **39** |
+| **Duplikat-E-Mail-Gruppen** | **4** |
+
+Die beiden bekannten Befunde reproduzieren exakt. Die Definitionen wurden **aus Migration #8
+abgeleitet**, nicht geraten:
+
+- **Ghost-Profil** = `profiles`-Zeile ohne zugehörige `auth.users`-Zeile (inkl. soft-deleted);
+  #8 selektiert mit `NOT EXISTS (SELECT 1 FROM auth.users au WHERE au.id = p.id)`. → **39**
+  (davon 35 nicht soft-deleted)
+- **Duplikat-Gruppe** = normalisierte E-Mail über alle Profile mit `count(*) > 1` → **4**
+  (bei Einschränkung auf nicht-gelöschte Profile: 2)
+
+## N8.3 Vorab-Probelauf in isolierter Instanz
+
+Vor dem Production-Apply wurde das Artefakt vollständig in `mig34-isolated-test` geprobt
+(Schemaklon, 289 Tabellen, identischer negativer Prestate). Alle 24 Statements liefen
+fehlerfrei, md5-Guard bestanden, Commit sauber. Anschließend lief die Rollback-Datei und
+meldete `ROLLBACK #5 OK` — die Instanz war wieder bei 0 Objekten.
+
+**Fund aus dem Probelauf:** Der Ledger-Insert scheiterte dort an Rechten (Ledger gehört in
+diesem Container `supabase_admin`). Für Production wurde das **vorab read-only geklärt**:
+`supabase_migrations.schema_migrations` gehört dort `postgres` und ist beschreibbar. Der
+Apply-Pfad war damit vor dem ersten Schreibversuch als frei nachgewiesen.
+
+## N8.4 Apply
+
+Ausführungsweg: `psql` über den Session Pooler, genau ein Aufruf, keine Retry-Schleife,
+Passwort ausschließlich interaktiv über `/dev/tty` (nie gespeichert, geloggt, in eine Datei
+geschrieben oder in die Shell-History aufgenommen). Kein `supabase db push`, kein
+`apply_migration`, kein `_prepared`, kein Migration-Repair.
+
+`PSQL_EXIT=0` — dieser Wert wurde **nicht** als Beweis akzeptiert; der gesamte Postcheck
+unten ist unabhängig read-only gegen Production erhoben.
+
+## N8.5 Post-State — Ledger
+
+| Prüfung | Ergebnis |
+|---|---|
+| `20260917150000` | exakt **1** ✅ |
+| Phantom-/Doppelversion (`LIKE '2026091715%'`) | **1** (nur die kanonische) ✅ |
+| `ledger_max` | `20260917150000` ✅ |
+| `ledger_total` | 438 → **439** (+1) ✅ |
+| #1–#4 | je weiterhin exakt 1 ✅ |
+| `LEDGER_DRIFT_CREATED` | **NO** ✅ |
+
+Ledger-Zeile: `name=add_pending_client_invite_contract_v1`,
+`created_by=passaondigital@gmail.com`, `idempotency_key=NULL`, `rollback=NULL`,
+`array_length(statements)=1`.
+
+**Beweis der Textidentität:** `md5(statements[1]) = d0f8b9bd274a61b775f36c5e2711d45c` —
+identisch mit der Repo-Datei. `octet_length(statements[1]) = 16586`, ebenfalls exakt die
+Dateigröße. (`length()` liefert 15607, das sind Zeichen statt Bytes — die Datei enthält
+UTF-8-Mehrbytezeichen.)
+
+Die md5 von #3 (`427b0dfbfa98b518f92eaeacc6d3b086`) und #4 (`3056567c716fd7a318254042f6e878a4`)
+wurden vor und nach dem Apply erhoben und sind unverändert.
+
+## N8.6 Post-State — Objektvertrag
+
+Alle Fingerprints stimmen mit dem isolierten Probelauf **exakt** überein. Production ==
+Probelauf == Repo-Bytes.
+
+### Tabelle `public.hm_pending_client_invites`
+
+| Eigenschaft | Wert |
+|---|---|
+| Owner | `postgres` |
+| RLS | **enabled** |
+| FORCE RLS | **enabled** |
+| Policies | **0** (beabsichtigt, siehe N8.8) |
+| ACL | `postgres=arwdDxtm/postgres \| service_role=arwdDxtm/postgres` |
+| `anon` / `authenticated` / `authenticator` | **kein einziges Tabellenprivileg** |
+| Zeilen | **0** |
+| Table-Comment | vorhanden |
+| Spalten | 13, exakt wie in der Migration |
+
+Constraints: `hm_pending_client_invites_pkey` (PK), `_provider_id_fkey`
+(FK → `profiles(id)` ON DELETE CASCADE), `_email_normalized` (CHECK), `_ttl` (CHECK),
+`_consumed_needs_user` (CHECK).
+
+Indizes (5): `_pkey`, `_active_email_uniq` (partiell UNIQUE), `_provider_request_uniq`
+(UNIQUE), `_expires_idx` (partiell), `_user_idx`.
+
+### Funktionen
+
+| Funktion | SECDEF | `search_path` | `prosrc` md5 | anon | auth | service_role |
+|---|---|---|---|---|---|---|
+| `_hm_normalize_email(text)` | **nein** (INVOKER) | **(keiner)** | `4f7063e091f7c6a30525e78ce68da4ae` | ✗ | ✗ | ✓ |
+| `_hm_expire_pending_client_invites(text)` | ja | `public` | `480bc9207014cf8b06b18f6dc12cf951` | ✗ | ✗ | ✓ |
+| `_hm_has_active_pending_client_invite(text)` | ja | `public` | `2d7a311cc74468f65c7b099acc8dbeb2` | ✗ | ✗ | ✓ |
+| `create_pending_client_invite_v1(uuid,text,text,integer)` | ja | `public` | `098ba120e40e3e51019e74c827959d84` | ✗ | ✗ | ✓ |
+| `bind_pending_client_invite_v1(uuid,uuid,uuid)` | ja | `public` | `f3f54e2f09a9b07b433f059baaffc91f` | ✗ | ✗ | ✓ |
+| `invalidate_pending_client_invite_v1(uuid,uuid,text,boolean)` | ja | `public` | `c1566e59c4a3a1d668896058b175169f` | ✗ | ✗ | ✓ |
+
+Alle sechs Owner `postgres`, ACL durchweg `postgres=X | service_role=X`.
+`has_function_privilege` für `anon`, `authenticated` und `authenticator`: **überall false**.
+
+### Warum `FORCE RLS` + 0 Policies den Vertrag nicht blockiert
+
+`FORCE ROW LEVEL SECURITY` unterwirft normalerweise auch den Tabelleneigentümer der RLS — bei
+null Policies wäre damit selbst `postgres` gesperrt und die SECURITY-DEFINER-Funktionen
+funktionslos. Read-only geprüft: `postgres` und `service_role` haben beide
+**`rolbypassrls = true`** und umgehen RLS deshalb unabhängig von `FORCE`. Der Vertrag ist
+funktionsfähig. `anon`, `authenticated` und `authenticator` haben `rolbypassrls = false`.
+
+## N8.7 Advisor-Befund 1 — `function_search_path_mutable` (`_hm_normalize_email`)
+
+**Status: PASS_WITH_DOCUMENTED_FINDING — kein Blocker für #6.**
+
+| Frage | Antwort |
+|---|---|
+| **A** Teil der kanonischen #5? | **Ja.** Statement 1 der Migration (Zeilen 61–67). `prosrc` md5 identisch mit Repo und Probelauf. |
+| **B** Absicht oder Härtungslücke? | **Echte Lücke, aber nachvollziehbare Auslassung.** Der Autor hat `SET search_path` genau auf den fünf SECURITY-DEFINER-Funktionen gesetzt, wo er Privilege Escalation verhindert, und auf dem einen INVOKER-Helper weggelassen, wo er das nicht tut. Trotzdem eine Abweichung: `_hm_normalize_email` ist die **einzige** von 195 Routinen in `public` ohne festen `search_path`. |
+| **C** Praktisch ausnutzbar? | **Nein** — siehe empirische Prüfung unten. |
+| **D** Wer darf sie aufrufen? | `postgres`, `service_role` (und Superuser `supabase_admin`). **Nicht** `anon`, `authenticated`, `authenticator`. |
+| **E** Nur intern genutzt? | **Ja.** Referenziert ausschließlich von den vier anderen #5-Funktionen — alle SECURITY DEFINER mit `search_path=public`. In **keinem** Index-, Constraint-, Default-, View- oder Generated-Column-Ausdruck (read-only geprüft), das IMMUTABLE-Persistenzrisiko entfällt damit. |
+| **F** Fixt #6–#9 das? | **Nein.** Keine der vier definiert die Funktion neu oder ändert ihre Grants; sie rufen sie nur auf — ausnahmslos aus SECURITY-DEFINER-Funktionen mit `search_path=public`. Der Befund besteht über die Kette fort, das Risiko wächst aber nicht. |
+| **G** Vor #6 fixen? | **Nein, kein MUST_FIX_BEFORE_NEXT_MIGRATION.** Als dokumentierter Restbefund tragbar. |
+
+### Empirische Prüfung (isolierte Instanz, nicht Production)
+
+Der Befund wurde nicht theoretisch abgetan, sondern angegriffen: Schema `evil` mit
+shadowenden `lower()`/`btrim()`, dann die Funktion aufgerufen.
+
+| Szenario | Ergebnis |
+|---|---|
+| `search_path = public` (Baseline) | `mixed@example.com` — korrekt |
+| `search_path = evil, public` (realistischer Fall) | `mixed@example.com` — **unverändert** |
+| `search_path = evil, pg_catalog, public` | `PWNED-lower` — **Shadowing gelingt** |
+
+Der Befund ist also **echt, kein False Positive**. Entscheidend ist, dass `pg_catalog`
+implizit zuerst durchsucht wird, solange es nicht explizit *nach* einem fremden Schema
+einsortiert wird. `coalesce`/`nullif` sind SQL-Konstrukte und grundsätzlich nicht shadowbar.
+
+### Warum das trotzdem nicht ausnutzbar ist
+
+Ein Angriff braucht **drei** Vorbedingungen gleichzeitig. Read-only gegen Production geprüft:
+
+| Rolle | Schema/Funktion anlegen | `EXECUTE` auf die Funktion | ausnutzbar |
+|---|---|---|---|
+| `anon` | ✗ | ✗ | **nein** |
+| `authenticated` | ✗ | ✗ | **nein** |
+| `authenticator` | ✗ | ✗ | **nein** |
+| `service_role` | ✗ | ✓ | **nein** (kann nichts anlegen) |
+| `postgres` | ✓ | ✓ | irrelevant — kann die Funktion ohnehin direkt umschreiben |
+
+Dazu: die Funktion ist **SECURITY INVOKER**. Selbst wenn die Auflösung manipuliert würde,
+entstünde kein Rechtegewinn — der Code liefe mit den Rechten des Aufrufers. Die
+Sicherheitsrichtung von #5 („NO GRANT ist erlaubt, WRONG GRANT nie") bliebe gewahrt: ein
+verfälschter Normalisierungswert führt zu *keinem* Treffer, nicht zu einem falschen Grant.
+
+### Fix-Plan (nicht angewendet)
+
+Eigene, eng begrenzte Härtungsmigration — **nicht** durch Änderung der bereits angewendeten
+#5-Datei:
+
+1. `CREATE OR REPLACE FUNCTION public._hm_normalize_email(text) … SET search_path = pg_catalog, public;`
+   (Signatur, Volatilität, Rückgabetyp und Body unverändert — reines Hinzufügen von `proconfig`.)
+2. Verifikation: `proconfig` gesetzt, `prosrc` md5 unverändert, ACL unverändert,
+   Advisor-Befund verschwunden.
+3. Einordnung: kann vor #6 oder gebündelt später laufen. Da #6–#9 die Aufrufsituation nicht
+   verschärfen, ist die Reihenfolge frei.
+
+## N8.8 Advisor-Befund 2 — `rls_enabled_no_policy` (`hm_pending_client_invites`)
+
+**Status: beabsichtigt. `INTENTIONAL_RLS_NO_POLICY=YES`.** Advisor-Level ist **INFO**, nicht WARN.
+
+| Frage | Antwort |
+|---|---|
+| Absichtlich service-role-only? | **Ja**, so im Migrationskommentar begründet: „RLS an, bewusst OHNE Policy". |
+| Haben `anon`/`authenticated` Tabellenprivilegien? | **Nein** — `SELECT`/`INSERT`/`UPDATE`/`DELETE`/`REFERENCES`/`TRIGGER` alle `false`. |
+| Kann PostgREST Zugriff bekommen? | **Nein.** PostgREST meldet sich als `authenticator` an (`rolinherit=false`, erbt also nichts) und wechselt per JWT-Claim die Rolle. `anon`/`authenticated` haben keine Privilegien → `42501`. Nur ein `service_role`-JWT käme durch — und dieser Key ist serverseitig. `anon`/`authenticated` sind in keiner Rolle Mitglied und erreichen weder `service_role` noch `postgres`. |
+| Umgeht `service_role` RLS erwartungsgemäß? | **Ja**, `rolbypassrls=true`. |
+| Gewünschter Default-Deny-Vertrag? | **Ja** — doppelt verriegelt: die Privilegienebene sperrt bereits vor RLS, RLS ist das zweite Schloss. |
+| Fehlt eine Policy? | **Nein.** Eine Policy würde den Zugriff nur *erweitern*. Niemand außer `service_role`/SECURITY DEFINER soll die Tabelle je sehen. |
+
+**Etabliertes Muster:** Vier weitere Tabellen fahren bereits RLS ohne Policy
+(`hm_lifecycle_reconciliation_issues`, `hm_reconciler_runs`, `hufi_data_events`,
+`hufi_data_state`). `hm_pending_client_invites` ist von diesen fünf die **strengste** — als
+einzige zusätzlich mit `FORCE ROW LEVEL SECURITY`.
+
+## N8.9 Sicherheits- und Tenant-Review
+
+| Prüfpunkt | Ergebnis |
+|---|---|
+| #5 erteilt selbst Provider-/Client-Zugriff? | **Nein.** 0 DML, keine Zeile in `access_grants`/`user_roles`/`profiles` angefasst. |
+| `authenticated` kann Invitation-State fremder Provider setzen? | **Nein** — kein Tabellenprivileg, kein `EXECUTE` auf irgendeine #5-Funktion. Die Sperre greift auf der Privilegienebene, vor jeder Policy-Logik. |
+| `authenticated` kann fremde E-Mail-Zuordnungen/Ghost-Daten übernehmen? | **Nein** — #5 verändert `handle_new_user` und `auto_assign_client_to_provider` nicht (siehe N8.10). |
+| `anon` kann interne #5-Funktionen ausführen? | **Nein**, alle sechs `false`. |
+| SECURITY DEFINER: `search_path` fest? | **Ja**, alle fünf `search_path=public`. |
+| SECURITY DEFINER: Auth-Kontext validiert? | `create_pending_client_invite_v1` prüft `has_role(p_provider_id,'provider')`; `bind_…` und `invalidate_…` prüfen die Provider-Bindung der Invite-Zeile und lehnen fremde Provider ab; `bind_…` vergleicht zusätzlich die normalisierte E-Mail des Auth-Users gegen den Invite. |
+| Freie `provider_id`/`user_id`-Manipulation? | Nur über `service_role` möglich — das ist der vorgesehene serverseitige Aufrufer. Aus dem Browser nicht erreichbar. |
+| PUBLIC-Grants korrekt? | **Ja**, `REVOKE ALL … FROM PUBLIC, anon, authenticated` auf allen sechs Funktionen und auf der Tabelle. |
+| Neue Tabelle: RLS aktiv, kein öffentlicher Zugriff? | **Ja** (N8.6/N8.8). |
+
+### Advisor-Gesamtbild
+
+6 Befundkategorien. Entscheidend für #5:
+
+- `anon_security_definer_function_executable` (WARN, **149** Funktionen) — **keine** aus #5
+- `authenticated_security_definer_function_executable` (WARN, **156** Funktionen) — **keine** aus #5
+- `function_search_path_mutable` (WARN, **1** Funktion) — `_hm_normalize_email`, siehe N8.7
+- `rls_enabled_no_policy` (INFO, 5 Tabellen) — siehe N8.8
+- `extension_in_public`, `auth_leaked_password_protection` — Altbefunde, ohne #5-Bezug
+
+Die Anforderung „neue #5-Funktionen dürfen keine unbeabsichtigten anon/authenticated
+SECURITY-DEFINER-Findings erzeugen" ist damit **erfüllt**: die beiden großen WARN-Kategorien
+sind Altlasten, keine einzige #5-Funktion taucht darin auf.
+
+## N8.10 Side-Effect-Matrix
+
+| Metrik | Vorher | Nachher | Δ |
+|---|---|---|---|
+| Ledger gesamt | 438 | **439** | +1 (nur #5) |
+| Ledger max | `20260917140000` | `20260917150000` | erwartet |
+| profiles gesamt / nicht gelöscht | 103 / 93 | **103 / 93** | **0** |
+| contacts | 44 | **44** | **0** |
+| access_grants gesamt / aktiv | 57 / 43 | **57 / 43** | **0** |
+| hm_connect_invitations | 0 | **0** | **0** |
+| user_roles | 64 | **64** | **0** |
+| auth.users | 64 | **64** | **0** |
+| **Ghost-Profile** | **39** | **39** | **0** ✅ |
+| **Duplikat-E-Mail-Gruppen** | **4** | **4** | **0** ✅ |
+| `hm_pending_client_invites` | (existierte nicht) | **0 Zeilen** | neu, leer |
+
+`MIG5_EXISTING_DATA_MUTATED=NO`. Keine Accounts zusammengeführt, keine E-Mail-Zuordnung
+geändert, keine Pferde/Termine/Rechnungen verschoben, keine Ghost-Bereinigung.
+
+Schemazahlen nach dem Apply: Tabellen `public` 293, Routinen `public` 195, Policies `public`
+753, Trigger `public` 190, Trigger `auth` 1.
+
+**Einschränkung, offen benannt:** Diese vier globalen Schemazahlen wurden vor dem Apply
+**nicht** erhoben — der Precheck hat stattdessen objektgenau den negativen Prestate
+verifiziert. Für Policies und Trigger ist die Nicht-Änderung aber *konstruktiv* bewiesen:
+die Migration enthält nachweislich 0 `CREATE POLICY` und 0 `CREATE/DROP/ALTER TRIGGER`.
+Für Tabellen und Routinen folgt aus dem negativen Prestate ein erwarteter Zuwachs von
+genau +1 Tabelle und +6 Routinen.
+
+### #1–#4 und die Triggerkette unverändert
+
+`create_customer_with_contact`, `create_invoice_with_items_for_provider`,
+`_autoflow_trigger_endpoint`, `autoflow_on_appointment_completed`,
+`autoflow_on_appointment_signed` — alle vorhanden, SECURITY DEFINER, `search_path=public`.
+Trigger `on_auth_user_created` (auth.users), `trg_autoflow_appointment_completed`,
+`trg_autoflow_appointment_signed`, `on_client_role_created`,
+`trg_user_roles_auto_assign_client` — alle vorhanden und aktiviert (`tgenabled='O'`).
+
+## N8.11 Chain-Pause — #5 ist inert
+
+`CHAIN_CAN_PAUSE_AFTER_MIG5=YES`, nachgewiesen statt angenommen:
+
+| Prüfung | Ergebnis |
+|---|---|
+| #6 `20260917155000` | **nicht angewendet** ✅ |
+| #7 `20260917160000` | **nicht angewendet** ✅ |
+| #8 `20260920120000` | **nicht angewendet** ✅ |
+| #9 `20260920190000` | **nicht angewendet** ✅ |
+| `create_invited_customer_with_contact` (#7) | existiert in Production **nicht** ✅ |
+| `handle_new_user` referenziert den #5-Vertrag? | **nein** (`prosrc` ohne Treffer) ✅ |
+| `auto_assign_client_to_provider` referenziert den #5-Vertrag? | **nein** ✅ |
+| Edge-Function-Deploy in diesem Durchgang | **keiner** ✅ |
+
+**Der belastbarste Einzelbeweis:** Die in Production deployte Fassung von
+`invite-client-with-password` (ACTIVE, Version 7, zuletzt aktualisiert lange vor diesem
+Release) wurde gelesen. Sie enthält **keinen** Aufruf von `create_pending_client_invite_v1`,
+`bind_pending_client_invite_v1` oder `invalidate_pending_client_invite_v1` — sie ist die alte
+Implementierung (direktes `auth.admin.createUser` plus Profil-/Rollen-/Kontakt-Insert).
+
+Die **Repo-Fassung** derselben Funktion ruft diese RPCs sehr wohl auf. Repo und Deployment
+divergieren hier also bewusst; der Cutover gehört zu #6–#9 und ist **nicht** erfolgt.
+
+Damit liest **nichts** in Production den neuen Vertrag: weder die Triggerkette noch eine Edge
+Function. Die Tabelle bleibt leer, die Funktionen bleiben ungenutzt. `RELATED_EDGE_FUNCTION_DEPLOYED=NO`.
+
+Produktions-App bleibt kompatibel: #5 fügt ausschließlich neue Objekte hinzu und ändert keine
+bestehende Signatur, kein bestehendes Verhalten.
+
+## N8.12 Rollback-Pfad
+
+`docs/backups/mig5_20260917150000_prestate_rollback_2026-09-21.sql` — **nicht ausgeführt**,
+aber in der isolierten Instanz **erprobt**: sie stellte den Pre-State her und meldete
+`ROLLBACK #5 OK`.
+
+Umfang exakt: 6 `DROP FUNCTION` (volle Signaturen, kein `CASCADE`), 1 `DROP TABLE`
+(nimmt die eigenen Indizes/Constraints/RLS-Flag mit), 1 `DELETE` genau der Ledger-Zeile
+`20260917150000`. Ein eigener Postcheck im selben Transaktionsblock bricht ab, wenn danach
+noch #5-Objekte existieren oder #1–#4 nicht mehr genau viermal im Ledger stehen.
+
+Drei Guards verhindern einen schädlichen Lauf: (1) Abbruch, wenn #6–#9 bereits angewendet
+sind — #5 darf dann nicht isoliert zurück; (2) Abbruch, wenn fremder Code den Vertrag
+referenziert; (3) Abbruch, wenn die Tabelle Zeilen enthält (dann wäre ein `DROP` kein
+Rollback mehr, sondern Datenverlust).
+
+Kein Backup bestehender Daten nötig: `MIG5_DATA_ROLLBACK_LOSSLESS=YES`, da keine
+Bestandsdaten angefasst wurden.
+
+## N8.13 Ergebnis
+
+```
+MIG5_APPLIED=YES
+MIG5_APPLY_STATE=COMMITTED
+MIG5_LEDGER_VERSION=20260917150000
+LEDGER_DRIFT_CREATED=NO
+
+MIG5_OBJECTS_CREATED=PASS
+MIG5_RLS_CONTRACT=PASS
+MIG5_GRANT_CONTRACT=PASS
+MIG5_SECURITY_REVIEW=PASS_WITH_DOCUMENTED_FINDING
+MIG5_TENANT_REVIEW=PASS
+
+NORMALIZE_EMAIL_SEARCH_PATH_FINDING=REAL_BUT_NOT_EXPLOITABLE_DOCUMENTED_RESIDUAL
+INTENTIONAL_RLS_NO_POLICY=YES
+
+MIG5_EXISTING_DATA_MUTATED=NO
+GHOST_PROFILE_COUNT_AFTER=39
+DUPLICATE_EMAIL_GROUPS_AFTER=4
+
+UNEXPECTED_PROD_SIDE_EFFECTS=NONE
+
+MIG6_APPLIED=NO
+MIG7_APPLIED=NO
+MIG8_APPLIED=NO
+MIG9_APPLIED=NO
+RELATED_EDGE_FUNCTION_DEPLOYED=NO
+
+CHAIN_CAN_PAUSE_AFTER_MIG5=YES
+SAFE_TO_ANALYZE_MIG6=YES
+```
+
+**Offener Punkt für den nächsten Schritt:** der `search_path`-Restbefund aus N8.7. Er blockiert
+#6 nicht, sollte aber nicht unbegrenzt offen bleiben — er ist die einzige Abweichung von einer
+sonst zu 100 % durchgehaltenen Projektkonvention.
+
+**STOPP.** Keine Migration #6–#9, kein Edge-Deploy, keine Ghost-Bereinigung, keine
+Vault-Änderung, kein Push.
