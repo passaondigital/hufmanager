@@ -1,0 +1,134 @@
+-- PRE-STATE + ROLLBACK zu Migration #4
+-- 20260917140000_fix_autoflow_trigger_auth_vault_v1
+-- Projekt: vnschgjxkzzwzefqlrji (HufManager PROD)
+-- Erfasst: 2026-09-21, read-only, VOR dem Apply.
+--
+-- STATUS: Migration #4 ist NICHT angewendet. Dieser Pre-State ist der Ist-Zustand.
+--
+-- Artefakt-Hashes (Repo, unveraendert seit Commit 110dffc5):
+--   md5 roh     = be1854ea7e8d6b304a1d3edc6eafede5
+--   md5 ohne NL = 3056567c716fd7a318254042f6e878a4
+--   sha256 roh  = f93a408a357d4e6c08afad78f8b15b9f93226312de9e7c3b8449338f4795be23
+--   8038 Bytes / 169 Zeilen
+--
+-- ============================================================
+-- PRE-STATE der von #4 betroffenen Objekte
+-- ============================================================
+--
+-- public.autoflow_on_appointment_completed()
+--   returns          trigger
+--   SECURITY DEFINER true
+--   search_path      public
+--   owner            postgres
+--   body md5         92910008ac054d1741829613ca2c0155   (710 Zeichen)
+--   ACL              =X/postgres | postgres=X/postgres | anon=X/postgres
+--                    | authenticated=X/postgres | service_role=X/postgres
+--   anon EXECUTE     true      authenticated EXECUTE true     service_role EXECUTE true
+--
+-- public.autoflow_on_appointment_signed()
+--   returns          trigger
+--   SECURITY DEFINER true
+--   search_path      public
+--   owner            postgres
+--   body md5         ab5ddbc4edd28ceee007421c83ce0aa3   (691 Zeichen)
+--   ACL              identisch zu oben
+--   anon EXECUTE     true      authenticated EXECUTE true     service_role EXECUTE true
+--
+-- public._autoflow_trigger_endpoint()
+--   EXISTIERT NICHT (wird von #4 neu angelegt)
+--
+-- Trigger auf public.appointments (beide aktiv, tgenabled='O'):
+--   CREATE TRIGGER trg_autoflow_appointment_completed AFTER UPDATE ON public.appointments
+--     FOR EACH ROW EXECUTE FUNCTION autoflow_on_appointment_completed()
+--   CREATE TRIGGER trg_autoflow_appointment_signed AFTER UPDATE ON public.appointments
+--     FOR EACH ROW EXECUTE FUNCTION autoflow_on_appointment_signed()
+--   -> #4 nutzt nur CREATE OR REPLACE FUNCTION; die Triggerbindung wird NICHT angefasst
+--      und muss folglich auch nicht zurueckgerollt werden.
+--
+-- Globaler Pre-State:
+--   public functions = 188   public tables = 292   Policies = 835
+--   Ledger           = 437   Kopf = 20260917130000
+--   Vault            = 0 Secrets  (autoflow_service_key und
+--                                  autoflow_functions_base_url fehlen beide)
+--
+-- ============================================================
+-- HERKUNFT DER EXAKTEN ALT-DEFINITIONEN
+-- ============================================================
+-- Die beiden PROD-Bodies sind BYTE-IDENTISCH zur bereits im Repo getrackten
+-- Ursprungsmigration:
+--
+--   supabase/migrations/20260219153151_c6f406a7-109f-4ad7-9610-fe5761d53104.sql
+--
+-- Verifiziert: die dort extrahierten Function-Bodies ergeben exakt
+--   92910008ac054d1741829613ca2c0155  (completed)
+--   ab5ddbc4edd28ceee007421c83ce0aa3  (signed)
+--
+-- Deshalb enthaelt DIESE Datei die Alt-Definitionen bewusst NICHT im Klartext:
+-- sie tragen ein historisches anon-JWT und eine PROD-Function-URL. Das Rollback
+-- wird stattdessen deterministisch aus der getrackten Quelldatei erzeugt --
+-- exakt, reproduzierbar und ohne das Token ein zweites Mal zu verbreiten.
+--
+-- ============================================================
+-- ROLLBACK - SCHRITT 1: SQL erzeugen
+-- ============================================================
+-- python3 - supabase/migrations/20260219153151_c6f406a7-109f-4ad7-9610-fe5761d53104.sql \
+--          /tmp/mig4_rollback.sql <<'PY'
+-- import sys, re, hashlib
+-- src, out = sys.argv[1], sys.argv[2]
+-- s = open(src, encoding='utf-8').read()
+-- want = {'autoflow_on_appointment_completed':'92910008ac054d1741829613ca2c0155',
+--         'autoflow_on_appointment_signed':'ab5ddbc4edd28ceee007421c83ce0aa3'}
+-- blocks = []
+-- for m in re.finditer(r'(CREATE OR REPLACE FUNCTION\s+(?:public\.)?(\w+)\s*\(.*?AS\s+(\$\w*\$)(.*?)\3\s*;)', s, re.S|re.I):
+--     full, name, body = m.group(1), m.group(2), m.group(4)
+--     if name in want:
+--         assert hashlib.md5(body.encode()).hexdigest() == want[name], name
+--         blocks.append(full)
+-- assert len(blocks) == 2
+-- open(out,'w',encoding='utf-8').write(
+--     "begin;\n\n" + "\n\n".join(blocks) +
+--     "\n\ndrop function if exists public._autoflow_trigger_endpoint();\n\n"
+--     "delete from supabase_migrations.schema_migrations where version = '20260917140000';\n\ncommit;\n")
+-- PY
+--
+-- Der Generator bricht ab, wenn ein Body nicht exakt dem PROD-Pre-State
+-- entspricht. Die erzeugte Datei enthaelt das Token -> NICHT committen.
+--
+-- ============================================================
+-- ROLLBACK - SCHRITT 2: anwenden
+-- ============================================================
+-- psql "$DB_URL" -v ON_ERROR_STOP=1 -f /tmp/mig4_rollback.sql
+--
+-- Inhalt der erzeugten Transaktion:
+--   begin;
+--     CREATE OR REPLACE FUNCTION public.autoflow_on_appointment_completed() ...  -- Alt-Body
+--     CREATE OR REPLACE FUNCTION public.autoflow_on_appointment_signed()    ...  -- Alt-Body
+--     drop function if exists public._autoflow_trigger_endpoint();
+--     delete from supabase_migrations.schema_migrations where version = '20260917140000';
+--   commit;
+--
+-- CREATE OR REPLACE FUNCTION erhaelt bestehende ACLs -> die Grants der beiden
+-- Triggerfunktionen kommen automatisch unveraendert zurueck. #4 aendert sie
+-- ohnehin nicht (siehe NACHTRAG 5).
+--
+-- Danach /tmp/mig4_rollback.sql loeschen (enthaelt das Token).
+--
+-- ============================================================
+-- ROLLBACK - SCHRITT 3: verifizieren (Soll = PRE-STATE oben)
+-- ============================================================
+-- select p.proname, md5(p.prosrc) as body_md5, length(p.prosrc) as len,
+--        array_to_string(p.proacl::text[],' | ') as acl
+--   from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+--  where n.nspname='public'
+--    and p.proname in ('autoflow_on_appointment_completed','autoflow_on_appointment_signed');
+--   -- completed: 92910008ac054d1741829613ca2c0155 / 710
+--   -- signed   : ab5ddbc4edd28ceee007421c83ce0aa3 / 691
+--
+-- select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+--  where n.nspname='public' and p.proname='_autoflow_trigger_endpoint';     -- 0
+-- select count(*) from supabase_migrations.schema_migrations;               -- 437
+-- select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+--  where n.nspname='public';                                                -- 188
+--
+-- Nicht betroffen und daher unveraendert: #1 (20260917120000),
+-- #2 (20260917125000), #3 (20260917130000).

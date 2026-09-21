@@ -1329,3 +1329,428 @@ Abgeleitet (Arithmetik, nicht per CLI erhoben): „nur lokal" 402 → **401**, b
 HTTP-Call wird also übersprungen (`RAISE WARNING`).
 
 **STOPP vor Migration #4.** Keine weitere Anwendung ohne ausdrückliche Freigabe.
+
+---
+
+# NACHTRAG 5 — Migration #4: Read-only Preflight (2026-09-21)
+
+**Status:** `MIGRATION_4_PREFLIGHT_ONLY — NICHT ANGEWENDET`
+Kein Production-Write, kein Vault-Write, kein Secret gesetzt, kein Trigger ersetzt,
+kein `CREATE OR REPLACE`, kein Ledger-Write, kein Edge-Deploy, kein Push.
+
+Artefakt `20260917140000_fix_autoflow_trigger_auth_vault_v1.sql`, unverändert seit `110dffc5`:
+md5 roh `be1854ea7e8d6b304a1d3edc6eafede5` · md5 ohne NL `3056567c716fd7a318254042f6e878a4` ·
+sha256 `f93a408a357d4e6c08afad78f8b15b9f93226312de9e7c3b8449338f4795be23` · 8038 B / 169 Zeilen.
+
+## N5.1 Was #4 tatsächlich ändert
+
+| Objekt | Art der Änderung |
+|---|---|
+| `public._autoflow_trigger_endpoint()` | **neu**, `RETURNS TABLE(function_url text, service_key text)`, SECURITY DEFINER, `search_path=public` |
+| `REVOKE ALL ON _autoflow_trigger_endpoint FROM PUBLIC, anon, authenticated` | neu |
+| `public.autoflow_on_appointment_completed()` | **Body ersetzt** (`CREATE OR REPLACE`, gleiche Signatur) |
+| `public.autoflow_on_appointment_signed()` | **Body ersetzt** (dito) |
+
+**Trigger selbst werden nicht angefasst** — kein `DROP`/`CREATE TRIGGER`. Verifiziert:
+beide Trigger hängen als `AFTER UPDATE … FOR EACH ROW` an `public.appointments`, beide aktiv
+(`tgenabled='O'`), beide **ohne** `WHEN`-Klausel. Keine Policy, kein Grant auf Tabellen,
+keine Tabelle, keine Spalte.
+
+## N5.2 Ist-Zustand in Production (read-only erhoben)
+
+| | `autoflow_on_appointment_completed()` | `autoflow_on_appointment_signed()` |
+|---|---|---|
+| returns / Sprache | `trigger` / plpgsql | `trigger` / plpgsql |
+| SECURITY DEFINER | true | true |
+| `search_path` | `public` | `public` |
+| Owner | `postgres` | `postgres` |
+| Body md5 (Länge) | `92910008ac054d1741829613ca2c0155` (710) | `ab5ddbc4edd28ceee007421c83ce0aa3` (691) |
+| ACL | `=X/postgres \| postgres \| anon \| authenticated \| service_role` | identisch |
+| `anon` EXECUTE | **true** | **true** |
+
+`_autoflow_trigger_endpoint()` existiert noch nicht.
+
+**Root-Cause der Migration unabhängig bestätigt:** das in beiden Bodies hartcodierte Bearer-Token
+wurde serverseitig dekodiert (ohne es auszugeben) — `role = anon`, `ref = vnschgjxkzzwzefqlrji`.
+Die deployte Edge Function prüft `token !== SUPABASE_SERVICE_ROLE_KEY → 401` (Zeile 19).
+Beide Trigger laufen also seit jeher in ein 401. Und: der aktuelle Trigger zeigt fest auf
+**Production**, was die Cross-Environment-Kritik im Migrationskopf belegt.
+
+```
+CURRENT_COMPLETED_ANON_EXECUTE=YES
+CURRENT_SIGNED_ANON_EXECUTE=YES
+```
+
+## N5.3 Beseitigt #4 den Advisor-Befund? — **NEIN**
+
+`CREATE OR REPLACE FUNCTION` **erhält bestehende ACLs**. #4 enthält für die beiden
+Triggerfunktionen **kein** `REVOKE`. Nach #4 hätten `anon` und `authenticated` also weiterhin
+EXECUTE, und `anon_security_definer_function_executable` würde beide weiterhin melden.
+
+**Ausnutzbar ist das nicht.** Empirisch geprüft (`set local role anon` + Direktaufruf):
+
+```
+0A000: trigger functions can only be called as triggers
+```
+
+PostgreSQL verweigert den Direktaufruf einer `RETURNS trigger`-Funktion unabhängig vom Grant.
+Der Service-Key kann darüber also nicht abfließen.
+
+Die **wirklich gefährliche** neue Funktion ist `_autoflow_trigger_endpoint()`: sie gibt den
+Service-Key als Spalte zurück und ist eine normale Funktion, also direkt aufrufbar. Genau
+dafür enthält #4 den `REVOKE` — **das ist korrekt und notwendig.**
+
+**Empfehlung (nicht Teil des Artefakts):** zwei zusätzliche `REVOKE`-Zeilen für die beiden
+Triggerfunktionen würden den Advisor-Befund sauber schließen. Das wäre eine Artefaktänderung
+und damit eine eigene Entscheidung — hier bewusst nicht eigenmächtig vorgenommen.
+
+## N5.4 Vault-Vertrag
+
+| Prüfung | Ergebnis |
+|---|---|
+| Extension `supabase_vault` / `pg_net` | vorhanden / vorhanden |
+| Schema `vault` | vorhanden |
+| **Secrets gesamt** | **0** — Vault ist komplett leer |
+| `autoflow_service_key` | **existiert nicht** |
+| `autoflow_functions_base_url` | **existiert nicht** |
+| `anon` / `authenticated`: `USAGE` auf `vault` | **false / false** |
+| `anon` / `authenticated`: `SELECT` auf `vault.decrypted_secrets` | **false / false** |
+| `current_setting('app.settings.supabase_url', true)` | **NULL** — der im Migrationskopf dokumentierte Defekt besteht real |
+
+**Erwarteter Secret-Typ:** `autoflow_service_key` = der **service_role key dieser Umgebung**
+(nicht anon, nicht ein User-JWT) — er muss byte-genau dem `SUPABASE_SERVICE_ROLE_KEY` der Edge
+Function entsprechen, sonst bleibt es beim 401. `autoflow_functions_base_url` = die Functions-
+Basis-URL **dieses** Projekts; die Funktion hängt `/autoflow-auto-invoice` an.
+
+**Fehlt eines der Secrets:** `_autoflow_trigger_endpoint()` liefert eine leere Menge, der
+Aufrufer loggt `RAISE WARNING` und überspringt den HTTP-Call. Das `UPDATE` auf `appointments`
+läuft normal durch. **Ungültiges Secret:** der Aufruf geht raus, die Edge Function antwortet
+401 — für den Trigger folgenlos, weil `net.http_post` asynchron ist.
+
+**Secret-Wert wird nie geloggt:** die `RAISE WARNING`-Texte enthalten nur Secret-*Namen* und die
+Appointment-ID, nie den Wert. Der Key fließt ausschließlich in den `Authorization`-Header.
+
+## N5.5 Environment-Isolation — PASS
+
+Das Artefakt enthält **keine** Projekt-URL und **kein** Token; beide Werte kommen aus Vault.
+Auf einer frischen Staging-Umgebung ohne Secrets ruft der Trigger **nichts** auf — insbesondere
+nicht die Produktion. Damit ist die ursprüngliche Kritik behoben.
+
+Zu beachten: die Kommentarzeilen 29–32 beschreiben die alte PROD-URL nur redigiert
+(`https://<prod-ref>.supabase.co/…`), also ohne verwendbaren Wert. **Die echte PROD-URL und das
+anon-JWT stehen dagegen weiterhin im Klartext in der bereits getrackten Ursprungsmigration
+`20260219153151_…sql`** — eine Altlast, die #4 nicht beseitigt und die außerhalb dieses
+Release-Schritts liegt.
+
+## N5.6 Trigger-Vertrag
+
+* **Doppeltes Feuern ist möglich.** Beide Trigger sind `AFTER UPDATE` ohne `WHEN`, die Bedingung
+  steckt im Body: `completed` prüft `NEW.status='completed' AND OLD.status IS DISTINCT FROM 'completed'`,
+  `signed` prüft `NEW.signed_at IS NOT NULL AND OLD.signed_at IS NULL`. Setzt **ein** UPDATE beides
+  gleichzeitig, feuern **beide** Funktionen und senden **zwei** HTTP-Requests für denselben Termin.
+* **Das ist durch #2 abgesichert:** der zweite Lauf scheitert am partiellen Unique-Index
+  `idx_invoice_appointments_autoflow_unique`, und #3 rollt dabei Rechnungskopf **und** Positionen
+  zurück (kein `ON CONFLICT DO NOTHING`). Es entsteht keine Doppelrechnung — genau der in
+  NACHTRAG 4 als **T12** live nachgewiesene Pfad.
+* **Trigger-Fehler blockieren keine Termin-Transaktion.** `net.http_post` schreibt nur in die
+  pg_net-Queue; HTTP-Fehler, Timeouts und 401/500 der Edge Function erreichen die Trigger-
+  Transaktion nicht. Fehlende Secrets führen zu `RAISE WARNING`, nicht zu `RAISE EXCEPTION`.
+  Das `UPDATE appointments` kann durch #4 also nicht fehlschlagen.
+
+## N5.7 **Blocker: die deployte Edge Function ist veraltet**
+
+| | |
+|---|---|
+| `autoflow-auto-invoice` Status | ACTIVE, **Version 79**, `verify_jwt=false` |
+| **deployt am** | **2026-08-08** |
+| Repo-Stand (ruft `create_invoice_with_items_for_provider`) | Commit `110dffc5`, **2026-09-20** |
+
+Der deployte Quelltext wurde gelesen und ist die **alte** Fassung. Sie ruft den #3-RPC **nicht**
+auf, sondern schreibt direkt in `invoices` mit den Spalten `appointment_id`, `subtotal`,
+`tax_amount`, `total`, `items`, `client_name`, `client_email`, `client_address` — von denen
+**0 von 8** in Production existieren (read-only geprüft). Zusätzlich setzt sie
+`client_id = contacts.id`, obwohl `invoices.client_id` per FK auf `profiles` zeigt.
+
+**Konsequenz:** #4 repariert die Trigger-Credentials, sodass der Aufruf die Edge Function zum
+ersten Mal überhaupt erreicht. Dort läuft dann die alte Logik in einen PostgREST-Fehler beim
+INSERT, loggt `autoflow_log.status='failed'` und antwortet 500. **#4 allein stellt Auto-Invoicing
+also nicht her** — dafür muss `autoflow-auto-invoice` neu deployt werden.
+
+**Aktuelle Sprengweite ist dennoch null:** `autoflow_settings` hat 2 Zeilen, davon
+**0 mit `auto_invoice_enabled = true`**. Die Function steigt für jeden Provider vorher mit
+„Auto-invoice disabled" aus. `appointments`: 5 `completed`, 0 signiert.
+
+## N5.8 Kompatibilität mit #2 und #3
+
+| Prüfung | Ergebnis |
+|---|---|
+| #2 Idempotenz | **PASS** — der Autoflow-Link ist der Schlüssel; Doppelfeuern erzeugt keine zweite Rechnung |
+| #3 Invoice-RPC | **PASS auf Artefaktebene** — der Repo-Stand der Edge Function ruft `create_invoice_with_items_for_provider` mit `p_provider_id`/`p_appointment_id` auf, genau der in NACHTRAG 4 getestete Vertrag; `service_role`-Grant passt zum Aufrufer |
+| #3 Invoice-RPC, **deployt** | **nicht erfüllt** — die laufende Version ruft den RPC nicht auf (N5.7) |
+
+## N5.9 Rollback
+
+`docs/backups/mig4_20260917140000_prestate_rollback_2026-09-21.sql`
+
+Die beiden PROD-Bodies sind **byte-identisch** zur bereits getrackten Ursprungsmigration
+`20260219153151_c6f406a7-109f-4ad7-9610-fe5761d53104.sql` — verifiziert über die extrahierten
+Bodies (`92910008…` / `ab5ddbc4…`). Das Rollback wird deshalb **deterministisch aus dieser
+Quelldatei erzeugt** statt das historische anon-JWT und die PROD-URL in ein zweites Artefakt zu
+kopieren. Der Generator bricht ab, wenn ein extrahierter Body nicht exakt dem Pre-State
+entspricht; die erzeugte Datei wird nicht committet.
+
+Rollback-Transaktion: beide Alt-Bodies per `CREATE OR REPLACE` zurück (erhält die ACLs
+automatisch), `drop function _autoflow_trigger_endpoint()`, Ledger-Zeile `20260917140000`
+löschen. Triggerbindung bleibt unberührt, da #4 sie nicht ändert. #1/#2/#3 nicht betroffen.
+
+**Generierung und Hash-Gegenprobe wurden durchgeführt** — beide Bodies ergaben exakt die
+PROD-Hashes. `ROLLBACK_EXACT_PROD_STATE=YES`.
+
+## N5.10 Testplan für #4 (vor Apply definiert)
+
+Voraussetzung für A–J: beide Vault-Secrets gesetzt **und** Edge Function neu deployt.
+Ohne das sind nur K–O sinnvoll.
+
+| # | Test | Methode | Erwartung |
+|---|---|---|---|
+| **M** | `anon` ruft Triggerfunktionen direkt auf | read-only, `set local role` | `0A000 trigger functions can only be called as triggers` |
+| **N** | `anon`/`authenticated` rufen `_autoflow_trigger_endpoint()` auf | read-only | `42501 insufficient_privilege` — **Service-Key darf nicht abfließen** |
+| **O** | `service_role`-Vertrag | read-only ACL-Prüfung | nur `postgres` + Triggerkontext |
+| **D** | Vault-Secret fehlt | Rollback-Transaktion: Termin auf `completed` | `RAISE WARNING`, **kein** HTTP-Call, `UPDATE` erfolgreich |
+| **L** | Statusänderung bleibt fachlich korrekt | dito | `appointments.status` korrekt gesetzt, Transaktion committed |
+| **A** | completed-Termin | Rollback-Transaktion | genau **ein** `net.http_post` in der pg_net-Queue |
+| **B** | signierter Termin | dito | genau ein Request, `trigger_type='after_signature'` |
+| **C** | ein UPDATE setzt `status` **und** `signed_at` | dito | zwei Requests — erlaubt; Schutz greift erst in #2/#3 |
+| **E** | ungültiges Secret | Secret bewusst falsch | Edge Function 401, Trigger-Transaktion unbeeinflusst |
+| **F/G/H** | Edge Function 401 / 500 / Timeout | pg_net-Response prüfen | Termin-UPDATE in allen Fällen erfolgreich |
+| **I** | #2-Idempotenz | zwei Läufe für denselben Termin | zweiter endet in `autoflow_duplicate` |
+| **J/K** | #3-Integration, keine Doppelrechnung | nach Redeploy | genau eine Rechnung, ein Autoflow-Link |
+
+Alle DB-seitigen Tests laufen im bewährten Muster: eine Transaktion, die sich per
+`RAISE EXCEPTION` zwingend selbst zurückrollt. **Achtung:** `net.http_post` ist bei Rollback
+*nicht* zwingend folgenlos — die pg_net-Queue-Zeile wird zwar mit zurückgerollt, aber Tests
+A–C sollten trotzdem gegen einen Termin ohne aktiviertes `auto_invoice_enabled` laufen, damit
+selbst ein durchgerutschter Request fachlich nichts auslöst.
+
+## N5.11 Empfohlene Rollout-Reihenfolge
+
+1. **Edge Function `autoflow-auto-invoice` neu deployen** (Repo-Stand `110dffc5`, ruft #3).
+   Vorher unwirksam, danach wirksam — vgl. CLAUDE.md: HTTP 200 ist kein Erfolgskriterium.
+2. Migration **#4** anwenden (kanonische Version `20260917140000`, gleicher Weg wie #3).
+3. Vault-Secrets setzen — **manuell, Werte niemals ins Repo**:
+   `autoflow_service_key` (service_role key **dieser** Umgebung) und
+   `autoflow_functions_base_url` (Functions-Basis-URL **dieses** Projekts).
+4. Tests M/N/O, dann D/L, dann A–C.
+5. Erst danach `auto_invoice_enabled` für **einen** Pilot-Provider aktivieren und J/K prüfen.
+
+Schritt 2 ist von 1 und 3 unabhängig **anwendbar**, aber ohne beide **wirkungslos**.
+Reihenfolge 1 vor 3 ist wichtig: sonst erreicht der erste echte Trigger-Aufruf die alte Function.
+
+## N5.12 Ergebnis
+
+```
+MIG4_LEDGER_PRESENT=NO
+MIG4_PROD_FUNCTIONS_BACKED_UP=YES
+MIG4_ROLLBACK_READY=YES
+ROLLBACK_EXACT_PROD_STATE=YES
+
+CURRENT_COMPLETED_ANON_EXECUTE=YES
+CURRENT_SIGNED_ANON_EXECUTE=YES
+MIG4_FIXES_ANON_EXECUTE_FINDING=NO   (nicht ausnutzbar, siehe N5.3)
+
+MIG4_SECURITY_REVIEW=PASS
+MIG4_TRIGGER_CONTRACT=PASS
+MIG4_VAULT_CONTRACT=PASS
+MIG4_ENVIRONMENT_ISOLATION=PASS
+MIG4_IDEMPOTENCY_COMPATIBILITY=PASS
+MIG4_INVOICE_RPC_COMPATIBILITY=WARN  (Artefakt PASS, deployte Function veraltet — N5.7)
+
+VAULT_SECRET_EXISTS=NO
+VAULT_SECRET_REQUIRED_BEFORE_APPLY=NO
+VAULT_SECRET_REQUIRED_BEFORE_FUNCTIONAL_TEST=YES
+
+TEST_PLAN_READY=YES
+MIGRATION_4_APPLIED=NO
+SAFE_TO_CONSIDER_MIGRATION_4=YES  (mit Rollout-Reihenfolge aus N5.11)
+```
+
+**STOPP.** Migration #4 nicht angewendet. Keine Anwendung ohne ausdrückliche Freigabe.
+
+---
+
+# NACHTRAG 6 — Edge-Function-Cutover `autoflow-auto-invoice` (2026-09-21)
+
+**Status:** `EDGE_FUNCTION_DEPLOYED`
+Eigener Release-Schritt, **keine** Migration. Migration #4 weiterhin **nicht** angewendet,
+**keine** Vault-Änderung, **kein** `auto_invoice_enabled` aktiviert, kein Push.
+Ausschließlich `autoflow-auto-invoice` deployt — keine andere Edge Function, keine Config-Änderung.
+
+## N6.1 Warum dieser Schritt vor #4 kommt
+
+NACHTRAG 5 (N5.7) hatte aufgedeckt: die in Production laufende Fassung stammte vom
+**2026-08-08** und war älter als der Repo-Stand, der #2/#3 nutzt. Migration #4 repariert die
+Trigger-Credentials und lässt den Aufruf zum ersten Mal überhaupt durch — er wäre damit auf der
+alten, defekten Logik gelandet. Deshalb zuerst der Cutover, dann #4.
+
+## N6.2 Alt gegen Neu
+
+| | vorher | nachher |
+|---|---|---|
+| Version | **79** | **80** |
+| deployt am | 2026-08-08 23:49 UTC | **2026-09-21 13:06 UTC** |
+| Rechnungspfad | `.from("invoices").insert(invoiceData)` — direkter, nicht-atomarer Write | **`rpc("create_invoice_with_items_for_provider", …)`** (#3) |
+| Spalten im Write | `appointment_id`, `subtotal`, `tax_amount`, `total`, `items`, `client_name`, `client_email`, `client_address` — **0 von 8 existieren** | entfällt, die RPC schreibt |
+| `client_id` | `contacts.id` (falsch — FK zeigt auf `profiles`) | `horse.owner_id`, also `profiles.id` |
+| Duplikatsprüfung | `invoices.appointment_id` — Spalte existiert nicht, konnte nie greifen | `invoice_appointments` mit `source='autoflow'`, spiegelt den #2-Index |
+| Idempotenz | keine | `autoflow_duplicate` / SQLSTATE `23505` → 200 ohne Rechnung |
+| Status / `verify_jwt` | ACTIVE / false | ACTIVE / **false (unverändert)** |
+
+## N6.3 Predeploy-Audit (12 Punkte)
+
+| # | Prüfung | Ergebnis |
+|---|---|---|
+| 1 | kein `.from("invoices").insert(...)` | ✅ **0** `.from("invoices")`-Zugriffe überhaupt |
+| 2 | kein separater `invoice_items`-Write | ✅ **0** Zugriffe |
+| 3 | Rechnung über `create_invoice_with_items_for_provider` | ✅ Zeile 142/143 |
+| 4 | `p_appointment_id` korrekt übergeben | ✅ Zeile 146, `appointment.id` |
+| 5 | #2-Idempotenzvertrag respektiert | ✅ Vorab-SELECT filtert `source='autoflow'` (spiegelt den partiellen Index); verlorenes Rennen → 200 |
+| 6 | #3-Provider-/Tenant-Vertrag | ✅ `p_provider_id`, `client_id`, `horse_id` stammen **alle aus der DB-Zeile**, nie aus dem Request |
+| 7 | Fehlerbehandlung | ✅ `autoflow_duplicate`/`23505` → 200 no-op; sonstige RPC-Fehler → `autoflow_log('failed')` + 500 mit generischer Meldung |
+| 8 | keine Secrets geloggt | ✅ kein `console.*` und kein `logAction`-Feld enthält Key/Token |
+| 9 | Authorization auf service-role begrenzt | ✅ `token !== supabaseServiceKey → 401` |
+| 10 | Key nur aus ENV | ✅ `Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")`, kein Literal |
+| 11 | kein fremder Tenant abrechenbar | ✅ Request liefert nur `appointment_id` + `trigger_type`; alle Tenant-Werte kommen aus der Appointment-Zeile |
+| 12 | disabled-Pfad erhalten | ✅ `!settings?.auto_invoice_enabled` → 200 „skipped", keine Rechnung |
+
+**Abhängigkeiten:** keine relativen Imports — nur `deno.land/std@0.190.0` und
+`esm.sh/@supabase/supabase-js@2`. Die Function ist eine einzelne, in sich geschlossene Datei.
+
+### Klassifikation aller Tabellenzugriffe
+
+| Zeile | Tabelle | Klasse |
+|---|---|---|
+| 42 | `appointments` | READ |
+| 61 | `autoflow_settings` | READ |
+| 101 | `invoice_appointments` | **READ** |
+| 193, 203 | `notifications` | PRODUCTIVE_DIRECT_WRITE |
+| 243 | `autoflow_log` | PRODUCTIVE_DIRECT_WRITE |
+
+`invoices` und `invoice_items`: **kein Zugriff**. Rechnungsschreiben läuft ausschließlich
+RPC-INDIRECT über #3. → **`PRODUCTIVE_DIRECT_INVOICE_WRITE=NONE`**
+
+Die beiden verbleibenden Direktwrites (`notifications`, `autoflow_log`) laufen **nach** der
+Rechnung und sind nicht Teil ihrer Transaktion — schlagen sie fehl, existiert die Rechnung
+trotzdem. Das ist unkritisch, aber bewusst festgehalten.
+
+## N6.4 Statische Prüfungen
+
+| Prüfung | Ergebnis |
+|---|---|
+| `deno check` (Deno 2.9.6, Remote-Deps geladen) | **Exitcode 0**, keine Typfehler |
+| `npm run scan:secrets:hufmanager` | **`HUFMANAGER_SECRET_SCAN=PASS files=2763`** |
+| `vitest run` (Invoice-/Tenant-Tests) | **4 Dateien, 76 Tests, alle grün** |
+| `git diff --check` | sauber (Datei unverändert gegenüber `110dffc5`) |
+| Secret-Muster in der Function | 0 JWT · 0 `sbp_` · 0 `supabase.co`-URL · `SERVICE_ROLE_KEY` nur als ENV-Name |
+
+> **Einschränkung, ehrlich festgehalten:** für `autoflow-auto-invoice` existieren **keine eigenen
+> Tests**. Die 76 gelaufenen Tests sind Frontend-Lib-Tests (`invoiceLineItems`, `invoiceTax`,
+> `invoiceStatus`, `inviteTenantBinding`) und decken diese Function nicht ab. Die Absicherung
+> dieses Schritts ruht auf dem statischen Audit, `deno check` und den Live-Tests in N6.6.
+
+## N6.5 Deploy
+
+Vor dem Deploy Sprengweite geprüft: **kein** Cron-Job ruft `autoflow-auto-invoice`
+(16 Jobs gesamt; die autoflow-Jobs betreffen `monthly-checkin` und `feedback-check`).
+Einzige Aufrufer sind die beiden Trigger — und die laufen bis Migration #4 in ein 401.
+Ein fehlerhafter Deploy hätte also praktisch keine Wirkung gehabt.
+
+`config.toml` deklariert bereits `[functions.autoflow-auto-invoice] verify_jwt = false`;
+der bestehende Auth-Vertrag wurde **nicht** angefasst, die Function validiert weiterhin selbst.
+
+Deployt: nur `index.ts`, Entrypoint `index.ts`, `verify_jwt=false`.
+
+| Fingerprint | Wert |
+|---|---|
+| Repo-Artefakt md5 | `0eba6a7e20cfa262527c50d955d430c4` |
+| Repo-Artefakt sha256 | `fe943083f0a9a309f88eb0e8c194c5c8064b527046f2cf6deeac7ad34eb7290a` |
+| Größe | 10424 Bytes / 254 Zeilen |
+| Bundle `ezbr_sha256` (von Supabase) | `7aa60d2558242d58daf75bca51ef9c6b02b46872c64200119fce759f15436f56` |
+
+## N6.6 Postdeploy-Verifikation
+
+Der deployte Source wurde **zurückgelesen** und gegen die Sollwerte geprüft:
+
+| Prüfung | Ergebnis |
+|---|---|
+| Status / Version | **ACTIVE / 80** (> 79) ✅ |
+| `verify_jwt` | **false** — unverändert ✅ |
+| `create_invoice_with_items_for_provider` | vorhanden ✅ |
+| `p_appointment_id: appointment.id` | vorhanden ✅ |
+| `autoflow_duplicate` / `23505`-Handling | vorhanden ✅ |
+| Auth-Guard `token !== supabaseServiceKey` | vorhanden ✅ |
+| alter `.from("invoices").insert`-Pfad | **entfernt** ✅ |
+| `.from("invoice_items")` | nicht vorhanden ✅ |
+| hardcodierte Keys / Projekt-URLs | **keine** ✅ |
+
+### Live-Tests gegen die deployte Function
+
+| Test | Erwartung | Ergebnis |
+|---|---|---|
+| **A** Request ohne `Authorization` | 401 | **HTTP 401** `{"error":"Unauthorized"}` ✅ |
+| **B** falscher Bearer-Token | 401 | **HTTP 401** `{"error":"Unauthorized"}` ✅ |
+| OPTIONS-Preflight (CORS) | 200 | **HTTP 200** ✅ |
+| **C** gültige Auth, fehlende `appointment_id` → 400 | — | **BLOCKED** |
+| **D** nicht existierende `appointment_id` → 404 | — | **BLOCKED** |
+| **E** Provider mit `auto_invoice_enabled=false` → 200/skipped | — | **BLOCKED** |
+
+C/D/E benötigen den echten `service_role`-Key. Der wird hier weder angefordert noch gehalten
+noch protokolliert, deshalb bleiben sie offen. Sie lassen sich später gefahrlos nachholen:
+C und D erzeugen keinerlei Writes, E erzeugt genau eine `autoflow_log`-Zeile mit
+`status='skipped'` und **keine** Rechnung, kein `invoice_item`, keinen Link.
+
+## N6.7 Prod-State nach dem Deploy
+
+| Prüfung | Soll | Ist |
+|---|---|---|
+| Migration #4 `20260917140000` | 0 | **0** ✅ |
+| Ledger gesamt / Kopf | 437 / `20260917130000` | identisch ✅ |
+| `_autoflow_trigger_endpoint` | nicht vorhanden | **0** ✅ |
+| public functions | 188 | **188** ✅ |
+| Vault-Secrets | 0 | **0** ✅ unverändert |
+| `autoflow_settings` Zeilen / davon aktiv | 2 / 0 | **2 / 0** ✅ |
+| `invoices` / `invoice_items` / `invoice_appointments` | 11 / 12 / 0 | **11 / 12 / 0** ✅ |
+| `autoflow_log` gesamt | 0 | **0** ✅ — kein Aufruf kam je an der Auth vorbei |
+
+**`UNEXPECTED_PROD_WRITES=NONE`.**
+
+## N6.8 Ergebnis
+
+```
+AUTOFLOW_PROD_BEFORE_VERSION=79
+LOCAL_AUTOFLOW_REVIEW=PASS
+CANONICAL_INVOICE_RPC_USED=YES
+PRODUCTIVE_DIRECT_INVOICE_WRITE=NONE
+IDEMPOTENCY_COMPATIBLE=YES
+TENANT_CONTRACT_COMPATIBLE=YES
+AUTH_GUARD=PASS
+SECRET_SCAN=PASS
+PREDEPLOY_TESTS=PASS
+
+AUTOFLOW_DEPLOYED=YES
+AUTOFLOW_PROD_AFTER_VERSION=80
+DEPLOYED_SOURCE_MATCHES_REPO=YES
+POSTDEPLOY_AUTH_TEST=PASS
+DISABLED_PROVIDER_TEST=BLOCKED   (service_role-Key nicht verfuegbar)
+UNEXPECTED_PROD_WRITES=NONE
+
+MIGRATION_4_APPLIED=NO
+VAULT_CHANGED=NO
+AUTO_INVOICE_ENABLED_COUNT=0
+
+SAFE_TO_PREPARE_MIGRATION_4=YES
+```
+
+**Nächster Schritt laut Rollout-Reihenfolge (N5.11):** Schritt 1 ist erledigt. Es folgen
+Migration #4, danach die beiden Vault-Secrets, danach Tests, danach ein Pilot-Provider.
+
+**STOPP.** Keine Migration #4, keine Vault-Secrets, kein `auto_invoice_enabled`, kein Push.
