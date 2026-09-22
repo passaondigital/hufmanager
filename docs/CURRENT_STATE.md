@@ -1,119 +1,112 @@
-# HUFI / HufManager — Current State
+# HufManager — CURRENT STATE / SOURCE OF TRUTH
 
-> Aktueller Snapshot für Menschen und Agenten. Bei Widerspruch gilt: verifizierter Production-Stand schlägt ältere Planung oder Marketingtext.
+**Stand:** 22.09.2026
 
-**Stand:** 14.08.2026
+> Aktueller technischer Snapshot für Menschen und Agenten. Bei Widerspruch gilt: verifizierter Runtime-/Production-Stand vor älterer Planung, Marketingtext oder historischer Dokumentation.
 
-## Produktstatus
+## 1. Git / Release-Linie
 
-### HufManager
+- Repository: `passaondigital/hufmanager`
+- Aktive Lifecycle-Release-Linie: `release/hufmanager-lifecycle-2026-09-11`
+- Operativer Code-Baseline-Commit vor diesem reinen Dokumentationsupdate: `0ca6d2a44cb5026b04e6994b1d68f26a122e0725`
+- `main` ist für den Lifecycle-Strang nicht der aktuelle Arbeitsstand; der letzte dort sichtbare Baseline-Commit war `d68e5151e64e042c56099c6f332c9911b1c71344`.
+- Dieses Dokumentationsupdate ändert keine Runtime-, Datenbank- oder Produktlogik.
 
-- **Status:** produktiv / Dennis-ready / real-customer-ready
-- **Landing:** `https://hufmanager.de`
-- **App:** `https://app.hufmanager.de`
-- **Produkt:** eigenständiger HufManager Relaunch 2026 für Hufbearbeiter/Hufpfleger
-- **Provider-Shell:** Slim/Hybrid, eine Oberfläche für Tagesarbeit und Fachseiten
-- **KundenApp:** produktiver Clientbereich in derselben App-/Datenbasis, mit eigener `ClientAppLayout`-Shell und Rollenprüfung
-- **Partnerbereich:** produktiv getestet, pferdebezogene Zugriffe über gültige Relationships
+## 2. Bereits verifiziert
 
-Go-Live-Evidenz:
-- 148/148 Tests PASS
-- Build PASS
-- Build = Deploy = Live verifiziert
-- Landing HTTP 200
-- App HTTP 200
-- HufiApp HTTP 200 und unberührt
-- P0 Security 5/5 PASS
-- Production-Acceptance 14.08.2026 mit Provider, Client und Partner
-- `DENNIS_READY=YES`
-- `READY_FOR_REAL_CUSTOMER=YES`
+### XXL-Staging / P0
 
-Zusätzliche P1-Härtung der Partner-Einladungsannahme ist in Production vorhanden. `accept_partner_invitation` bindet die User-ID an `auth.uid()`, entzieht `anon`/`PUBLIC` EXECUTE und schützt gegen Wiederverwendung/Race-Conditions.
+Aus dem dokumentierten Stabilisierungslauf:
 
-Verbindliche Detaildoku:
-- `docs/HUFMANAGER_RELAUNCH_2026_FINAL.md`
-- `docs/HUFMANAGER_FAQ.md`
-- `docs/HUFIBOSS_HUFMANAGER_CANONICAL.md`
-- `HUFMANAGER_DEMO_ACCEPTANCE_2026-08-14.md`
-- `HUFMANAGER_RELAUNCH_2026_ABSCHLUSS_MAENGELBERICHT.md`
+- Staging-Isolation: PASS
+- DB-Stabilität: PASS
+- P0 Security/DB: PASS
+- Invoice-Atomicität/Negativmatrix: PASS
+- DB-Lint: 0 Fehler
+- aktive Staging→Production-Pfade wurden vor den Tests deaktiviert bzw. verifiziert
 
-### HufiApp
+Diese Punkte nicht ohne neuen gegenteiligen Beweis erneut als offen behandeln.
 
-- **Live:** `https://hufiapp.de`
-- HufiApp ist eine getrennte Frontend-Auslieferung und darf bei HufManager-Deployments nicht überschrieben werden.
-- Historisch bestehen gemeinsame Code-/Backend-Bausteine; Produktidentität und Webroots sind trotzdem getrennt zu behandeln.
+## 3. Lifecycle / Production-Deploy — aktueller Gate-Stand
 
-### HufiOS / HufiBoss
+Nach den operatorseitig dokumentierten Claude-Code-/Terminal-Ausgaben:
 
-- **HufiOS** = Pascals Arbeits-/Betriebssystem-Umgebung.
-- **HufiBoss** = CEO-Agent / zentraler Assistent in HufiOS.
-- **HufiBrain** = Wissens-/Memory-/Intelligence-Schicht.
-- Kanonische Architektur liegt zusätzlich in Google Drive unter „HUFI – Kanonische Architektur & Modellfamilie“.
-- Für HufManager-Fragen muss HufiBoss `docs/HUFIBOSS_HUFMANAGER_CANONICAL.md` als Produktwissen verwenden.
+- Prerequisite-Migration für die Lifecycle-Step-1-Abhängigkeiten wurde kontrolliert angewendet und postgeprüft.
+- Lifecycle **Step 1** wurde atomar angewendet und postgeprüft.
+- Der Postcheck für Step 1 war PASS.
+- **Step 2 wurde NICHT angewendet.**
+- Kein Scheduler-Start, kein Edge-Deploy und keine Service-Restarts im gestoppten Schritt.
+- Kein blindes `supabase db push`.
 
-## HufManager Provider-Navigation
+### Aktueller Blocker
 
-1. Heute
-2. Tour
-3. Kunden & Pferde
-4. Hufi Hufanalyse
-5. Finanzen
-6. Mehr
+Die lokale Migration-Dateimenge und das Production-/Remote-Migration-Ledger sind nicht eindeutig deckungsgleich.
 
-Fachseiten wie Pferdeakte, Kalender, Rechnungen, Ausgaben, Fuhrpark und Management laufen innerhalb derselben Hybrid-Shell. Die alte sichtbare 5-A-Navigation ist nicht mehr die primäre Provider-Navigation.
+Damit gilt:
 
-## Pferd-zentriertes Identitätsmodell
+**MIGRATION_LEDGER = BLOCKED**  
+**SAFE_FOR_MIGRATION_2 = NO**
 
-- `#KID` = Kunde / Pferdebesitzer
-- `#EQID` = dauerhafte Pferde-/Equine-ID
-- `#PID` = Provider / Pferdeprofi
-- `#PRID` = Fachpartner / weiterer Pferdeprofi
+Das ist derzeit der maßgebliche Release-Stop. Ein Schema kann fachlich korrekt sein und trotzdem eine uneindeutige Migration-Historie besitzen; Migrationen dürfen deshalb nicht nur wegen Dateiname/Timestamp erneut ausgeführt werden.
 
-Kanonische Zugriffskette:
+## 4. Backup / Rollback
 
-`Identity → Context/Workspace → Pferd/#EQID → Relationship → Status → Grant/Permission → Action`
+Laut den dokumentierten Deploy-Ausgaben wurden vor den Production-Schritten Backup-/Restore-/Rollback-Artefakte erzeugt und verifiziert.
 
-Das Pferd steht global zuerst. Eine sichtbare Rolle, Route, URL oder ID erzeugt allein keine Berechtigung.
+Vor jedem weiteren Production-Schritt müssen diese Artefakte erneut auffindbar und zur betroffenen Migration passend sein.
 
-## Security-Grundsätze
+## 5. Exakt nächster technischer Schritt
 
-Vor Relaunch verifiziert:
-1. Profile / PII
-2. Horses / Medical Data
-3. Invoices / Payment Fields
-4. GPS / Locations / Timed Access
-5. Appointments / Consent
+Vor Migration Step 2:
 
-Partner-/Cross-User-Zugriffe benötigen serverseitig prüfbare Beziehungen und Berechtigungen. Unklarer oder inaktiver Status bedeutet DENY/LIMITED.
+1. lokales Repo-Migrationsledger inventarisieren,
+2. Remote-/Production-Ledger inventarisieren,
+3. tatsächlichen Production-Schema-Stand read-only erfassen,
+4. jede Abweichung klassifizieren als:
+   - echte fehlende Migration,
+   - bereits angewendet mit anderem Dateinamen/Timestamp,
+   - historische Legacy-Migration,
+   - neue Release-Migration,
+   - reine Ledger-/Naming-Abweichung ohne Schema-Differenz,
+5. für jede Abweichung dokumentieren: LOCAL, REMOTE, SCHEMA-EFFEKT, BEREITS ANGEWENDET, RISIKO, BEHANDLUNG,
+6. erst danach ein explizites `LEDGER_RECONCILED=YES` und `SAFE_FOR_MIGRATION_2=YES` zulassen.
 
-## Infrastrukturgrenze
+Bis dahin:
 
-Produktionsauslieferung ist getrennt:
-- HufManager Landingpage
-- HufManager App
-- HufiApp
+- keine Migration #2,
+- kein ungeprüfter DB-Push,
+- kein DNS-Cutover,
+- kein neuer Production-Deploy,
+- keine destruktive History-Reparatur.
 
-Vor Deployments immer aktuelle Nginx-Roots prüfen, Backup/Rollback erzeugen, Build/Test durchführen und Live-Ziel validieren.
+## 6. Produkt-/Pilotstatus
 
-## Was nicht ungeprüft behauptet wird
+Der technische Kern wurde stark gehärtet, aber ein Production-/Pilot-GO darf nicht aus einzelnen PASS-Werten abgeleitet werden.
 
-Nicht aus bloßer Code-Existenz oder älteren Marketingtexten ableiten:
-- vollständige Offlinefähigkeit aller Fachfunktionen
-- automatische Zahlungserkennung
-- DATEV-Export
-- automatischer Mahnlauf
-- medizinische Diagnose durch Hufi
-- pauschale Partner-/Therapeutenrechte
-- aktuelle Preise ohne Gegenprüfung gegen Live-Landing/Checkout
+Die maßgebliche Produktprüfung bleibt der vollständige reale Kernflow:
 
-## Source-of-Truth-Regel
+`Login → Kunde → Pferd → Termin → Tour → Dokumentation → Material → Rechnung/PDF`
+
+inklusive Mobile, Draft/Resume und UI-Mandantentrennung.
+
+## 7. Infrastrukturgrenze
+
+Bekannte Trennung:
+
+- XXL-Staging: `cloud-server-10634828` / `85.190.105.104`
+- HufManager Staging-App: `/srv/hufi/lab/factory/projects/hufmanager`
+- Production und Staging nicht vermischen.
+- Supabase-/DB-/DNS-/Deployment-Ziele vor jedem Write erneut verifizieren.
+
+## 8. Source-of-Truth-Regel
 
 Priorität bei Konflikten:
-1. aktuell verifizierter Production-Stand
-2. Security-/Acceptance-Evidenz
-3. aktueller Code-/Migrationsstand
-4. aktuelle Produktdoku
-5. ältere Architektur-/Planungsdoku
-6. Marketingtext
 
-Keine Secrets, Tokens, Passwörter oder Service-Role-Keys in Dokumentation oder Agentenwissen übernehmen.
+1. aktuell verifizierter Production-/Runtime-Stand,
+2. Backup-/Postcheck-/Acceptance-Evidenz,
+3. aktueller Release-Branch und Migrationen,
+4. HM-CodeDoku / Master-Audit,
+5. ältere Architektur-/Planungsdokumente,
+6. Marketingtext.
+
+Keine Secrets, Tokens, Passwörter oder Service-Role-Keys in Git oder Agentenwissen aufnehmen.
