@@ -21,6 +21,11 @@ verify_jwt = true
 [functions.copecart-webhook]
 verify_jwt = false
 
+[functions.hufi-data-core]
+# Public webhook endpoint by design. Authentication is the CopeCart
+# X-Copecart-Signature HMAC checked over the raw request body.
+verify_jwt = false
+
 [functions.serve-ical-feed]
 verify_jwt = false
 
