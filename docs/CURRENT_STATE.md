@@ -1,119 +1,129 @@
-# HUFI / HufManager — Current State
+# HufManager — CURRENT STATE / SOURCE OF TRUTH
 
-> Aktueller Snapshot für Menschen und Agenten. Bei Widerspruch gilt: verifizierter Production-Stand schlägt ältere Planung oder Marketingtext.
+**Stand:** 24.09.2026 (live verifiziert, read-only gegen Production)
 
-**Stand:** 14.08.2026
+> Aktueller technischer Snapshot für Menschen und Agenten. Bei Widerspruch gilt:
+> Repo + aktuelle Runtime + aktuelle DB + reproduzierbare Testevidenz vor älterer Doku.
+>
+> **Korrektur zum Stand 22.09.:** Die dort genannte Sperre `MIGRATION_LEDGER=BLOCKED` war
+> zum Zeitpunkt des Schreibens bereits überholt. Sie basierte auf Commit `0ca6d2a4` und kannte
+> 23 lokal auf dem Server liegende, ungepushte Commits vom 21.09. nicht (Ledger-Reconciliation
+> + Production-Apply der Release-Migrationen #1–#9). Diese Commits sind jetzt gepusht.
 
-## Produktstatus
+## 1. Source of Truth
 
-### HufManager
+| Punkt | Wert (verifiziert 24.09.2026) |
+|---|---|
+| Repo | `passaondigital/hufmanager`, lokal `/home/administrator/hufmanager` |
+| Release-Branch | `release/hufmanager-lifecycle-2026-09-11` |
+| Letzter Code-Commit | `7a13d19b` fix(invite): route every client-creation path through the #5-#9 contract |
+| `origin/main` | `f7640eaa` — für HufManager-Slim **nicht** maßgeblich |
+| Worktrees / Stashes | nur Haupt-Worktree, keine Stashes |
+| Server | `cloud-server-10634828` / `85.190.105.104` — **Production-Web und Staging-Web laufen auf demselben Host** |
+| Production-Web | `app.hufmanager.de` (DNS → 85.190.105.104) → nginx root `/srv/hufi/business/hufmanager/app` (echtes Verzeichnis, Build vom **12.09.2026**, noch keine Release-/Symlink-Struktur) |
+| Staging-Web | `hufmanager-staging.huficloud.heyhufi.com` → `/srv/hufi/lab/factory/projects/hufmanager/dist` (HTTP 200; HTTPS-Check vom Server aus: kein Response) |
+| Production-DB | Supabase `vnschgjxkzzwzefqlrji` |
+| Lokale Supabase | Docker-Stack `supabase_*_vnschgjxkzzwzefqlrji` auf dem Server = **lokale Kopie/Staging**, nicht Production |
+| Supabase CLI | **nicht eingeloggt** (kein Access-Token) → Edge-Deploy nur über Supabase-MCP/Dashboard |
 
-- **Status:** produktiv / Dennis-ready / real-customer-ready
-- **Landing:** `https://hufmanager.de`
-- **App:** `https://app.hufmanager.de`
-- **Produkt:** eigenständiger HufManager Relaunch 2026 für Hufbearbeiter/Hufpfleger
-- **Provider-Shell:** Slim/Hybrid, eine Oberfläche für Tagesarbeit und Fachseiten
-- **KundenApp:** produktiver Clientbereich in derselben App-/Datenbasis, mit eigener `ClientAppLayout`-Shell und Rollenprüfung
-- **Partnerbereich:** produktiv getestet, pferdebezogene Zugriffe über gültige Relationships
+## 2. Migration Ledger — RECONCILED
 
-Go-Live-Evidenz:
-- 148/148 Tests PASS
-- Build PASS
-- Build = Deploy = Live verifiziert
-- Landing HTTP 200
-- App HTTP 200
-- HufiApp HTTP 200 und unberührt
-- P0 Security 5/5 PASS
-- Production-Acceptance 14.08.2026 mit Provider, Client und Partner
-- `DENNIS_READY=YES`
-- `READY_FOR_REAL_CUSTOMER=YES`
+Live `list_migrations` (24.09.): letzter Eintrag `20260920190000_fix_cross_provider_ghost_takeover_v1`.
 
-Zusätzliche P1-Härtung der Partner-Einladungsannahme ist in Production vorhanden. `accept_partner_invitation` bindet die User-ID an `auth.uid()`, entzieht `anon`/`PUBLIC` EXECUTE und schützt gegen Wiederverwendung/Race-Conditions.
+In Production angewendet und im Ledger (Evidenz: `docs/HUFMANAGER_MIGRATION_LEDGER_RECONCILIATION_2026-09-21.md`, Nachträge 1–13):
 
-Verbindliche Detaildoku:
-- `docs/HUFMANAGER_RELAUNCH_2026_FINAL.md`
-- `docs/HUFMANAGER_FAQ.md`
-- `docs/HUFIBOSS_HUFMANAGER_CANONICAL.md`
-- `HUFMANAGER_DEMO_ACCEPTANCE_2026-08-14.md`
-- `HUFMANAGER_RELAUNCH_2026_ABSCHLUSS_MAENGELBERICHT.md`
+```
+20260917120000 add_create_customer_with_contact_v1
+20260917125000 add_autoflow_invoice_appointment_idempotency_v1
+20260917130000 add_create_invoice_with_items_for_provider_v1
+20260917140000 fix_autoflow_trigger_auth_vault_v1
+20260917150000 add_pending_client_invite_contract_v1
+20260917152500 fix_hm_normalize_email_search_path_v1   (Hardening)
+20260917155000 fix_invite_tenant_auto_assign_v1
+20260917160000 add_create_invited_customer_with_contact_v1
+20260920120000 fix_pending_invite_ghost_merge_v1
+20260920190000 fix_cross_provider_ghost_takeover_v1
+```
 
-### HufiApp
+```
+LEDGER_RECONCILED=YES         (Weg A: Ledger unangetastet, Release migrationsweise)
+RELEASE_MIGRATIONS_PENDING=0
+SAFE_FOR_NEXT_MIGRATION=YES, aber nur einzeln per Apply-Skript mit Pre/Postcheck
+```
 
-- **Live:** `https://hufiapp.de`
-- HufiApp ist eine getrennte Frontend-Auslieferung und darf bei HufManager-Deployments nicht überschrieben werden.
-- Historisch bestehen gemeinsame Code-/Backend-Bausteine; Produktidentität und Webroots sind trotzdem getrennt zu behandeln.
+Bekannte, **bewusst nicht reparierte** Ledger-Drift: der Slim-Entitlement-Layer
+(`20260911204057…20260912051700`, 7 Dateien) und 36 Legacy-Migrationen sind im Schema wirksam,
+aber ohne Ledger-Eintrag. 8 `_prepared`-Migrationen sind nie angewendet.
+**`supabase db push` bleibt verboten** (würde ~395 bereits angewendete Migrationen erneut ausführen
+und `_prepared`-Billing-Logik scharf schalten).
 
-### HufiOS / HufiBoss
+## 3. Production-Stand: DB neu, Edge/Frontend alt
 
-- **HufiOS** = Pascals Arbeits-/Betriebssystem-Umgebung.
-- **HufiBoss** = CEO-Agent / zentraler Assistent in HufiOS.
-- **HufiBrain** = Wissens-/Memory-/Intelligence-Schicht.
-- Kanonische Architektur liegt zusätzlich in Google Drive unter „HUFI – Kanonische Architektur & Modellfamilie“.
-- Für HufManager-Fragen muss HufiBoss `docs/HUFIBOSS_HUFMANAGER_CANONICAL.md` als Produktwissen verwenden.
+| Komponente | Production | Repo |
+|---|---|---|
+| DB-Migrationen #1–#9 | **angewendet** | = |
+| `autoflow-auto-invoice` | v80, neu (21.09. deployt) | = |
+| `invite-client-with-password` | **v7 alt** — ohne Pending-Invite-Vertrag | neu (Vertrag #5–#9) |
+| `invite-client` | **v8 alt** — createUser + setTimeout + eigener Grant | neu: HTTP 410 Gone |
+| `admin-create-client` | **v117 alt** — direkte Writes, setTimeout | neu: kanonischer Vertrag |
+| `hufi-agent` | v40 | Repo-Fassung nutzt neue RPCs, Deploy „mit Vorbehalt" |
+| Frontend | Build vom 12.09. | RC `110dffc5` + Fixes bis `7a13d19b` |
 
-## HufManager Provider-Navigation
+### Offener Security-P0 (live)
 
-1. Heute
-2. Tour
-3. Kunden & Pferde
-4. Hufi Hufanalyse
-5. Finanzen
-6. Mehr
+Beide in Production erreichbaren Einladepfade (`invite-client` v8, `invite-client-with-password` v7)
+legen **keinen** Pending Invite an. Ohne Invite greift in `auto_assign_client_to_provider()` der
+generische „erster Provider"-Fallback (fremder Provider erhält aktiven Grant inkl. `can_view_medical`)
+und die Ghost-Merge-Schleife in `handle_new_user()` bleibt aktiv.
 
-Fachseiten wie Pferdeakte, Kalender, Rechnungen, Ausgaben, Fuhrpark und Management laufen innerhalb derselben Hybrid-Shell. Die alte sichtbare 5-A-Navigation ist nicht mehr die primäre Provider-Navigation.
+Read-only Messung 24.09.: seit 20.09. 1 neuer Auth-User, 0 neue Kunden, **0 verdächtige Grants** →
+bisher kein Schaden. Das Risiko besteht bis zum Deploy der Repo-Fassungen.
 
-## Pferd-zentriertes Identitätsmodell
+Fix liegt fertig im Repo (`7a13d19b`), getestet (siehe §5). **Deploy braucht Pascals Freigabe**,
+weil Edge-Functions und Frontend zusammen gehen müssen (altes Frontend ruft `invite-client`,
+das nach dem Fix 410 liefert).
 
-- `#KID` = Kunde / Pferdebesitzer
-- `#EQID` = dauerhafte Pferde-/Equine-ID
-- `#PID` = Provider / Pferdeprofi
-- `#PRID` = Fachpartner / weiterer Pferdeprofi
+## 4. Billing / CopeCart
 
-Kanonische Zugriffskette:
+- Kanonische Ingestion laut Doku: `hufi-data-core` (v6, `verify_jwt=false`). Legacy `copecart-webhook` (v164) weiterhin aktiv.
+- `hufi_data_events`: 2 Events, letztes 11.09.2026. `hm_lifecycle_events`: 1. Keine offenen Reconciliation-Issues.
+- `product_entitlements` HUFMANAGER: 35 ACTIVE, 1 LOCKED (letzte Änderung 12.09., Legacy-Backfill).
+- Supabase-Logs letzte 24 h: **0 Aufrufe** von `hufi-data-core` und `copecart-webhook`.
+- Welche URL im CopeCart-Dashboard hinterlegt ist, ist vom Server aus **nicht prüfbar** → `COPECART_ROUTING=UNKNOWN` bis Pascal/Dashboard-Evidenz.
+- Cron aktiv u. a.: `reconcile-period-end-subscriptions`, `downgrade-expired-trials`.
 
-`Identity → Context/Workspace → Pferd/#EQID → Relationship → Status → Grant/Permission → Action`
+## 5. Testevidenz (24.09.2026, HEAD `7a13d19b`)
 
-Das Pferd steht global zuerst. Eine sichtbare Rolle, Route, URL oder ID erzeugt allein keine Berechtigung.
+```
+git diff --check (23 Commits)            PASS
+vitest                                   21 Dateien, 300/300 PASS
+tsc -p tsconfig.app.json                 131 Diagnosen = bekannte Baseline, 0 neue
+deno check invite-client                 PASS
+deno check invite-client-with-password   PASS
+deno check admin-create-client           PASS
+Secret-Scan über 23 ungepushte Commits   0 Treffer
+```
 
-## Security-Grundsätze
+## 6. Backup / Rollback
 
-Vor Relaunch verifiziert:
-1. Profile / PII
-2. Horses / Medical Data
-3. Invoices / Payment Fields
-4. GPS / Locations / Timed Access
-5. Appointments / Consent
+| Artefakt | Ort | Stand |
+|---|---|---|
+| DB Schema + Data Dump | `~/hufmanager-backups/20260920-211950-pre-hufmanager-release/db/` | 20.09., **vor** #1–#9 |
+| Webroot vor Release | `…/20260920-211950-pre-hufmanager-release/webroot/app-before` | 12.09.-Build |
+| Edge vor Invite-Deploy | `~/hufmanager-backups/20260924-081933-pre-invite-p0-deploy/` | 24.09., v7/v8/v117 wörtlich + SHA256SUMS |
+| Per-Migration-Rollback | Ledger-Doku, Abschnitte „Rollback-Pfad" je Nachtrag | 21.09. |
+| Restore-Drill | `~/prod-db-backup-drill/` | 11.09. — **seitdem kein Restore-Test** |
+| Storage-Backup | — | **nicht vorhanden/nicht gefunden** |
+| Offsite-Kopie | — | **nicht belegt** |
 
-Partner-/Cross-User-Zugriffe benötigen serverseitig prüfbare Beziehungen und Berechtigungen. Unklarer oder inaktiver Status bedeutet DENY/LIMITED.
+Frontend-Rollback nach erstem Deploy: `./deploy.sh hufmanager --rollback` (Symlink `previous`).
 
-## Infrastrukturgrenze
+## 7. Nicht tun
 
-Produktionsauslieferung ist getrennt:
-- HufManager Landingpage
-- HufManager App
-- HufiApp
+- kein `supabase db push`
+- keine Ledger-„Reparatur" ohne separate Freigabe (Weg B)
+- keine `_prepared`-Migration anwenden
+- keinen DNS-/Proxy-Umbau als Nebeneffekt
+- Edge-Functions nur namentlich deployen, nie pauschal
 
-Vor Deployments immer aktuelle Nginx-Roots prüfen, Backup/Rollback erzeugen, Build/Test durchführen und Live-Ziel validieren.
-
-## Was nicht ungeprüft behauptet wird
-
-Nicht aus bloßer Code-Existenz oder älteren Marketingtexten ableiten:
-- vollständige Offlinefähigkeit aller Fachfunktionen
-- automatische Zahlungserkennung
-- DATEV-Export
-- automatischer Mahnlauf
-- medizinische Diagnose durch Hufi
-- pauschale Partner-/Therapeutenrechte
-- aktuelle Preise ohne Gegenprüfung gegen Live-Landing/Checkout
-
-## Source-of-Truth-Regel
-
-Priorität bei Konflikten:
-1. aktuell verifizierter Production-Stand
-2. Security-/Acceptance-Evidenz
-3. aktueller Code-/Migrationsstand
-4. aktuelle Produktdoku
-5. ältere Architektur-/Planungsdoku
-6. Marketingtext
-
-Keine Secrets, Tokens, Passwörter oder Service-Role-Keys in Dokumentation oder Agentenwissen übernehmen.
+Release-Gates und Next Steps: `docs/HUFMANAGER_RELEASE_GATES.md`.
