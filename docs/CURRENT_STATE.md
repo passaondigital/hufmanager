@@ -159,7 +159,23 @@ Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 b
 `send-push-notification` 403 nach Terminanlage; Hilfe-Tooltip überdeckt Termin-Dialogtitel.
 
 
-### INCIDENT 24.09.2026 ab 10:40 UTC — Production-DB überlastet (offen)
+### INCIDENT 24.09.2026 — Root Cause gefunden, Ballast entfernt (17:20 UTC), Erholung läuft
+
+- **Root Cause:** pg_net-Worker (`pg_net 0.19.5`, Session seit 05.08.) räumt `net._http_response` per TTL-DELETE auf.
+  Die Tabelle war auf 267 MB für 566 Zeilen aufgebläht (Autovacuum seit 05.08. nie gelaufen); der DELETE lief
+  bis zu 26 min pro Durchlauf und belegte ~90 % der gesamten DB-Zeit (pg_stat_statements: 523.524 s). Phasen:
+  23.09. ~16:00–01:00 UTC und 24.09. ab 10:40 UTC. Zusätzlich `cron.job_run_details` ohne Retention:
+  373.248 Zeilen / 410 MB (pg_cron löscht nie; ~2.400 Läufe/Tag; Befehlstext inkl. Bearer-JWT pro Zeile).
+- **Owner-Freigaben (Pascal, 24.09.):** `net.worker_restart()` + `TRUNCATE net._http_response` (16:44 UTC),
+  `TRUNCATE cron.job_run_details` (17:15 UTC). Keine Geschäftsdaten betroffen. DB 865 MB → 188 MB.
+- **Retention (neu):** Migration `20260924180000_add_cron_run_details_retention_v1` = eigener Cron-Job 24
+  `purge-cron-job-run-details` (täglich 03:17 UTC, löscht > 7 Tage). Bestehende 16 Jobs unverändert.
+  Rollback: `SELECT cron.unschedule('purge-cron-job-run-details');`
+- **Stand 17:18 UTC:** REST noch 2–22 s (vereinzelt 500) trotz minimalem Traffic → Instanz erholt sich verzögert
+  (Verdacht: aufgebrauchtes CPU-/IO-Burst-Guthaben). Weiter beobachten; falls keine Erholung: Compute im Dashboard prüfen.
+- **Nebenbefund:** Job 20 und Job 21 rufen beide `hufi-routines-runner` auf (5 min + jede Minute) — nicht verändert.
+
+#### Ursprüngliche Beobachtung (vor Root Cause)
 
 - Symptome: Login 504 „upstream request timeout“ (1 von 3 Versuchen ok, ~18 s), `canceling statement due to statement timeout`,
   `cron job … job startup timeout`, triviale Systemqueries (pg_stat_activity) 12–13 s, eine Query ~500 s (Ende 10:54 UTC, Text nicht geloggt).
