@@ -175,6 +175,40 @@ Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 b
   (Verdacht: aufgebrauchtes CPU-/IO-Burst-Guthaben). Weiter beobachten; falls keine Erholung: Compute im Dashboard prüfen.
 - **Nebenbefund:** Job 20 und Job 21 rufen beide `hufi-routines-runner` auf (5 min + jede Minute) — nicht verändert.
 
+#### Re-Check 24.09. 20:45–20:50 UTC (nach SSH-Abbruch) — KEINE Erholung → STOP für weitere Prod-Changes
+
+- Ballast bleibt weg: `cron.job_run_details` 376 kB / 353 Zeilen (seit 17:18), `net._http_response` 112 kB / 138 Zeilen,
+  DB 188 MB. Keine andere Tabelle aufgebläht (größte: `system_health_checks` 106 MB / 427k Zeilen, vacuumed).
+  Job 24 `purge-cron-job-run-details` aktiv, erster Lauf 25.09. 03:17 UTC.
+- Trotzdem: DB praktisch idle (keine aktive Query, keine Locks, 23 Backends von 60), aber triviale Queries 10–30 s
+  (`count(*) from pg_stat_activity` 10 s, Größenabfrage 30 s), MCP-Verbindung zeitweise „connection timeout“.
+- Cron seit 17:18 durchgehend 60–80 % `job startup timeout` (je 30-min-Slot 30–40 von ~50 Läufen), `net.http_post` dauert
+  10–20 s statt ms. Postgres-Log: laufend `statement timeout`, `could not accept SSL connection: Connection reset by peer`.
+- REST (anon, `services?limit=1`): 2,7 / 9,7 / 12,9 / 18,0 / 30,1 s, davon 2× HTTP 500. Auth-Health 0,07–6,9 s.
+- Instanz ist klein (shared_buffers ~224 MB, max_connections 60 → Nano/Micro), Uptime 139 Tage.
+- **Bewertung:** Ursache liegt jetzt nicht mehr in DB-Inhalten, sondern im Compute/IO der Instanz (gedrosselt oder degradiert,
+  vermutlich aufgebrauchtes Burst-/IO-Budget nach tagelangem Voll-Last-DELETE). Braucht Dashboard: Reports → CPU/IO-Budget,
+  ggf. „Restart project“ bzw. Compute-Upgrade. Kein Management-API-Token auf dem Server (`~/.supabase/access-token` fehlt),
+  MCP bietet nur pause/restore → bewusst nicht genutzt.
+
+#### Job 20 / 21 — Analyse (nicht verändert)
+
+- Job 21 `routines-runner` (`* * * * *`) = kanonisch, aus Repo-Migration `20260513120000_hufi_routines_cron.sql`.
+- Job 20 `hufi-routines-runner` (`*/5`) = in keiner Migration, manuell angelegt → Legacy-Duplikat. Gleiche URL, gleicher
+  leerer Body, gleiche Aufgabe.
+- `hufi_routines` hat **0 Zeilen** → beide Jobs tun fachlich nichts (1 SELECT pro Aufruf). 72 Aufrufe/h, davon 12 durch Job 20.
+  Trägt nicht wesentlich zur Last bei (Hauptproblem ist jede Cron-Verbindung an sich, solange die Instanz lahm ist).
+- Risiko bei künftigen Routinen: zur vollen 5-Minute laufen beide gleichzeitig ohne Lock → Doppelausführung/Doppel-Push möglich.
+- Empfehlung nach Erholung: `SELECT cron.unschedule(20);` (Rollback: Job mit identischem Kommando neu anlegen).
+
+#### Secrets in Cron-Commands (Security/Ops-Finding P1)
+
+- JWT im Klartext im Authorization-Header der Jobs 8–14, 16–21 (8–14 ohne „Bearer“-Präfix) (Job 15 hat Platzhalter `SERVICE_ROLE_KEY` → läuft seit jeher mit ungültigem Token).
+  Kein Job nutzt Vault. Der JWT landet zusätzlich in `cron.job_run_details` und via auto_explain in den Postgres-Logs.
+- Kleinster sicherer Fix (später, eigene Freigabe): Key einmal in `vault.secrets` ablegen, Jobs per `cron.alter_job` auf
+  `(select decrypted_secret from vault.decrypted_secrets where name='cron_service_key')` umstellen; danach Key-Rotation
+  gemäß bestehendem Rotations-Runbook. Kein Umbau im Incident.
+
 #### Ursprüngliche Beobachtung (vor Root Cause)
 
 - Symptome: Login 504 „upstream request timeout“ (1 von 3 Versuchen ok, ~18 s), `canceling statement due to statement timeout`,
