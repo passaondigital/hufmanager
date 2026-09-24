@@ -75,17 +75,18 @@ export function QuickAddAppointmentFAB({
 
   // Fetch services
   const { data: services = [] } = useQuery({
-    queryKey: ["services-quick-add"],
+    queryKey: ["services-quick-add", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("services")
         .select("name")
+        .eq("provider_id", user!.id)
         .eq("is_active", true);
 
       if (error) throw error;
       return data;
     },
-    enabled: isOpen,
+    enabled: isOpen && !!user?.id,
   });
 
   const filteredHorses = horses.filter((horse) => {

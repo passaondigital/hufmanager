@@ -187,13 +187,19 @@ export function AppointmentFormModal({
     return map;
   }, [servicePresets]);
 
+  // Nur eigene Leistungen: die Auswahl übernimmt service_id und Preis in den Termin.
   const { data: services = [] } = useQuery({
-    queryKey: ["services"],
+    queryKey: ["services", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("services").select("*").eq("is_active", true);
+      const { data, error } = await supabase
+        .from("services")
+        .select("*")
+        .eq("provider_id", user!.id)
+        .eq("is_active", true);
       if (error) throw error;
       return data;
     },
+    enabled: !!user?.id,
   });
 
   const currentService = services.find((service: any) => service.name === formData.serviceType);
