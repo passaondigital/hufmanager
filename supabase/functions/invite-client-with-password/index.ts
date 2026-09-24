@@ -228,23 +228,32 @@ serve(async (req: Request): Promise<Response> => {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const { data: clientProfile } = await supabaseAdmin
-        .from("profiles")
-        .select("id, email, full_name, created_by_provider_id, has_logged_in, force_password_reset, deleted_at")
-        .eq("id", clientId)
-        .maybeSingle();
+      // Gate NUR aus serverseitigen Fakten (Security-Review 2026-09-24):
+      // profiles.email / has_logged_in / created_by_provider_id sind fuer
+      // verbundene Provider per RLS aenderbar und daher KEIN Vertrauensanker.
+      //  - Login-Identitaet und "nie angemeldet" aus auth.users
+      //  - Eigentuemerschaft aus einem verbrauchten Pending Invite DIESES
+      //    Providers fuer genau diesen User (Tabelle nur service_role)
+      //  - aktiver eigener Grant + Rolle client
+      const { data: authLookup, error: authLookupError } = await supabaseAdmin.auth.admin.getUserById(clientId);
+      const authUser = authLookupError ? null : authLookup?.user ?? null;
+      const { data: ownInvite } = await supabaseAdmin
+        .from("hm_pending_client_invites").select("id")
+        .eq("provider_id", callerUser.id).eq("consumed_user_id", clientId)
+        .not("consumed_at", "is", null)
+        .limit(1).maybeSingle();
       const { data: clientRole } = await supabaseAdmin
         .from("user_roles").select("role").eq("user_id", clientId).eq("role", "client").maybeSingle();
       const { data: ownGrant } = await supabaseAdmin
         .from("access_grants").select("id")
         .eq("client_id", clientId).eq("provider_id", callerUser.id).eq("is_active", true)
         .limit(1).maybeSingle();
-      const resendAllowed = !!clientProfile && !!clientRole && !!ownGrant
-        && clientProfile.created_by_provider_id === callerUser.id
-        && clientProfile.deleted_at == null
-        && clientProfile.has_logged_in !== true
-        && clientProfile.force_password_reset === true
-        && !!clientProfile.email;
+      const { data: clientProfile } = await supabaseAdmin
+        .from("profiles").select("full_name, deleted_at").eq("id", clientId).maybeSingle();
+      const resendAllowed = !!authUser && !!authUser.email
+        && authUser.last_sign_in_at == null
+        && !!ownInvite && !!clientRole && !!ownGrant
+        && !!clientProfile && clientProfile.deleted_at == null;
       if (!resendAllowed) {
         // Einheitliche Antwort — verraet nicht, ob der Account existiert.
         return new Response(JSON.stringify({ error: "Erneuter Versand für diesen Kunden nicht möglich" }), {
@@ -260,7 +269,7 @@ serve(async (req: Request): Promise<Response> => {
         });
       }
       const resent = await sendInviteMail({
-        to: clientProfile.email!, fullName: clientProfile.full_name || "", providerName, providerEmail, loginUrl, tempPassword: newPassword,
+        to: authUser!.email!, fullName: clientProfile!.full_name || "", providerName, providerEmail, loginUrl, tempPassword: newPassword,
       });
       return new Response(JSON.stringify({ success: true, emailSent: resent, userId: clientId }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },

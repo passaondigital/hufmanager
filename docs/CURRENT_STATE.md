@@ -82,12 +82,33 @@ DB nach Deploy + Smoke: nur +2 Profile/User (QA A/B), Grants 57 unverändert, 0 
 - Zugangsdaten nur lokal: `~/.config/hufmanager-qa/credentials.env` (chmod 600)
 - Zustand: Rolle provider, `starter/trialing`, **kein Slim-Entitlement** → `NO_ENTITLEMENT`, kein Pro → Invite 403
 
-### Neuer P0-Befund: Neuregistrierung ohne Slim-Zugang
+### Trial-P0 — BEHOBEN (24.09.2026)
 
-Ein frisch registrierter Provider erhält **kein** `product_entitlements`-Eintrag und landet im
-`HufmanagerSlimAccessGate` auf „Kein aktiver Zugang“ statt in einer 14-Tage-Testphase.
-Betrifft auch den echten Neukunden vom 23.09. Vorbestehend (Gate + RPC schon im Build vom 12.09.),
-**nicht** durch den Deploy verursacht. → FIRST_LOGIN BLOCKED.
+Migration `20260924120000_add_hufmanager_slim_trial_producer_v1` (Commit `170a2fed`, sha256 `a38930f1…`),
+angewendet per Transaktion inkl. Ledger-Eintrag. Postcheck: md5 Writer `533a14ba…`, Producer `7b8bc74b…`,
+Trigger-Fn `37f3d54f…` = lokal erwartet; Rechte nur service_role; 0 offene Issues.
+
+- Einzige Zugangswahrheit unverändert: `hm_lifecycle_events` → `hm_project_hufmanager_entitlement_v1` → `product_entitlements`.
+- Neuer Producer `hm_start_hufmanager_slim_trial_v1` + Trigger `trg_user_roles_start_slim_trial` (Rolle provider).
+- Writer-Guard: `trial_started` überschreibt nie einen bestehenden/aktiven/früheren Eintrag.
+- 14 Tage serverseitig (CHECK-Constraint), Ablauf beim Lesen (`TRIAL_EXPIRED`).
+- Security-Review: 1 Finding (Fehlerpfad hätte Signup abgebrochen) → behoben + Negativtest.
+- Lokal 17/17 (`scripts/hufmanager-slim-trial-producer-tests.sql`), Negativkontrolle ohne Guard schlägt fehl.
+- Live: frische Registrierung `+qa-trial` → `TRIAL_ACTIVE` bis 08.10.2026, `ACTIVE_TRIAL`.
+- Neukunde vom 23.09. (`164d9860…`) per Producer freigeschaltet: `TRIAL_ACTIVE` 24.09.–08.10.2026.
+- Rollback: `docs/backups/mig10_20260924120000_prestate_rollback_2026-09-24.sql` (lokal getestet, Writer-md5 zurück auf `d04fba66…`).
+- Offen (nur gemeldet): 1 älterer Provider (`e228e26d…`, 14.01.2026) ohne Slim-Eintrag.
+
+### Tenant-Smoke Production — PASS (24.09.2026)
+
+QA A/B vorübergehend mit `plan_override='pro'` + Slim-Entitlement `ACTIVE` (`source=QA_MANUAL`) ausgestattet
+(nur diese zwei User-IDs). Reproduzierbar: `scripts/ops/qa_tenant_smoke.py`.
+- A und B laden je einen eigenen Testkunden ein → Rolle client, `created_by_provider_id` = Einlader,
+  genau 1 aktiver eigener Grant, 0 fremde Grants, Kontakt nur beim Einlader, Pending Invite gebunden + verbraucht.
+- A/B verwalten eigene Kunden (Grant/Kontakt/Profil lesen, Kontakt ändern).
+- 36/36 Adversarial-Checks PASS: fremde Profile/Grants/Kontakte unsichtbar, Update/Delete fremder Rows wirkungslos,
+  Grant-Diebstahl und gefälschter Grant 403, Invite-Tabelle 403, Invite-RPC direkt 403, Re-Invite fremder Kunden 409.
+- Beobachtung P2: Provider kann Kontakt mit `profile_id` eines fremden Kunden anlegen (201), ohne Sichtbarkeitsgewinn.
 
 ## 4. Billing / CopeCart (Stand 24.09., korrigiert)
 

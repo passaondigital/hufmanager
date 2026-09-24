@@ -297,12 +297,15 @@ describe("Invite-Security-Haertung (2026-09-24)", () => {
     expect(withPasswordCode).toMatch(/JSON\.stringify\(\{ success: true, emailSent, userId: newUserId \}\)/);
   });
 
-  it("erlaubt erneuten Versand nur fuer eigene, nie eingeloggte Kunden", () => {
+  it("erlaubt erneuten Versand nur fuer eigene, nie eingeloggte Kunden — aus serverseitigen Fakten", () => {
     expect(withPasswordCode).toMatch(/body\.action === "resend"/);
-    expect(withPasswordCode).toMatch(/clientProfile\.created_by_provider_id === callerUser\.id/);
-    expect(withPasswordCode).toMatch(/\.eq\("provider_id", callerUser\.id\)\.eq\("is_active", true\)/);
-    expect(withPasswordCode).toMatch(/clientProfile\.has_logged_in !== true/);
-    expect(withPasswordCode).toMatch(/clientProfile\.force_password_reset === true/);
+    expect(withPasswordCode).toMatch(/auth\.admin\.getUserById\(clientId\)/);
+    expect(withPasswordCode).toMatch(/authUser\.last_sign_in_at == null/);
+    expect(withPasswordCode).toMatch(/from\("hm_pending_client_invites"\)[\s\S]*\.eq\("provider_id", callerUser\.id\)\.eq\("consumed_user_id", clientId\)/);
+    expect(withPasswordCode).toMatch(/to: authUser!\.email!/);
+    // provider-editierbare profiles-Spalten duerfen NICHT als Gate dienen
+    const resendBlock = withPasswordCode.slice(withPasswordCode.indexOf('body.action === "resend"'), withPasswordCode.indexOf("const email = body.email"));
+    expect(resendBlock).not.toMatch(/has_logged_in|created_by_provider_id|force_password_reset|clientProfile\.email/);
   });
 
   it("zeigt im Frontend nie ein Einmalpasswort an", () => {
