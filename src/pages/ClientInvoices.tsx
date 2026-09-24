@@ -64,6 +64,7 @@ interface ClientProfile {
   city: string | null;
   zip_code: string | null;
   stable_street: string | null;
+  street?: string | null;
   stable_city: string | null;
   stable_zip: string | null;
   readable_id: string | null;
@@ -94,7 +95,7 @@ export default function ClientInvoices() {
     // Fetch user profile
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("full_name, readable_id, email, phone, city, zip_code, stable_street, stable_city, stable_zip")
+      .select("full_name, readable_id, email, phone, city, zip_code, street, stable_street, stable_city, stable_zip")
       .eq("id", user.id)
       .single();
     

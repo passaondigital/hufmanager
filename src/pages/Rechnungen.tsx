@@ -76,6 +76,7 @@ interface Invoice {
     city: string | null;
     zip_code: string | null;
     stable_street: string | null;
+    street?: string | null;
     stable_city: string | null;
     stable_zip: string | null;
   } | null;
@@ -138,7 +139,7 @@ export default function Rechnungen() {
       const clientIds = [...new Set(data.map(inv => inv.client_id))];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, readable_id, email, phone, city, zip_code, stable_street, stable_city, stable_zip")
+        .select("id, full_name, readable_id, email, phone, city, zip_code, street, stable_street, stable_city, stable_zip")
         .in("id", clientIds);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);

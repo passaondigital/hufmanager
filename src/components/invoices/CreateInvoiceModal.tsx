@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -158,7 +159,7 @@ export function CreateInvoiceModal({
     client_id: preSelectedClientId || "",
     horse_id: preSelectedHorseId || "",
     invoice_number: "",
-    issue_date: new Date().toISOString().split("T")[0],
+    issue_date: format(new Date(), "yyyy-MM-dd"),
     due_date: "",
     status: "sent" as "sent" | "paid" | "overdue",
     payment_method: "" as "" | "Überweisung" | "Bar" | "PayPal" | "CopeCart",
@@ -700,7 +701,7 @@ export function CreateInvoiceModal({
         client_id: "",
         horse_id: "",
         invoice_number: "",
-        issue_date: new Date().toISOString().split("T")[0],
+        issue_date: format(new Date(), "yyyy-MM-dd"),
         due_date: "",
         status: "sent",
         payment_method: "",

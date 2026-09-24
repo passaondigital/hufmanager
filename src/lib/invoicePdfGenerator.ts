@@ -48,6 +48,7 @@ interface ClientProfile {
   stable_street: string | null;
   stable_city: string | null;
   stable_zip: string | null;
+  street?: string | null;
   readable_id?: string | null;
   vat_id?: string | null;
 }
@@ -344,8 +345,10 @@ async function renderInvoicePdfWithItems(
   doc.setFont("helvetica", "normal");
   let addrY = addressY + 5;
   
-  if (enrichedClientProfile?.stable_street) {
-    doc.text(enrichedClientProfile.stable_street, margin, addrY);
+  // Kundenformular speichert die Anschrift in `street`; `stable_street` ist die Stall-Adresse.
+  const clientStreet = enrichedClientProfile?.stable_street || enrichedClientProfile?.street;
+  if (clientStreet) {
+    doc.text(clientStreet, margin, addrY);
     addrY += 4.5;
   }
   
@@ -695,7 +698,7 @@ async function renderInvoicePdfWithItems(
       const creditorZipMatch = creditorCityLine.match(/^(\d{4})\s+(.+)$/);
 
       // Parse debtor address
-      const debtorStreet = enrichedClientProfile?.stable_street || "";
+      const debtorStreet = enrichedClientProfile?.stable_street || enrichedClientProfile?.street || "";
       const debtorZip = enrichedClientProfile?.stable_zip || enrichedClientProfile?.zip_code || "";
       const debtorCity = enrichedClientProfile?.stable_city || enrichedClientProfile?.city || "";
 
