@@ -1,6 +1,6 @@
 # HufManager Slim — Release Gates
 
-**Stand:** 24.09.2026 · Code-HEAD `7a13d19b` · Production `vnschgjxkzzwzefqlrji`
+**Stand:** 24.09.2026 · Code-HEAD `bcc3342d` · Production `vnschgjxkzzwzefqlrji`
 Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CURRENT_STATE.md`.
 
 | Gate | Status | Evidenz / was fehlt |
@@ -23,12 +23,12 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 | DOCUMENTATION | UNKNOWN | kein E2E |
 | MATERIAL | PARTIAL | Cross-Tenant-Inventory-Test PASS (N4.7); Bestand/Verbrauch-Flow ungetestet |
 | INVOICE_PDF | PARTIAL | Rechnungs-RPC Money/Atomicity/Idempotenz PASS in Prod; PDF-Fix im RC, aber Frontend nicht deployt |
-| BILLING | UNKNOWN | letzte Events 11.09.; kein Contract-Test gegen echte CopeCart-Payloads in diesem Lauf |
-| COPECART_ROUTING | UNKNOWN | Dashboard-URL nicht vom Server prüfbar; 0 Webhook-Aufrufe in 24 h |
+| BILLING | BLOCKED | deployte copecart-webhook v164 weist echte IPNs ab (401) und loggt PII; Fix im Repo, Doppel-Writer-Entscheidung offen |
+| COPECART_ROUTING | PARTIAL | Pascal: IPN → copecart-webhook; Logs 11.09.: dieselbe IPN auch an hufi-data-core (200) → zwei Ziele konfiguriert |
 | LIFECYCLE | PARTIAL | Step 1 + Reconciler in Prod, 0 offene Issues; Step 2 nicht angewendet |
 | MOBILE | UNKNOWN | keine Viewport-E2E in diesem Lauf |
 | DRAFT_RESUME | UNKNOWN | nicht geprüft |
-| SECURITY | BLOCKED | Invite-P0 live bis Deploy; 149/155 Legacy-SECURITY-DEFINER-Advisor-Findings deferred |
+| SECURITY | BLOCKED | live: Invite-P0, create-demo-business-user mit öffentlichen Credentials, PII-Logging copecart-webhook; Fixes in bcc3342d nicht deployt; Rotationen offen |
 | MONITORING | PARTIAL | `system-health-check`, `anomaly-detection`, `validate-backup` laufen per Cron; kein Alerting-Nachweis |
 | BACKUP | PARTIAL | DB-Dump 20.09. (vor #1–#9), Edge-Backup 24.09.; kein aktueller DB-Dump nach #9, kein Storage-Backup, kein Offsite-Nachweis |
 | RESTORE | PARTIAL | letzter Drill 11.09.; kein Restore-Test des 20.09.-Dumps |

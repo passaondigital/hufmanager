@@ -1,6 +1,6 @@
 # HufManager — CURRENT STATE / SOURCE OF TRUTH
 
-**Stand:** 24.09.2026 (live verifiziert, read-only gegen Production)
+**Stand:** 24.09.2026, Nachmittag (live verifiziert, read-only gegen Production; MCP-Ziel per get_project = HufManager/eu-central-1 bestätigt)
 
 > Aktueller technischer Snapshot für Menschen und Agenten. Bei Widerspruch gilt:
 > Repo + aktuelle Runtime + aktuelle DB + reproduzierbare Testevidenz vor älterer Doku.
@@ -83,17 +83,44 @@ Fix liegt fertig im Repo (`7a13d19b`), getestet (siehe §5). **Deploy braucht Pa
 weil Edge-Functions und Frontend zusammen gehen müssen (altes Frontend ruft `invite-client`,
 das nach dem Fix 410 liefert).
 
-## 4. Billing / CopeCart
+## 4. Billing / CopeCart (Stand 24.09., korrigiert)
 
-- Kanonische Ingestion laut Doku: `hufi-data-core` (v6, `verify_jwt=false`). Legacy `copecart-webhook` (v164) weiterhin aktiv.
-- **Von Pascal am 24.09.2026 bestätigte CopeCart-IPN/Webhook-Benachrichtigungs-URL:** `https://vnschgjxkzzwzefqlrji.supabase.co/functions/v1/copecart-webhook`.
-- Damit ist der externe CopeCart-Einstiegspunkt **bekannt** und zeigt auf die Production-Edge-Function `copecart-webhook` im Supabase-Projekt `vnschgjxkzzwzefqlrji`.
-- Das löst die bisherige URL-Unklarheit, aber noch nicht die Writer-Frage: Doku bezeichnet `hufi-data-core` als kanonische Ingestion, während CopeCart extern in `copecart-webhook` eintritt. Vor Zusammenlegung/Abschaltung muss verifiziert werden, ob `copecart-webhook` intern an `hufi-data-core` übergibt oder selbst schreibt.
-- Status deshalb: `COPECART_ENTRYPOINT=USER_CONFIRMED`; `CANONICAL_BILLING_WRITER=UNRESOLVED` bis Code-/Runtime-Flow belegt ist.
-- `hufi_data_events`: 2 Events, letztes 11.09.2026. `hm_lifecycle_events`: 1. Keine offenen Reconciliation-Issues.
-- `product_entitlements` HUFMANAGER: 35 ACTIVE, 1 LOCKED (letzte Änderung 12.09., Legacy-Backfill).
-- Supabase-Logs letzte 24 h: **0 Aufrufe** von `hufi-data-core` und `copecart-webhook`; das widerspricht der konfigurierten URL nicht, belegt aber in diesem Zeitfenster keine reale Zustellung.
-- Cron aktiv u. a.: `reconcile-period-end-subscriptions`, `downgrade-expired-trials`.
+- **CopeCart-IPN-URL laut Pascal:** `https://vnschgjxkzzwzefqlrji.supabase.co/functions/v1/copecart-webhook`.
+- `COPECART_ENTRYPOINT=USER_CONFIRMED` (Pascal, 24.09.).
+- **Writer-Frage beantwortet (Code-Beleg):** `copecart-webhook` übergibt **nicht** an
+  `hufi-data-core`, es schreibt selbst (`profiles`, `product_entitlements`,
+  `saas_billing_events`, `admin_revenue_log`, `admin_invoices`, Voice-Credits-RPC).
+  `hufi-data-core` schreibt über `hufi_data_ingest_and_project_v1`.
+  `CANONICAL_BILLING_WRITER=UNRESOLVED` bleibt, bis Pascal die Zuständigkeit je Produkt festlegt.
+- **Log-Evidenz 11.09.2026 20:06:19 UTC:** dieselbe IPN traf **beide** Endpoints —
+  `hufi-data-core` → **200**, `copecart-webhook` → **401** (Retries 21:18, 22:30 ebenfalls 401).
+  CopeCart ist also (mindestens zeitweise) mit zwei Zielen konfiguriert.
+- Ursache 401: deployte `copecart-webhook` **v164** erwartet ein Passwort **im Body**;
+  CopeCart sendet eine **HMAC-SHA256-Signatur im Header `X-Copecart-Signature`**
+  (bewiesen durch den 200 von `hufi-data-core`, das genau so prüft).
+  ⇒ v164 verarbeitet faktisch **keine** echte IPN.
+- **v164 loggt das komplette Payload inkl. Käufer-PII vor jeder Prüfung** (Z. 482) und
+  vergibt bei unbekannter Produkt-ID `|| 'pro'` (Z. 136). Sicherung der deployten Fassung:
+  `~/hufmanager-backups/20260924-081933-pre-invite-p0-deploy/functions/copecart-webhook/`.
+- Repo-Fassung (`bcc3342d`): HMAC, keine Payload-/PII-Logs, zentrale Allowlist fail-closed,
+  Laufzeit-Check PASS. **Nicht deployt.**
+- **Doppel-Writer-Risiko:** Repo-`copecart-webhook` (SaaS-Zweig) und `hufi-data-core`
+  (`hm_project_hufmanager_entitlement_v1`) schreiben beide `product_entitlements` für Slim
+  `3a97bd25`. Heute harmlos, weil v164 alles abweist; nach Deploy des Fixes aktiv.
+  → Entscheidung Pascal nötig, welcher Endpoint für welches Produkt kanonisch ist.
+- Secrets: `hufi-data-core` nutzt `COPECART_DATACORE_SECRET || COPECART_IPN_PASSWORD`.
+  Welches gesetzt ist, ist ohne CLI-Login nicht prüfbar. Bei Rotation beide berücksichtigen.
+- Daten: `hufi_data_events` 2 (letztes 11.09.), `product_entitlements` HUFMANAGER 35 ACTIVE / 1 LOCKED.
+
+### Weitere Security-Befunde 24.09.
+
+- Repo `passaondigital/hufmanager` ist **öffentlich**.
+- `create-demo-business-user` (Prod, `verify_jwt=false`, kein Caller-Check) enthält
+  Klartext-Zugangsdaten eines Provider-Demo-Kontos (angelegt 16.03., letzter Login 23.03.,
+  nur Client eines inaktiven Grants). Passwort steht öffentlich in der Git-History →
+  **kompromittiert, Rotation/Sperre nötig**. Repo-Fassung: 410 Gone (`bcc3342d`), nicht deployt.
+- Invite: Einmalpasswort jetzt aus `crypto.getRandomValues`, 12 Zeichen, Rückgabe nur bei
+  fehlgeschlagener Mail (`bcc3342d`), nicht deployt.
 
 ## 5. Testevidenz (24.09.2026, HEAD `7a13d19b`)
 
