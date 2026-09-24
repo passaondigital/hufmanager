@@ -127,6 +127,37 @@ QA A/B vorübergehend mit `plan_override='pro'` + Slim-Entitlement `ACTIVE` (`so
   `update profiles set plan_override=null …; delete from product_entitlements where source='QA_MANUAL'`.
 - QA-Konten: A, B, `+qa-trial` (Trial-Test) sowie Testkunden `+qa-a-client1`, `+qa-b-client1`.
 
+
+### Stand 24.09. spät — Owner-Entscheidung, QA-Cleanup, Kernflow-E2E (gestoppt)
+
+**`SECRET_ROTATION = DEFERRED / RISK_ACCEPTED_BY_OWNER`** (Pascal, 24.09.2026): CopeCart/IPN erst vor wenigen Tagen
+eingerichtet und getestet, kein belegter Secret-Leak, Payload-Logging behoben. Keine Rotation, keine Änderung im
+CopeCart-Dashboard. Blockiert `SALE_READY` nicht mehr. Runbook bleibt für später.
+
+**QA-Cleanup:** QA A/B ohne Pro/Slim (Override + `QA_MANUAL` entfernt), Testkunden A1/B1 inkl. Grants/Kontakte/Invites
+gelöscht; QA-Konten bleiben. Danach: Grants 57, ACTIVE 35 (Ausgangsstand), 0 offene Issues, 0 verwaiste Profile.
+Backup: `~/hufmanager-backups/20260924-qa-cleanup/`.
+
+**Kernflow-E2E (Playwright, Production, QA-Trial-Provider mit regulärer Testphase):**
+- Login ✅, Dashboard/Navigation ✅ (Heute, Tour, Kunden & Pferde, Finanzen, Mehr).
+- Onboarding-Assistent hing im Schritt Business-Name → **behoben** (`2668a344`, live), im Browser verifiziert.
+- Kunde anlegen ✅, nach Reload vorhanden ✅; **Doppelklick erzeugte 2 Kunden / 2 Pferde** → **behoben**
+  (Submit-Lock `76679463`, live; Kunde/Pferd/Termin/Rechnung); Termin-Doppelklick auf Prod danach = 1 Termin.
+- Termin anlegen: **STOP — Tenant-Leak P0** (s. u.). Tour, Doku, Material, Rechnung/PDF, Mobile: **NOT_TESTED**.
+- E2E-Testdaten des Trial-Providers neutralisiert (Termin gelöscht, Pferde/Kontakte/Profile soft-deleted, Grants revoked).
+
+**P0 (vorbestehend seit 11.02.2026): Leistungskatalog aller Provider für jeden eingeloggten Nutzer lesbar.**
+- RLS `services`: Policy „Authenticated users can view active services“ = `auth.uid() IS NOT NULL AND is_active`.
+- Messung: QA-Trial sieht 27 Leistungen von 12 fremden Providern inkl. Preis (0 eigene).
+- Provider-Formulare laden `services` ohne Provider-Filter (`AppointmentFormModal`, `SlimFinanceScreen`,
+  `EmergencyAppointmentSheet`, `QuickAddAppointmentFAB`, `Services`, `PriceGroupManagement` …) → fremde Leistungen auswählbar.
+- **Echte Auswirkung:** 22 Termine von 5 echten Providern (seit 14.08.2026) verweisen auf Leistungen fremder Provider
+  (+1 QA-Termin, entfernt). Risiko: fremde Preise in Terminen/Rechnungen, Offenlegung von Preislisten.
+- Nicht durch Deploys vom 24.09. verursacht. Kein Fix ausgeführt (STOP-Regel). Folgeauftrag nötig.
+
+Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 bei jedem Seitenaufruf, nicht blockierend);
+`send-push-notification` 403 nach Terminanlage; Hilfe-Tooltip überdeckt Termin-Dialogtitel.
+
 ## 4. Billing / CopeCart (Stand 24.09., korrigiert)
 
 - **CopeCart-IPN-URL laut Pascal:** `https://vnschgjxkzzwzefqlrji.supabase.co/functions/v1/copecart-webhook`.

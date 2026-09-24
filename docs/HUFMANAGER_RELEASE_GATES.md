@@ -12,13 +12,13 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 | UNIT_TESTS | TESTED | vitest 309/309; copecart Laufzeit-Check 10/10 |
 | DB_TESTS | PARTIAL | Trial-Migration 17/17 lokal + Negativkontrollen; Invite-RPCs N4–N13; keine CI-Suite |
 | AUTH | PARTIAL | Signup/Login/Token-Pfade live (QA), 401/403/410 geprüft; Password-Recovery nicht getestet |
-| FIRST_LOGIN | PARTIAL | Trial live: frische Registrierung → TRIAL_ACTIVE 14 T.; UI-Durchlauf (Onboarding-Wizard, Mobile) nicht getestet |
-| TENANT_ISOLATION | TESTED | Prod QA A↔B mit echten Kunden: 36/36 Adversarial-Checks (2× gelaufen), 0 fremde Grants |
+| FIRST_LOGIN | PARTIAL | Wizard-Hänger behoben (2668a344, Browser-verifiziert); Trial live; Mobile nicht getestet. Vorher: | Trial live: frische Registrierung → TRIAL_ACTIVE 14 T.; UI-Durchlauf (Onboarding-Wizard, Mobile) nicht getestet |
+| TENANT_ISOLATION | BLOCKED | Kunden/Grants/Kontakte/Invites isoliert (36/36), ABER Leistungskatalog (`services`) Cross-Tenant lesbar und in Terminen referenziert. Vorher: | Prod QA A↔B mit echten Kunden: 36/36 Adversarial-Checks (2× gelaufen), 0 fremde Grants |
 | CLIENT_INVITE | TESTED | Prod: Invite A/B, Grant/Kontakt/Invite korrekt, kein Fallback; Resend 8/8; kein Passwort im Browser |
 | PARTNER_INVITE | UNKNOWN | nicht geprüft |
 | INTAKE_IMPORT | UNKNOWN | nicht geprüft |
-| CUSTOMER_HORSE | PARTIAL | Kunde anlegen/verwalten (QA) live; Pferd-CRUD + Doppelklick-Dublette nicht getestet |
-| APPOINTMENT | UNKNOWN | kein E2E |
+| CUSTOMER_HORSE | TESTED | Prod-Browser: Kunde + Pferd anlegen, Reload, erneut öffnen; Doppelklick-Dublette gefunden und behoben (lokal+Prod verifiziert) |
+| APPOINTMENT | BLOCKED | Anlage funktioniert (Doppelklick-sicher seit 76679463), aber Leistungsauswahl zeigt fremde Provider-Leistungen (P0) |
 | TOUR | UNKNOWN | kein E2E |
 | DOCUMENTATION | UNKNOWN | kein E2E |
 | MATERIAL | PARTIAL | Cross-Tenant-Inventory (N4.7); Flow ungetestet |
@@ -26,9 +26,9 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 | BILLING | PARTIAL | Slim-Wahrheit einzig `hufi-data-core`→Lifecycle→Entitlements; Trial-Producer live; kein echter Zahlungs-E2E |
 | COPECART_ROUTING | PARTIAL | IPN → copecart-webhook (ack-only v165) + hufi-data-core; Verifikation nach Rotation offen |
 | LIFECYCLE | PARTIAL | Writer + Guard + Trial live, 0 offene Issues; Step 2 nicht angewendet |
-| MOBILE | UNKNOWN | keine Viewport-E2E |
+| MOBILE | UNKNOWN | NOT_TESTED — E2E vor Mobile-Phase wegen P0 gestoppt |
 | DRAFT_RESUME | UNKNOWN | nicht geprüft |
-| SECURITY | PARTIAL | Invite-P0, PII-Log, Allowlist, Demo-Endpoints, Demo-Passwörter erledigt; offen: CopeCart-Secret-Rotation, P1 Provider darf Client-`email`/`created_by_provider_id` via RLS ändern, P2 fremde `profile_id` in Kontakt, Auto-Confirm Signup |
+| SECURITY | BLOCKED | P0 vorbestehend: `services` für alle Authentifizierten lesbar, 22 echte Termine mit fremden Leistungen; SECRET_ROTATION = DEFERRED/RISK_ACCEPTED_BY_OWNER (kein Blocker). Vorher: | Invite-P0, PII-Log, Allowlist, Demo-Endpoints, Demo-Passwörter erledigt; offen: CopeCart-Secret-Rotation, P1 Provider darf Client-`email`/`created_by_provider_id` via RLS ändern, P2 fremde `profile_id` in Kontakt, Auto-Confirm Signup |
 | MONITORING | PARTIAL | Cron-Health-Checks; kein Alerting-Nachweis |
 | BACKUP | PARTIAL | Prod-Dump 24.09. verifiziert; kein Storage-Backup, kein Offsite |
 | RESTORE | PARTIAL | letzter Drill 11.09.; Rollback-SQL Trial lokal getestet |
@@ -36,19 +36,21 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 | STAGING_SMOKE | PARTIAL | lokal Trial/Webhook; kein Staging-Browser-E2E |
 | PRODUCTION_SMOKE | TESTED | Final-Smoke 24.09.: Tenant 36/36, Resend 8/8, Trial, 410/401-Pfade, App 200, DB-Invarianten |
 | SUPPORT_RECOVERY | UNKNOWN | nicht geprüft |
-| SALE_READY | BLOCKED | fehlt: Kernflow-E2E (Termin/Tour/Doku/Material/Rechnung-PDF), Mobile, Secret-Rotation, Billing-Zahlungs-E2E |
+| SALE_READY | BLOCKED | P0 `services`-Leak; Kernflow ab Termin, Mobile, Billing-Zahlungs-E2E nicht belegt. Secret-Rotation ist KEIN Blocker (Owner-Risikoakzeptanz) |
 
 ## Blocker
 
-1. **CopeCart-Secret-Rotation** — nur Pascal (Runbook `docs/HUFMANAGER_SECRET_ROTATION_RUNBOOK.md`).
-2. **Kernflow-E2E fehlt** (Termin → Tour → Doku → Material → Rechnung/PDF, Mobile 360/390/430).
-3. **P1 RLS:** verbundene Provider können `profiles.email` / `created_by_provider_id` / `has_logged_in` ihrer Kunden ändern.
+1. **P0 Tenant-Leak `services`** — RLS-Policy + ungefilterte Provider-Formulare; 22 echte Termine mit fremden Leistungen.
+2. **Kernflow ab Termin nicht E2E belegt** (Tour, Doku, Material, Rechnung/PDF) + Mobile NOT_TESTED — wegen STOP.
+3. **Billing-Zahlungs-E2E** (Kauf → Paid Entitlement → Login) nicht belegt.
+
+Nicht mehr blockierend: CopeCart-Secret-Rotation (`DEFERRED / RISK_ACCEPTED_BY_OWNER`, 24.09.2026).
 
 ## Next 3
 
-1. Rotation nach Runbook + Test-IPN → Logs verifizieren (beide Endpoints 200, keine Mutation durch copecart-webhook).
-2. Kernflow-E2E im Browser mit QA A (Kunde → Pferd → Termin → Tour → Doku → Material → Rechnung/PDF), Mobile-Viewports.
-3. P1-RLS-Härtung `profiles` (BEFORE-UPDATE-Trigger gegen Fremdänderung von email/created_by_provider_id/has_logged_in) mit Tests.
+1. Folgeauftrag P0 `services`: Provider-Formulare auf eigene Leistungen filtern + RLS so einschränken, dass Kunden nur Leistungen ihrer Provider (Grant) und Landing/Widget nur die eines Providers sehen; Bestandsaufnahme der 22 betroffenen Termine.
+2. Kernflow-E2E fortsetzen (Termin → Tour → Doku → Material → Rechnung/PDF) + Mobile 360/390/430.
+3. Billing-Zahlungs-E2E mit Pascal (Testkauf) nach Freigabe.
 
 ## Safe tasks für günstigere Agents
 
