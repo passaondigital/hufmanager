@@ -252,7 +252,29 @@ Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 b
 - Nebenbefund P1: Cron-Job für `hufi-routines-runner` enthält einen Bearer-JWT im Klartext im `net.http_post`-Kommando;
   dieser erscheint in den Postgres-Logs (auto_explain).
 
-### P0 Leistungskatalog — Analyse-Stand (Fix NICHT begonnen, wartet auf gesunde DB)
+### P0 Leistungskatalog — BEHOBEN (25.09.2026)
+
+- Migration `20260924220000_scope_services_read_and_foreign_service_guard_v1` (Commit `cc4b5fe4`, md5 `e1da9f22…`),
+  auf PROD per Transaktion inkl. Ledger-Eintrag; Ledger-md5 = Datei. Rollback:
+  `docs/backups/mig11_20260924220000_prestate_rollback_2026-09-25.sql` (lokal geprüft: Policy-Diff 0).
+- Lesen `services`: nur eigener Provider, aktiver Mitarbeiter (`is_employee_of_provider`), Kunde mit aktivem gültigem
+  Grant (`has_active_access_grant`), Admin (`user_roles`) / Master-Admin (`master_admins`). Keine Metadata. Alte Policy entfernt.
+- Schreibschutz-Trigger `hm_guard_service_owner_v1` auf `appointments`, `service_price_overrides`, `autoflow_settings`,
+  `payment_products`: fremde service_id → 42501 „Leistung gehört nicht zu diesem Betrieb“, nur bei INSERT oder Änderung
+  von Service-/Eigentümer-Spalte; gilt auch für service_role/RPC/Edge.
+- Frontend (`cc4b5fe4`, live): `AppointmentFormModal` + `QuickAddAppointmentFAB` laden nur eigene Leistungen.
+- Tests lokal 24/24 (`scripts/services-tenant-scope-tests.sql`), Negativkontrolle ohne Migration 8/24.
+- PROD-Smoke (QA-Trial-JWT, REST): 0 fremde Leistungen sichtbar, eigene Leistung + Termin damit 201, fremde service_id bei
+  Termin/Umstellung/Preis-Override 403/42501, Schnell-Termin ohne service_id 201; Alttermin für seinen Provider lesbar und
+  bearbeitbar (Transaktion mit Selbst-Rollback). QA-Testdaten gelöscht. Browser-Smoke unverändert grün.
+- Datenintegrität: 34 Leistungen / 296 Termine, md5 der 22 Alttermine und aller Leistungen vor = nach.
+- 22 Alttermine NICHT verändert, Preise NICHT rekonstruiert → Owner-Entscheidung offen.
+- Beziehungs-Check vor Apply: 1 Kunde verliert Sicht auf Leistungen eines Providers — Grant seit 14.08. revoked (beabsichtigt).
+  Aktiver Mitarbeiter behält Sicht.
+- **P2 Restrisiko:** Kunden legen Grants selbst an (Freigabe-Modell „Verbinden“). Wer sich als Kunde bei einem Provider
+  verbindet, sieht dessen aktive Leistungen wie ein echter Kunde. Vorher sah jeder eingeloggte Nutzer alles.
+
+#### Ursprüngliche Analyse (vor Fix)
 
 - Ungefilterte Provider-Lesepfade: `AppointmentFormModal` (Z. ~193), `QuickAddAppointmentFAB` (Z. ~81). Alle anderen filtern auf `provider_id`.
 - Legitime Fremdlesung: `ClientBooking` (Provider über aktiven Grant), Admin. Landing/Widget laden anonym → sehen schon heute nichts.
