@@ -39,3 +39,4 @@ supabase/.temp/*
 
 # TypeScript-Build-Zwischenstände
 *.tsbuildinfo
+__pycache__/
