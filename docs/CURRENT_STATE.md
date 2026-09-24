@@ -191,7 +191,20 @@ Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 b
   ggf. „Restart project“ bzw. Compute-Upgrade. Kein Management-API-Token auf dem Server (`~/.supabase/access-token` fehlt),
   MCP bietet nur pause/restore → bewusst nicht genutzt.
 
-#### Job 20 / 21 — Analyse (nicht verändert)
+#### INCIDENT GESCHLOSSEN — `INCIDENT_RECOVERY = PASS` (24.09. 21:32 UTC)
+
+- Pascal hat das Projekt im Dashboard neu gestartet (Postmaster-Start 21:09 UTC).
+- **Job 20 deaktiviert** (Owner-Freigabe, 21:24 UTC): `cron.alter_job(20, active := false)`, Kommando unverändert
+  (md5 `01df2f3b…`), nicht gelöscht. Rollback: `select cron.alter_job(20, active := true);`. Job 21 aktiv.
+- Messreihe 21:24–21:30 UTC (12× im 30-s-Takt): Auth 75–124 ms, REST 71–244 ms, alle 200.
+- Cron seit Neustart: 0 Fehler, Läufe 60–200 ms (vorher 10–20 s); Job 21 läuft jede Minute erfolgreich.
+- Logs ab 21:10: 0 statement timeouts, 0 cron startup timeouts, 0 SSL-Resets. 23× 503 nur in der Neustart-Minute 21:10
+  (`hufi_routines`, `profiles` HEAD), danach keine 5xx.
+- 21:32 UTC: `cron.job_run_details` 432 kB / 428 Zeilen, `net._http_response` 184 kB / 186 Zeilen → normales Wachstum.
+- Lehre: Bereinigte Tabellen reichten nicht; die Instanz blieb bis zum Neustart gedrosselt. Beim nächsten Mal nach dem
+  Aufräumen direkt neu starten. Offener Folgepunkt: Compute-Größe (Nano/Micro) und Disk-IO-Budget im Dashboard beobachten.
+
+#### Job 20 / 21 — Analyse
 
 - Job 21 `routines-runner` (`* * * * *`) = kanonisch, aus Repo-Migration `20260513120000_hufi_routines_cron.sql`.
 - Job 20 `hufi-routines-runner` (`*/5`) = in keiner Migration, manuell angelegt → Legacy-Duplikat. Gleiche URL, gleicher
@@ -199,13 +212,13 @@ Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 b
 - `hufi_routines` hat **0 Zeilen** → beide Jobs tun fachlich nichts (1 SELECT pro Aufruf). 72 Aufrufe/h, davon 12 durch Job 20.
   Trägt nicht wesentlich zur Last bei (Hauptproblem ist jede Cron-Verbindung an sich, solange die Instanz lahm ist).
 - Risiko bei künftigen Routinen: zur vollen 5-Minute laufen beide gleichzeitig ohne Lock → Doppelausführung/Doppel-Push möglich.
-- Empfehlung nach Erholung: `SELECT cron.unschedule(20);` (Rollback: Job mit identischem Kommando neu anlegen).
+- Umgesetzt 21:24 UTC: Job 20 deaktiviert (nicht gelöscht), siehe oben.
 
 #### Secrets in Cron-Commands (Security/Ops-Finding P1)
 
 - JWT im Klartext im Authorization-Header der Jobs 8–14, 16–21 (8–14 ohne „Bearer“-Präfix) (Job 15 hat Platzhalter `SERVICE_ROLE_KEY` → läuft seit jeher mit ungültigem Token).
   Kein Job nutzt Vault. Der JWT landet zusätzlich in `cron.job_run_details` und via auto_explain in den Postgres-Logs.
-- Kleinster sicherer Fix (später, eigene Freigabe): Key einmal in `vault.secrets` ablegen, Jobs per `cron.alter_job` auf
+- **Separater Folgepunkt, nicht im Incident umgesetzt.** Kleinster sicherer Fix (eigene Freigabe): Key einmal in `vault.secrets` ablegen, Jobs per `cron.alter_job` auf
   `(select decrypted_secret from vault.decrypted_secrets where name='cron_service_key')` umstellen; danach Key-Rotation
   gemäß bestehendem Rotations-Runbook. Kein Umbau im Incident.
 
