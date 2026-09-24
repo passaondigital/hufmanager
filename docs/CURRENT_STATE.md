@@ -274,20 +274,51 @@ Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 b
 - **P2 Restrisiko:** Kunden legen Grants selbst an (Freigabe-Modell „Verbinden“). Wer sich als Kunde bei einem Provider
   verbindet, sieht dessen aktive Leistungen wie ein echter Kunde. Vorher sah jeder eingeloggte Nutzer alles.
 
-### Golden Flow E2E (Production, QA-Trial, Browser 390×844) — 25.09.2026, läuft
+### Golden Flow E2E + Release-Checks (Production, QA-Trial) — Stand 25.09.2026 ~00:45 MESZ
 
-- ✅ Kunde anlegen (Kunden & Pferde → Neuer Kunde), ✅ Pferd anlegen, ✅ Termin planen (Formular zeigt nur eigene
-  Leistungen bzw. Standardvorlagen), ✅ Tour starten → Termin öffnen → Abschluss speichern (DB: `completed`).
-- ❌ **P0 Rechnung erstellen:** `create_invoice_with_items` → 409 `invoices_invoice_number_key` (RE-2026-0002 existiert bei
-  anderem Betrieb). Zähler `invoice_number_counters` ist pro Provider, Unique-Constraint aber global → jeder neue Provider
-  kollidiert. Fix = Repo-Migration `20260910063819_tenant_scope_invoice_number_uniqueness` (auf PROD nie angewendet, nicht
-  im Ledger). Lokal getestet (2. Betrieb gleiche Nummer erlaubt, gleicher Betrieb doppelt blockiert), keine Lookups nur über
-  `invoice_number`, keine FKs darauf, 0 Duplikate pro Provider. Apply-/Rollback-Dateien: `docs/backups/mig12_*`.
-  **PROD-Apply wartet auf Owner-Freigabe.** Nebeneffekt: fehlgeschlagene Versuche verbrauchen Nummern (Lücken).
-- Befunde UX: „Termin planen“ springt aus der Slim-Shell nach `/kalender`; Provider ohne eigene Leistungen bekommen
-  Standardvorlagen mit 0 € (vorher fremde Preise) → Onboarding sollte Leistungen anlegen lassen (Claudia: 0 eigene).
-- QA-Testdaten bleiben im QA-Tenant: Kunde „QA GoldenFlow“, Pferd „QA Goldie“, 1 abgeschlossener Termin.
-- Offen: Rechnung/PDF, Mobile/PWA-Details.
+**Rechnungsnummer-Migration `20260910063819` — ANGEWENDET (Owner-Freigabe 25.09.)**
+- Vorher `UNIQUE (invoice_number)` global, 11 Rechnungen, 0 Duplikate pro Provider. Nachher
+  `invoices_provider_invoice_number_key UNIQUE (provider_id, invoice_number)`, Ledger-md5 = Datei (`52901df6…`),
+  md5 aller 11 Bestandsrechnungen vor = nach. Rollback: `docs/backups/mig12_*` (nur solange keine Nummer doppelt über Betriebe).
+- QA-Rechnung RE-2026-0003 (60 €, 1 Position) gespeichert; gleiche Nummer existiert bei anderem Betrieb (erlaubt).
+  Duplikat im selben Betrieb → `invoices_provider_invoice_number_key` (Selbst-Rollback-Test). RE-2026-0001/0002 durch
+  die beiden fehlgeschlagenen Versuche vor dem Fix verbraucht (Lücke, kein Refactor).
+- PDF geprüft: Nummer, Kunde, Position, Netto 50,42 + 19 % 9,58 = 60,00 €. Gefixt + live (`84eefb13`): Kundenstraße fehlte
+  (PDF las nur `stable_street`), Rechnungsdatum-Default war UTC-Datum (nach Mitternacht MESZ = Vortag).
+- P1: Absender-Pflichtangaben (Adresse, Steuernummer, IBAN) fehlen im PDF, wenn der Betrieb sie nicht hinterlegt hat —
+  kein Hinweis/Gate vor Rechnungserstellung. P2: Spalten „Pos.“/„Menge“ im PDF zu schmal (Text bricht vertikal).
+
+**Golden Flow (RESPONSIVE_BROWSER, Playwright 390×844):** Login ✅ → Kunde ✅ → Pferd ✅ → Termin ✅ → Tour starten ✅ →
+Abschluss/Doku „Alles gut“ ✅ (`completed`) → Rechnung ✅ → PDF ✅ → Reload ✅ → Logout/Login ✅. Material: NOT_TESTED.
+Termin ohne eigene Leistung → Standardvorlage 0 €, service_id leer (korrekt nach P0; UX-Lücke für Betriebe ohne Leistungen).
+
+**Mobile/PWA (RESPONSIVE_BROWSER, Pixel-7-Emulation; REAL_DEVICE: NOT_TESTED):** 7 Screens ohne horizontales Überlaufen,
+kaum Mini-Tippflächen (nur Karten-Zoom/Attribution); Manifest installierbar (standalone, start_url /home, Icons 72–512 +
+maskable); Service Worker aktiv + kontrolliert. **Offline-Kaltstart geht nicht** (`navigateFallback: null`, HTML bewusst
+nicht gecacht gegen veraltetes Routing) → P1-Entscheidung (NetworkFirst mit Timeout + Fallback). Manifest wird als
+`application/octet-stream` ausgeliefert; `theme_color` Manifest #0a0700 ≠ Meta #FF6A00 (P2).
+
+**Claudia:** Account gesund (provider, TRIAL_ACTIVE bis 08.10., nicht gesperrt, 2 gültige Sessions, Daten vorhanden).
+Fehler nur in Incident-Fenstern (500/504 bis 129 s). Außerhalb: bekannter 404 Membership-RPC, 7× 400 Partner-Notizen.
+Keine Request-Schleife (1–2 Requests/min). → Ursache = DB-Incident; kein account-spezifischer Fehler.
+
+**Signup / E-Mail / Trial:**
+- **E-Mail-Bestätigung auf PROD AUS**: 7/7 Signups der letzten 30 Tage nach 0,4 s „bestätigt“, nie eine Mail verschickt.
+  App ist vorbereitet (Toast „Bitte bestätigen“, `emailRedirectTo` /home). Einschalten nur im Dashboard
+  (Auth → Sign In/Providers → Email → Confirm email) — kein Management-Token auf dem Server. Bestehende Accounts sind bereits
+  bestätigt → werden nicht ausgesperrt.
+- Rolle: `admin` nur aus `raw_app_meta_data`; aus `user_metadata` nur client/provider → OK.
+- **Trial-Trigger prüft `signup_app` nicht** → künftige HufiApp-Provider bekämen HufManager-Slim-Trial (aktuell 0
+  HufiApp-Provider in dieser DB). Kleinster Fix: Trigger nur bei `signup_app IS DISTINCT FROM 'hufiapp'` → braucht Freigabe.
+
+**Kleinere Befunde:**
+- `get_product_membership_context` 404: Splitter-Migration nie angewendet; seit `d717244a` höchstens 1 Aufruf pro Sitzung,
+  keine Schleife, Zugang wird durchgelassen (P2).
+- Push nach Termin 403: gewollt (Function erlaubt Push nur an sich selbst); Client-Push bräuchte serverseitigen Versand (P2).
+- `partner_treatment_notes`: Frontend fragt Spalten `follow_up_date`, `treatment`, `recommendations` ab, die in PROD fehlen
+  → 400, Partner-Notizen in der Pferdeakte leer (P2).
+- „Termin planen“ springt aus Slim-Shell nach `/kalender` (P2). Termin-Tooltip über Titel: NOT_RETESTED.
+- QA-Daten im QA-Tenant: Kunde „QA GoldenFlow“, Pferd „QA Goldie“, 1 Termin (completed), Rechnung RE-2026-0003.
 
 #### Ursprüngliche Analyse (vor Fix)
 
