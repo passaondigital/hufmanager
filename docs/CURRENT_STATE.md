@@ -16,11 +16,11 @@
 |---|---|
 | Repo | `passaondigital/hufmanager`, lokal `/home/administrator/hufmanager` |
 | Release-Branch | `release/hufmanager-lifecycle-2026-09-11` |
-| Letzter Code-Commit | `9f82803e` (Edge) / Frontend live `b15b6133` |
+| Live-Stand | Frontend `992f9117`; Edge invite-client-with-password v9 (`992f9117`), invite-client v9, admin-create-client v118, copecart-webhook v165, demo-Functions v32/v5 (410) |
 | `origin/main` | `f7640eaa` — für HufManager-Slim **nicht** maßgeblich |
 | Worktrees / Stashes | nur Haupt-Worktree, keine Stashes |
 | Server | `cloud-server-10634828` / `85.190.105.104` — **Production-Web und Staging-Web laufen auf demselben Host** |
-| Production-Web | `app.hufmanager.de` (DNS → 85.190.105.104) → nginx root `/srv/hufi/business/hufmanager/app` → Symlink `current` → `releases/b15b61334616` (seit 24.09.) |
+| Production-Web | `app.hufmanager.de` (DNS → 85.190.105.104) → nginx root `/srv/hufi/business/hufmanager/app` → Symlink `current` → `releases/992f9117db0d` (previous `b15b61334616`) |
 | Staging-Web | `hufmanager-staging.huficloud.heyhufi.com` → `/srv/hufi/lab/factory/projects/hufmanager/dist` (HTTP 200; HTTPS-Check vom Server aus: kein Response) |
 | Production-DB | Supabase `vnschgjxkzzwzefqlrji` |
 | Lokale Supabase | Docker-Stack `supabase_*_vnschgjxkzzwzefqlrji` auf dem Server = **lokale Kopie/Staging**, nicht Production |
@@ -109,6 +109,23 @@ QA A/B vorübergehend mit `plan_override='pro'` + Slim-Entitlement `ACTIVE` (`so
 - 36/36 Adversarial-Checks PASS: fremde Profile/Grants/Kontakte unsichtbar, Update/Delete fremder Rows wirkungslos,
   Grant-Diebstahl und gefälschter Grant 403, Invite-Tabelle 403, Invite-RPC direkt 403, Re-Invite fremder Kunden 409.
 - Beobachtung P2: Provider kann Kontakt mit `profile_id` eines fremden Kunden anlegen (201), ohne Sichtbarkeitsgewinn.
+
+
+### Nachtrag 24.09. abends — Invite-Fallback, Demo-Cleanup, finaler Smoke
+
+- **Invite-Fallback live** (`invite-client-with-password` v9 + Frontend `992f9117`): Einmalpasswort verlässt den Server nie
+  in einer API-Antwort; Mailversand 3× mit Resend-Fehlerauswertung; bei Fehlschlag `action:"resend"` → neues Passwort nur per Mail.
+  Resend-Gate ausschließlich aus Serverfakten (auth.users `last_sign_in_at IS NULL` + Login-E-Mail, verbrauchter Pending Invite
+  dieses Providers, eigener aktiver Grant). Security-Review: Takeover-Finding im ersten Entwurf gefunden, vor Deploy behoben, Nachprüfung CLOSED.
+  Live 8/8 (eigener Kunde 200/Mail; fremder Kunde, Provider, sich selbst 403; ohne Pro 403; anon 401; kaputte ID 400).
+- **Demo-Cleanup:** `create-demo-business-user` v32 und `create-demo-stallbetreiber-user` v5 → 410 + `verify_jwt=true`;
+  Passwörter beider Demo-Konten auf unbekannten Zufallswert rotiert, Sessions/Refresh-Tokens gelöscht; alte (öffentliche) Passwörter → 400.
+- **Finaler Production-Smoke PASS:** Tenant 36/36 (2. Lauf), Trial-Zugang, QA-Zugang, 410/401-Pfade, App 200;
+  DB: 0 neue Fremd-Grants, 0 offene Issues, 0 offene Invites, Ledger `20260924120000`.
+- **Offen:** CopeCart-Secret-Rotation (Pascal, Runbook), danach Webhook-Verifikation.
+- **QA-Freischaltung** (Pro + Slim ACTIVE `QA_MANUAL`) für QA A/B ist noch aktiv (für Smoke nach Rotation); Rücknahme per
+  `update profiles set plan_override=null …; delete from product_entitlements where source='QA_MANUAL'`.
+- QA-Konten: A, B, `+qa-trial` (Trial-Test) sowie Testkunden `+qa-a-client1`, `+qa-b-client1`.
 
 ## 4. Billing / CopeCart (Stand 24.09., korrigiert)
 

@@ -1,54 +1,54 @@
 # HufManager Slim — Release Gates
 
-**Stand:** 24.09.2026 nach Deploy · Edge `9f82803e` · Frontend `b15b6133` · Production `vnschgjxkzzwzefqlrji`
+**Stand:** 24.09.2026 abends · Frontend `992f9117` · Trial-Migration `20260924120000` · Production `vnschgjxkzzwzefqlrji`
 Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CURRENT_STATE.md`.
 
 | Gate | Status | Evidenz / was fehlt |
 |---|---|---|
-| SOURCE_OF_TRUTH | TESTED | Repo, Branch, Ledger, Edge-Versionen, Webroot, DNS live geprüft 24.09. |
-| MIGRATION_LEDGER | TESTED | Release-Migrationen #1–#9 + Hardening im Prod-Ledger; Legacy-Drift klassifiziert und bewusst belassen |
-| BUILD | TESTED | `./deploy.sh hufmanager --ref 7a13d19b --dry-run` inkl. Bundle-Gates (URL, Key, keine Staging-URL, Secret-Scan) |
-| TYPECHECK | PARTIAL | 131 TS-Diagnosen = Baseline, 0 neue; Baseline selbst nicht abgebaut |
-| UNIT_TESTS | TESTED | vitest 300/300 |
-| DB_TESTS | PARTIAL | Funktions-/Negativtests je Migration in Prod (Ledger-Doku N3–N13); keine automatisierte SQL-Suite im CI |
-| AUTH | PARTIAL | Edge-Auth statisch geprüft; kein frischer Browser-Login-Test gegen Production |
-| FIRST_LOGIN | BLOCKED | frische Registrierung (QA A/B + echter Neukunde 23.09.) erhält kein Slim-Entitlement → Access-Gate „Kein aktiver Zugang“, keine Testphase; vorbestehend seit ≥12.09. |
-| TENANT_ISOLATION | PARTIAL | QA A↔B: fremde Profile/Grants/Kontakte unsichtbar, Pending-Invites 403, gefälschter Grant 403; Tenants noch ohne Daten → befüllter Test offen |
-| CLIENT_INVITE | PARTIAL | Fix live (v8/v9/v118 + Frontend b15b6133); Negativpfade mit echten QA-JWTs PASS; positiver Invite-E2E offen, weil QA-Tenants weder Pro noch Slim-Entitlement haben |
+| SOURCE_OF_TRUTH | TESTED | Repo/Branch/Ledger/Edge/Webroot/DNS live 24.09.; Doku gepusht |
+| MIGRATION_LEDGER | TESTED | Prod-Ledger bis `20260924120000` (Trial), keine neue Drift; Legacy-Drift dokumentiert |
+| BUILD | TESTED | `./deploy.sh` Frontend `992f9117` inkl. Bundle-Gates, Deploy-Smoke 0 Errors |
+| TYPECHECK | PARTIAL | 131 TS-Diagnosen = Baseline, 0 neue |
+| UNIT_TESTS | TESTED | vitest 309/309; copecart Laufzeit-Check 10/10 |
+| DB_TESTS | PARTIAL | Trial-Migration 17/17 lokal + Negativkontrollen; Invite-RPCs N4–N13; keine CI-Suite |
+| AUTH | PARTIAL | Signup/Login/Token-Pfade live (QA), 401/403/410 geprüft; Password-Recovery nicht getestet |
+| FIRST_LOGIN | PARTIAL | Trial live: frische Registrierung → TRIAL_ACTIVE 14 T.; UI-Durchlauf (Onboarding-Wizard, Mobile) nicht getestet |
+| TENANT_ISOLATION | TESTED | Prod QA A↔B mit echten Kunden: 36/36 Adversarial-Checks (2× gelaufen), 0 fremde Grants |
+| CLIENT_INVITE | TESTED | Prod: Invite A/B, Grant/Kontakt/Invite korrekt, kein Fallback; Resend 8/8; kein Passwort im Browser |
 | PARTNER_INVITE | UNKNOWN | nicht geprüft |
 | INTAKE_IMPORT | UNKNOWN | nicht geprüft |
-| CUSTOMER_HORSE | PARTIAL | RPC `create_customer_with_contact` in Prod; bekannte Dublette bei Doppelklick „Pferd anlegen" |
-| APPOINTMENT | PARTIAL | Guards unit-getestet; kein E2E in diesem Lauf |
+| CUSTOMER_HORSE | PARTIAL | Kunde anlegen/verwalten (QA) live; Pferd-CRUD + Doppelklick-Dublette nicht getestet |
+| APPOINTMENT | UNKNOWN | kein E2E |
 | TOUR | UNKNOWN | kein E2E |
 | DOCUMENTATION | UNKNOWN | kein E2E |
-| MATERIAL | PARTIAL | Cross-Tenant-Inventory-Test PASS (N4.7); Bestand/Verbrauch-Flow ungetestet |
-| INVOICE_PDF | PARTIAL | Rechnungs-RPC Money/Atomicity/Idempotenz PASS in Prod; PDF-Fix im RC, aber Frontend nicht deployt |
-| BILLING | BLOCKED | deployte copecart-webhook v164 weist echte IPNs ab (401) und loggt PII; Fix im Repo, Doppel-Writer-Entscheidung offen |
-| COPECART_ROUTING | PARTIAL | Pascal: IPN → copecart-webhook; Logs 11.09.: dieselbe IPN auch an hufi-data-core (200) → zwei Ziele konfiguriert |
-| LIFECYCLE | PARTIAL | Step 1 + Reconciler in Prod, 0 offene Issues; Step 2 nicht angewendet |
-| MOBILE | UNKNOWN | keine Viewport-E2E in diesem Lauf |
+| MATERIAL | PARTIAL | Cross-Tenant-Inventory (N4.7); Flow ungetestet |
+| INVOICE_PDF | PARTIAL | Rechnungs-RPC Money/Atomicity PASS; PDF im Frontend live, nicht E2E getestet |
+| BILLING | PARTIAL | Slim-Wahrheit einzig `hufi-data-core`→Lifecycle→Entitlements; Trial-Producer live; kein echter Zahlungs-E2E |
+| COPECART_ROUTING | PARTIAL | IPN → copecart-webhook (ack-only v165) + hufi-data-core; Verifikation nach Rotation offen |
+| LIFECYCLE | PARTIAL | Writer + Guard + Trial live, 0 offene Issues; Step 2 nicht angewendet |
+| MOBILE | UNKNOWN | keine Viewport-E2E |
 | DRAFT_RESUME | UNKNOWN | nicht geprüft |
-| SECURITY | PARTIAL | Invite-P0 + PII-Logging + Allowlist live geschlossen; offen: Rotation COPECART_IPN_PASSWORD/DATACORE_SECRET, Demo-Konto-Passwort, Löschung create-demo-business-user/-stallbetreiber-user |
-| MONITORING | PARTIAL | `system-health-check`, `anomaly-detection`, `validate-backup` laufen per Cron; kein Alerting-Nachweis |
-| BACKUP | PARTIAL | Prod-Dump 24.09. post-#9 verifiziert; Edge-Backup 24.09.; kein Storage-Backup, kein Offsite-Nachweis |
-| RESTORE | PARTIAL | letzter Drill 11.09.; kein Restore-Test des 20.09.-Dumps |
-| ROLLBACK | PARTIAL | Frontend: previous → legacy-app-20260924T075848Z bereit; Edge: Vorfassungen gesichert; Rollback selbst nicht geübt |
-| STAGING_SMOKE | PARTIAL | RC 20.09. auf Staging getestet (Staging-Activation-Doku); Invite-Fix `7a13d19b` nicht auf Staging E2E-getestet |
-| PRODUCTION_SMOKE | PARTIAL | Deploy-Smoke 0 Errors, Bundle-Inhalt verifiziert, Auth-/410-/403-Pfade live; positiver Invite + Kunden-CRUD offen (QA-Provisionierung) |
+| SECURITY | PARTIAL | Invite-P0, PII-Log, Allowlist, Demo-Endpoints, Demo-Passwörter erledigt; offen: CopeCart-Secret-Rotation, P1 Provider darf Client-`email`/`created_by_provider_id` via RLS ändern, P2 fremde `profile_id` in Kontakt, Auto-Confirm Signup |
+| MONITORING | PARTIAL | Cron-Health-Checks; kein Alerting-Nachweis |
+| BACKUP | PARTIAL | Prod-Dump 24.09. verifiziert; kein Storage-Backup, kein Offsite |
+| RESTORE | PARTIAL | letzter Drill 11.09.; Rollback-SQL Trial lokal getestet |
+| ROLLBACK | PARTIAL | Frontend previous=`b15b6133`; Edge-Vorfassungen gesichert; Trial-Rollback lokal getestet; Prod-Rollback nicht geübt |
+| STAGING_SMOKE | PARTIAL | lokal Trial/Webhook; kein Staging-Browser-E2E |
+| PRODUCTION_SMOKE | TESTED | Final-Smoke 24.09.: Tenant 36/36, Resend 8/8, Trial, 410/401-Pfade, App 200, DB-Invarianten |
 | SUPPORT_RECOVERY | UNKNOWN | nicht geprüft |
-| SALE_READY | BLOCKED | Security-P0 offen, Kernflow-E2E fehlt, Billing unbelegt |
+| SALE_READY | BLOCKED | fehlt: Kernflow-E2E (Termin/Tour/Doku/Material/Rechnung-PDF), Mobile, Secret-Rotation, Billing-Zahlungs-E2E |
 
 ## Blocker
 
-1. **Invite-P0 live** — Deploy von `invite-client`, `invite-client-with-password`, `admin-create-client` + Frontend benötigt Pascals GO.
-2. **Billing-Routing unbelegt** — CopeCart-Dashboard-Konfiguration (Produkt-ID → `hufi-data-core`-URL) muss Pascal bestätigen oder Zugang geben.
-3. **Supabase CLI ohne Access-Token** — Edge-Deploy nur via MCP/Dashboard; CLI-Login (`! supabase login`) würde den dokumentierten Deploy-Pfad wieder öffnen.
+1. **CopeCart-Secret-Rotation** — nur Pascal (Runbook `docs/HUFMANAGER_SECRET_ROTATION_RUNBOOK.md`).
+2. **Kernflow-E2E fehlt** (Termin → Tour → Doku → Material → Rechnung/PDF, Mobile 360/390/430).
+3. **P1 RLS:** verbundene Provider können `profiles.email` / `created_by_provider_id` / `has_logged_in` ihrer Kunden ändern.
 
 ## Next 3
 
-1. Nach GO: frischen DB-Dump (Post-#9) ziehen → Edge-Functions namentlich deployen → `./deploy.sh hufmanager` → Invite-E2E aus zwei Providersichten + Negativtest „fremder Provider".
-2. Kernflow-E2E (Login → Kunde → Pferd → Termin → Tour → Doku → Material → Rechnung/PDF) mit zwei befüllten Test-Tenants auf Staging, danach Read-only-Smoke in Production; Viewports 360/390/430 + Desktop.
-3. Billing: CopeCart-Routing belegen, Contract-Tests (Duplicate/Out-of-order/Cancel/Ended) gegen lokale Supabase.
+1. Rotation nach Runbook + Test-IPN → Logs verifizieren (beide Endpoints 200, keine Mutation durch copecart-webhook).
+2. Kernflow-E2E im Browser mit QA A (Kunde → Pferd → Termin → Tour → Doku → Material → Rechnung/PDF), Mobile-Viewports.
+3. P1-RLS-Härtung `profiles` (BEFORE-UPDATE-Trigger gegen Fremdänderung von email/created_by_provider_id/has_logged_in) mit Tests.
 
 ## Safe tasks für günstigere Agents
 
