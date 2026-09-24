@@ -300,6 +300,11 @@ describe("Invite-Security-Haertung (2026-09-24)", () => {
     expect(inviteModal).toMatch(/\{success\.tempPassword && \(/);
   });
 
+  it("wertet den Resend-Rueckgabefehler als nicht zugestellt", () => {
+    expect(withPasswordCode).toMatch(/const \{ error: sendError \} = await resend\.emails\.send/);
+    expect(withPasswordCode).toMatch(/if \(sendError\) \{\s*emailSent = false;/);
+  });
+
   it("baut den Login-Link nur aus einer festen Origin-Allowlist", () => {
     expect(withPasswordCode).not.toMatch(/\$\{req\.headers\.get\("origin"\)/);
     expect(withPasswordCode).toMatch(/ALLOWED_LOGIN_ORIGINS\.includes\(requestOrigin\)/);

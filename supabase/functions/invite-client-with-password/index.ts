@@ -384,17 +384,23 @@ serve(async (req: Request): Promise<Response> => {
     // — das wäre genau die unklare Zwischenlage, die vermieden werden soll.
     // Der Aufrufer bekommt den Erfolg plus emailSent:false und kann das
     // Einmalpasswort selbst weitergeben (die UI zeigt es ohnehin an).
+    // Resend v2 wirft bei API-Fehlern nicht, sondern liefert { error } —
+    // beides zaehlt als "nicht zugestellt", sonst ginge das Passwort verloren.
     let emailSent = true;
     try {
-      await resend.emails.send({
+      const { error: sendError } = await resend.emails.send({
         from: "HufManager <info@hufmanager.de>",
         to: [email],
         subject: `🐴 ${safeProviderName} lädt dich zur HufManager Kunden-App ein`,
         html: emailHtml,
       });
+      if (sendError) {
+        emailSent = false;
+        console.error("invite-client-with-password: Kunde angelegt, Mailversand fehlgeschlagen:", sendError.message);
+      }
     } catch (mailErr) {
       emailSent = false;
-      console.error("invite-client-with-password: Kunde angelegt, Mailversand fehlgeschlagen:", mailErr);
+      console.error("invite-client-with-password: Kunde angelegt, Mailversand fehlgeschlagen:", mailErr instanceof Error ? mailErr.message : String(mailErr));
     }
 
     // Das Einmalpasswort verlässt den Server nur, wenn die Mail NICHT
