@@ -204,6 +204,20 @@ Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 b
 - Lehre: Bereinigte Tabellen reichten nicht; die Instanz blieb bis zum Neustart gedrosselt. Beim nächsten Mal nach dem
   Aufräumen direkt neu starten. Offener Folgepunkt: Compute-Größe (Nano/Micro) und Disk-IO-Budget im Dashboard beobachten.
 
+#### Claudia „App hängt sich ständig auf“ — Ursache + Frontend-Fix
+
+- Ursache 1 (Hauptursache): DB-Incident oben (23.09. abends, 24.09. ab 10:40 UTC) → jede Anfrage 35–126 s / 504.
+- Ursache 2 (Verstärker): `HufmanagerSlimAccessGate` umschließt jede Slim-Route einzeln → jeder Tab-Wechsel
+  (Heute/Tour/Kunden/Finanzen) mountete neu, fragte `get_hufmanager_access_context_v1` erneut ab und zeigte bis zur
+  Antwort den vollflächigen `AuthLoadingScreen`. Bei langsamer DB = eingefrorene App pro Klick.
+  Gleiches Muster in `ProductChoiceGate` (RPC `get_product_membership_context`, in Prod 404, keine Schleife).
+- Fix: Ergebnis pro User-ID im Speicher halten, bei Remount sofort rendern und still im Hintergrund neu prüfen
+  (`useHufmanagerSlimAccess.tsx`, `useProductMembership.ts`, Test `slimAccessCache.test.ts`).
+- **P1-Härtung (offen):** Beide Gates geben bei Lesefehler der Zugangsprüfung den Zugriff optisch frei (fail-open,
+  vorbestehend). Kein Datenzugriff dadurch: `appointments`, `horses`, `invoices` haben RESTRICTIVE-Policies mit
+  Slim-Entitlement-Prüfung, RPCs prüfen serverseitig. Ziel: bei Prüffehler „Zugang wird geprüft / Fehler beim Laden“
+  mit Retry statt Freigabe.
+
 #### Job 20 / 21 — Analyse
 
 - Job 21 `routines-runner` (`* * * * *`) = kanonisch, aus Repo-Migration `20260513120000_hufi_routines_cron.sql`.

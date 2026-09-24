@@ -37,10 +37,32 @@ interface UseHufmanagerSlimAccessResult {
 // (profiles.subscription_*) gate for the same reason; this hook does the
 // same for consistency rather than introducing a second admin-detection
 // convention.
+// HufmanagerSlimAccessGate wraps every Slim work route separately, so each
+// tab switch mounts a fresh hook. Without this cache every switch showed the
+// full-screen AuthLoadingScreen until the RPC answered -- on a slow DB that
+// was 35-126 s per click (real-user "app freezes" report, 24.09.2026).
+// Keyed by user id: a known answer renders immediately and is revalidated
+// silently in the background; another user never sees it.
+const slimAccessCache = new Map<string, HufmanagerSlimAccessContext | null>();
+
+export function readCachedSlimAccess(userId: string | undefined) {
+  if (!userId || !slimAccessCache.has(userId)) return undefined;
+  return slimAccessCache.get(userId) ?? null;
+}
+
+export function writeCachedSlimAccess(userId: string, context: HufmanagerSlimAccessContext | null) {
+  slimAccessCache.set(userId, context);
+}
+
+export function clearSlimAccessCache() {
+  slimAccessCache.clear();
+}
+
 export function useHufmanagerSlimAccess(): UseHufmanagerSlimAccessResult {
   const { user, role } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [context, setContext] = useState<HufmanagerSlimAccessContext | null>(null);
+  const cached = readCachedSlimAccess(user?.id);
+  const [loading, setLoading] = useState(cached === undefined);
+  const [context, setContext] = useState<HufmanagerSlimAccessContext | null>(cached ?? null);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAccess = useCallback(async () => {
@@ -50,7 +72,14 @@ export function useHufmanagerSlimAccess(): UseHufmanagerSlimAccessResult {
       return;
     }
 
-    setLoading(true);
+    // Only block the screen when there is no answer for this user yet.
+    const known = readCachedSlimAccess(user.id);
+    if (known === undefined) {
+      setLoading(true);
+    } else {
+      setContext(known);
+      setLoading(false);
+    }
     // "as never" cast follows the same established pattern as
     // useProductMembership.ts's calls to get_product_membership_context() --
     // this RPC is not yet in the generated Database types (that generation
@@ -80,7 +109,7 @@ export function useHufmanagerSlimAccess(): UseHufmanagerSlimAccessResult {
       current_period_end: string | null;
       reason_code: HufmanagerSlimAccessReasonCode | null;
     } | null;
-    setContext(
+    const next: HufmanagerSlimAccessContext | null =
       row
         ? {
             hasAccess: row.has_access === true,
@@ -91,8 +120,9 @@ export function useHufmanagerSlimAccess(): UseHufmanagerSlimAccessResult {
             currentPeriodEnd: row.current_period_end,
             reasonCode: row.reason_code,
           }
-        : null,
-    );
+        : null;
+    writeCachedSlimAccess(user.id, next);
+    setContext(next);
     setLoading(false);
   }, [user?.id, role]);
 
