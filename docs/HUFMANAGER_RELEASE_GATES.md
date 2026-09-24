@@ -1,6 +1,6 @@
 # HufManager Slim — Release Gates
 
-**Stand:** 24.09.2026 · Code-HEAD `bcc3342d` · Production `vnschgjxkzzwzefqlrji`
+**Stand:** 24.09.2026 nach Deploy · Edge `9f82803e` · Frontend `b15b6133` · Production `vnschgjxkzzwzefqlrji`
 Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CURRENT_STATE.md`.
 
 | Gate | Status | Evidenz / was fehlt |
@@ -12,9 +12,9 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 | UNIT_TESTS | TESTED | vitest 300/300 |
 | DB_TESTS | PARTIAL | Funktions-/Negativtests je Migration in Prod (Ledger-Doku N3–N13); keine automatisierte SQL-Suite im CI |
 | AUTH | PARTIAL | Edge-Auth statisch geprüft; kein frischer Browser-Login-Test gegen Production |
-| FIRST_LOGIN | UNKNOWN | kein E2E mit frischer Identität in diesem Lauf; Parkplatz „Quick-Setup-Wizard hängt bei Business-Name" |
-| TENANT_ISOLATION | PARTIAL | RPC-Cross-Tenant-Tests PASS (N4.7); **Invite-Pfad live offen bis Edge-Deploy**; kein 2-Tenant-UI-Red-Team |
-| CLIENT_INVITE | BLOCKED | Fix im Repo, nicht deployt; Freigabe Pascal nötig |
+| FIRST_LOGIN | BLOCKED | frische Registrierung (QA A/B + echter Neukunde 23.09.) erhält kein Slim-Entitlement → Access-Gate „Kein aktiver Zugang“, keine Testphase; vorbestehend seit ≥12.09. |
+| TENANT_ISOLATION | PARTIAL | QA A↔B: fremde Profile/Grants/Kontakte unsichtbar, Pending-Invites 403, gefälschter Grant 403; Tenants noch ohne Daten → befüllter Test offen |
+| CLIENT_INVITE | PARTIAL | Fix live (v8/v9/v118 + Frontend b15b6133); Negativpfade mit echten QA-JWTs PASS; positiver Invite-E2E offen, weil QA-Tenants weder Pro noch Slim-Entitlement haben |
 | PARTNER_INVITE | UNKNOWN | nicht geprüft |
 | INTAKE_IMPORT | UNKNOWN | nicht geprüft |
 | CUSTOMER_HORSE | PARTIAL | RPC `create_customer_with_contact` in Prod; bekannte Dublette bei Doppelklick „Pferd anlegen" |
@@ -28,13 +28,13 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 | LIFECYCLE | PARTIAL | Step 1 + Reconciler in Prod, 0 offene Issues; Step 2 nicht angewendet |
 | MOBILE | UNKNOWN | keine Viewport-E2E in diesem Lauf |
 | DRAFT_RESUME | UNKNOWN | nicht geprüft |
-| SECURITY | BLOCKED | live: Invite-P0, create-demo-business-user mit öffentlichen Credentials, PII-Logging copecart-webhook; Fixes in bcc3342d nicht deployt; Rotationen offen |
+| SECURITY | PARTIAL | Invite-P0 + PII-Logging + Allowlist live geschlossen; offen: Rotation COPECART_IPN_PASSWORD/DATACORE_SECRET, Demo-Konto-Passwort, Löschung create-demo-business-user/-stallbetreiber-user |
 | MONITORING | PARTIAL | `system-health-check`, `anomaly-detection`, `validate-backup` laufen per Cron; kein Alerting-Nachweis |
-| BACKUP | PARTIAL | DB-Dump 20.09. (vor #1–#9), Edge-Backup 24.09.; kein aktueller DB-Dump nach #9, kein Storage-Backup, kein Offsite-Nachweis |
+| BACKUP | PARTIAL | Prod-Dump 24.09. post-#9 verifiziert; Edge-Backup 24.09.; kein Storage-Backup, kein Offsite-Nachweis |
 | RESTORE | PARTIAL | letzter Drill 11.09.; kein Restore-Test des 20.09.-Dumps |
-| ROLLBACK | PARTIAL | Edge: wörtliche Vorfassungen gesichert; Frontend: Symlink-Rollback im Skript, erst nach erstem echten Deploy nutzbar |
+| ROLLBACK | PARTIAL | Frontend: previous → legacy-app-20260924T075848Z bereit; Edge: Vorfassungen gesichert; Rollback selbst nicht geübt |
 | STAGING_SMOKE | PARTIAL | RC 20.09. auf Staging getestet (Staging-Activation-Doku); Invite-Fix `7a13d19b` nicht auf Staging E2E-getestet |
-| PRODUCTION_SMOKE | UNKNOWN | kein Post-Deploy-Smoke, da nichts deployt |
+| PRODUCTION_SMOKE | PARTIAL | Deploy-Smoke 0 Errors, Bundle-Inhalt verifiziert, Auth-/410-/403-Pfade live; positiver Invite + Kunden-CRUD offen (QA-Provisionierung) |
 | SUPPORT_RECOVERY | UNKNOWN | nicht geprüft |
 | SALE_READY | BLOCKED | Security-P0 offen, Kernflow-E2E fehlt, Billing unbelegt |
 

@@ -16,11 +16,11 @@
 |---|---|
 | Repo | `passaondigital/hufmanager`, lokal `/home/administrator/hufmanager` |
 | Release-Branch | `release/hufmanager-lifecycle-2026-09-11` |
-| Letzter Code-Commit | `7a13d19b` fix(invite): route every client-creation path through the #5-#9 contract |
+| Letzter Code-Commit | `9f82803e` (Edge) / Frontend live `b15b6133` |
 | `origin/main` | `f7640eaa` — für HufManager-Slim **nicht** maßgeblich |
 | Worktrees / Stashes | nur Haupt-Worktree, keine Stashes |
 | Server | `cloud-server-10634828` / `85.190.105.104` — **Production-Web und Staging-Web laufen auf demselben Host** |
-| Production-Web | `app.hufmanager.de` (DNS → 85.190.105.104) → nginx root `/srv/hufi/business/hufmanager/app` (echtes Verzeichnis, Build vom **12.09.2026**, noch keine Release-/Symlink-Struktur) |
+| Production-Web | `app.hufmanager.de` (DNS → 85.190.105.104) → nginx root `/srv/hufi/business/hufmanager/app` → Symlink `current` → `releases/b15b61334616` (seit 24.09.) |
 | Staging-Web | `hufmanager-staging.huficloud.heyhufi.com` → `/srv/hufi/lab/factory/projects/hufmanager/dist` (HTTP 200; HTTPS-Check vom Server aus: kein Response) |
 | Production-DB | Supabase `vnschgjxkzzwzefqlrji` |
 | Lokale Supabase | Docker-Stack `supabase_*_vnschgjxkzzwzefqlrji` auf dem Server = **lokale Kopie/Staging**, nicht Production |
@@ -57,31 +57,37 @@ aber ohne Ledger-Eintrag. 8 `_prepared`-Migrationen sind nie angewendet.
 **`supabase db push` bleibt verboten** (würde ~395 bereits angewendete Migrationen erneut ausführen
 und `_prepared`-Billing-Logik scharf schalten).
 
-## 3. Production-Stand: DB neu, Edge/Frontend alt
+## 3. Production-Stand nach Deploy 24.09.2026 (~09:50–10:00 MESZ)
 
-| Komponente | Production | Repo |
-|---|---|---|
-| DB-Migrationen #1–#9 | **angewendet** | = |
-| `autoflow-auto-invoice` | v80, neu (21.09. deployt) | = |
-| `invite-client-with-password` | **v7 alt** — ohne Pending-Invite-Vertrag | neu (Vertrag #5–#9) |
-| `invite-client` | **v8 alt** — createUser + setTimeout + eigener Grant | neu: HTTP 410 Gone |
-| `admin-create-client` | **v117 alt** — direkte Writes, setTimeout | neu: kanonischer Vertrag |
-| `hufi-agent` | v40 | Repo-Fassung nutzt neue RPCs, Deploy „mit Vorbehalt" |
-| Frontend | Build vom 12.09. | RC `110dffc5` + Fixes bis `7a13d19b` |
+Vorbedingung: Prod-Dump `~/hufmanager-backups/20260924-094320-post-mig9-pre-invite-deploy/db/`
+(sha256 `87d68259…2cc73`, 30,4 MB, 339 Tabellen-Datenblöcke, Ledger `20260920190000`) — unabhängig verifiziert.
+Security-Review Deploy-Set: keine neuen High-Confidence-Findings; Origin-Allowlist + Resend-Fehlerprüfung nachgezogen.
 
-### Offener Security-P0 (live)
+| Komponente | vorher | jetzt | Verifikation |
+|---|---|---|---|
+| `invite-client-with-password` | v7 | **v8** (`9f82803e`), verify_jwt=false | 401 ohne/ungültiger Token; 403 ohne Pro (echter QA-JWT) |
+| `invite-client` | v8 | **v9** = 410 Gone, verify_jwt=false | 410 mit/ohne Token |
+| `admin-create-client` | v117 | **v118**, verify_jwt=true | Gateway 401; Anon 401; Provider-JWT 403 |
+| `copecart-webhook` | v164 | **v165** ack-only (`536b5f8b`), verify_jwt=false | SHA256 beider Dateien = Repo; 401 ohne/falsche Signatur |
+| `create-demo-business-user` | v31 | **unverändert** — nicht benötigt, nicht deployt | Löschung im Dashboard empfohlen |
+| Frontend | Build 12.09. | **`b15b6133`** via `./deploy.sh` | Entry-Chunk aus Release; neuer Invite-Pfad in 2 Chunks, alter in 0; Deploy-Smoke 0 Errors |
 
-Beide in Production erreichbaren Einladepfade (`invite-client` v8, `invite-client-with-password` v7)
-legen **keinen** Pending Invite an. Ohne Invite greift in `auto_assign_client_to_provider()` der
-generische „erster Provider"-Fallback (fremder Provider erhält aktiven Grant inkl. `can_view_medical`)
-und die Ghost-Merge-Schleife in `handle_new_user()` bleibt aktiv.
+Webroot: `releases/b15b61334616` (current), Rollback-Ziel `releases/legacy-app-20260924T075848Z` (previous).
+Rollback: `./deploy.sh hufmanager --rollback`; Edge-Vorfassungen in `~/hufmanager-backups/20260924-081933-pre-invite-p0-deploy/`.
+DB nach Deploy + Smoke: nur +2 Profile/User (QA A/B), Grants 57 unverändert, 0 Pending Invites, Ledger unverändert.
 
-Read-only Messung 24.09.: seit 20.09. 1 neuer Auth-User, 0 neue Kunden, **0 verdächtige Grants** →
-bisher kein Schaden. Das Risiko besteht bis zum Deploy der Repo-Fassungen.
+### QA-Tenants (dauerhaft)
 
-Fix liegt fertig im Repo (`7a13d19b`), getestet (siehe §5). **Deploy braucht Pascals Freigabe**,
-weil Edge-Functions und Frontend zusammen gehen müssen (altes Frontend ruft `invite-client`,
-das nach dem Fix 410 liefert).
+- QA Provider A `barhufserviceschmid+qa-a@gmail.com` (id 229ec82f…), QA Provider B `…+qa-b@gmail.com` (id 3740367c…)
+- Zugangsdaten nur lokal: `~/.config/hufmanager-qa/credentials.env` (chmod 600)
+- Zustand: Rolle provider, `starter/trialing`, **kein Slim-Entitlement** → `NO_ENTITLEMENT`, kein Pro → Invite 403
+
+### Neuer P0-Befund: Neuregistrierung ohne Slim-Zugang
+
+Ein frisch registrierter Provider erhält **kein** `product_entitlements`-Eintrag und landet im
+`HufmanagerSlimAccessGate` auf „Kein aktiver Zugang“ statt in einer 14-Tage-Testphase.
+Betrifft auch den echten Neukunden vom 23.09. Vorbestehend (Gate + RPC schon im Build vom 12.09.),
+**nicht** durch den Deploy verursacht. → FIRST_LOGIN BLOCKED.
 
 ## 4. Billing / CopeCart (Stand 24.09., korrigiert)
 
