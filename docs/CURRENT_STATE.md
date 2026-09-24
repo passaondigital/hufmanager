@@ -207,12 +207,18 @@ Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 b
 #### Claudia „App hängt sich ständig auf“ — Ursache + Frontend-Fix
 
 - Ursache 1 (Hauptursache): DB-Incident oben (23.09. abends, 24.09. ab 10:40 UTC) → jede Anfrage 35–126 s / 504.
-- Ursache 2 (Verstärker): `HufmanagerSlimAccessGate` umschließt jede Slim-Route einzeln → jeder Tab-Wechsel
-  (Heute/Tour/Kunden/Finanzen) mountete neu, fragte `get_hufmanager_access_context_v1` erneut ab und zeigte bis zur
-  Antwort den vollflächigen `AuthLoadingScreen`. Bei langsamer DB = eingefrorene App pro Klick.
-  Gleiches Muster in `ProductChoiceGate` (RPC `get_product_membership_context`, in Prod 404, keine Schleife).
-- Fix: Ergebnis pro User-ID im Speicher halten, bei Remount sofort rendern und still im Hintergrund neu prüfen
-  (`useHufmanagerSlimAccess.tsx`, `useProductMembership.ts`, Test `slimAccessCache.test.ts`).
+- Ursache 2 (Vermutung, im Smoke NICHT bestätigt): Tab-Wechsel innerhalb `/home/*` bauen `HufmanagerSlimAccessGate`
+  nicht neu auf (React behält die Instanz; Smoke: 0 Zugangs-RPCs bei 6 Tab-Wechseln). Blockierende Vollbild-Loader gibt es
+  nur beim App-Start/Reload und beim Wechsel zwischen verschiedenen `ProtectedRoute`-Top-Level-Routen (`ProductChoiceGate`,
+  RPC `get_product_membership_context` = 404 in Prod, keine Schleife). Bei langsamer DB blockierten diese bis zur Antwort.
+- Deploy `d717244a` (24.09. ~22:00 UTC): Ergebnis pro User-ID im Speicher, Remount rendert sofort und prüft still nach
+  (`useHufmanagerSlimAccess.tsx`, `useProductMembership.ts`, Test `slimAccessCache.test.ts`). Wirkt nur bei Remounts,
+  nicht beim ersten Laden. Hauptursache für Claudia bleibt der DB-Incident.
+- Production-Smoke (QA-Trial, Playwright, 390×844): Login 1,2 s, 6 Tab-Wechsel ohne Vollbild-Loader, Reload 0,07 s → `/home`,
+  Logout → `/auth`, `/home` ohne Session → `/auth`, Re-Login 0,4 s; Zugang `ACTIVE_TRIAL` bis 08.10.; 0 Page-Errors;
+  einzige 4xx: 3× bekannter 404 `get_product_membership_context`.
+- Tenant-Read (REST, QA-Trial-JWT): nur eigenes Profil + 3 eigene soft-gelöschte E2E-Kunden, 0 Pferde/Termine/Rechnungen,
+  3 eigene revoked Grants. `services`: 27 fremde sichtbar = bekannter offener P0.
 - **P1-Härtung (offen):** Beide Gates geben bei Lesefehler der Zugangsprüfung den Zugriff optisch frei (fail-open,
   vorbestehend). Kein Datenzugriff dadurch: `appointments`, `horses`, `invoices` haben RESTRICTIVE-Policies mit
   Slim-Entitlement-Prüfung, RPCs prüfen serverseitig. Ziel: bei Prüffehler „Zugang wird geprüft / Fehler beim Laden“
