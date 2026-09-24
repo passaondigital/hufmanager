@@ -86,10 +86,13 @@ das nach dem Fix 410 liefert).
 ## 4. Billing / CopeCart
 
 - Kanonische Ingestion laut Doku: `hufi-data-core` (v6, `verify_jwt=false`). Legacy `copecart-webhook` (v164) weiterhin aktiv.
+- **Von Pascal am 24.09.2026 bestätigte CopeCart-IPN/Webhook-Benachrichtigungs-URL:** `https://vnschgjxkzzwzefqlrji.supabase.co/functions/v1/copecart-webhook`.
+- Damit ist der externe CopeCart-Einstiegspunkt **bekannt** und zeigt auf die Production-Edge-Function `copecart-webhook` im Supabase-Projekt `vnschgjxkzzwzefqlrji`.
+- Das löst die bisherige URL-Unklarheit, aber noch nicht die Writer-Frage: Doku bezeichnet `hufi-data-core` als kanonische Ingestion, während CopeCart extern in `copecart-webhook` eintritt. Vor Zusammenlegung/Abschaltung muss verifiziert werden, ob `copecart-webhook` intern an `hufi-data-core` übergibt oder selbst schreibt.
+- Status deshalb: `COPECART_ENTRYPOINT=USER_CONFIRMED`; `CANONICAL_BILLING_WRITER=UNRESOLVED` bis Code-/Runtime-Flow belegt ist.
 - `hufi_data_events`: 2 Events, letztes 11.09.2026. `hm_lifecycle_events`: 1. Keine offenen Reconciliation-Issues.
 - `product_entitlements` HUFMANAGER: 35 ACTIVE, 1 LOCKED (letzte Änderung 12.09., Legacy-Backfill).
-- Supabase-Logs letzte 24 h: **0 Aufrufe** von `hufi-data-core` und `copecart-webhook`.
-- Welche URL im CopeCart-Dashboard hinterlegt ist, ist vom Server aus **nicht prüfbar** → `COPECART_ROUTING=UNKNOWN` bis Pascal/Dashboard-Evidenz.
+- Supabase-Logs letzte 24 h: **0 Aufrufe** von `hufi-data-core` und `copecart-webhook`; das widerspricht der konfigurierten URL nicht, belegt aber in diesem Zeitfenster keine reale Zustellung.
 - Cron aktiv u. a.: `reconcile-period-end-subscriptions`, `downgrade-expired-trials`.
 
 ## 5. Testevidenz (24.09.2026, HEAD `7a13d19b`)
