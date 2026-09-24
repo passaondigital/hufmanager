@@ -158,6 +158,27 @@ Backup: `~/hufmanager-backups/20260924-qa-cleanup/`.
 Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 bei jedem Seitenaufruf, nicht blockierend);
 `send-push-notification` 403 nach Terminanlage; Hilfe-Tooltip überdeckt Termin-Dialogtitel.
 
+
+### INCIDENT 24.09.2026 ab 10:40 UTC — Production-DB überlastet (offen)
+
+- Symptome: Login 504 „upstream request timeout“ (1 von 3 Versuchen ok, ~18 s), `canceling statement due to statement timeout`,
+  `cron job … job startup timeout`, triviale Systemqueries (pg_stat_activity) 12–13 s, eine Query ~500 s (Ende 10:54 UTC, Text nicht geloggt).
+- Traffic unverändert (~40 Requests/5 min), keine Edge-Function-Spitze. Letzter Production-Write aus dieser Session ~09:10 UTC →
+  kein zeitlicher Zusammenhang mit Deploys/Migrationen dieser Session erkennbar.
+- Supabase meldet `ACTIVE_HEALTHY`. Neustart/Compute nur über Dashboard (kein CLI-Token; MCP bietet nur pause/restore → nicht genutzt).
+- Nebenbefund P1: Cron-Job für `hufi-routines-runner` enthält einen Bearer-JWT im Klartext im `net.http_post`-Kommando;
+  dieser erscheint in den Postgres-Logs (auto_explain).
+
+### P0 Leistungskatalog — Analyse-Stand (Fix NICHT begonnen, wartet auf gesunde DB)
+
+- Ungefilterte Provider-Lesepfade: `AppointmentFormModal` (Z. ~193), `QuickAddAppointmentFAB` (Z. ~81). Alle anderen filtern auf `provider_id`.
+- Legitime Fremdlesung: `ClientBooking` (Provider über aktiven Grant), Admin. Landing/Widget laden anonym → sehen schon heute nichts.
+- `created_by_provider_id` ist KEIN geeigneter Anker (selbst editierbar) → neue SELECT-Regel nur über aktiven Grant / Employee / Admin.
+- Tabellen mit Referenz auf `services`: appointments.service_id, payment_products.service_id, autoflow_settings.default_service_id,
+  service_price_overrides.service_id, service_price_history.service_id, partner_appointments.service_id.
+- Geplanter Schreibschutz: Trigger, der eine fremde `service_id` nur bei INSERT oder bei Änderung von service_id/provider_id ablehnt
+  (die 22 Bestandstermine bleiben unverändert bearbeitbar).
+
 ## 4. Billing / CopeCart (Stand 24.09., korrigiert)
 
 - **CopeCart-IPN-URL laut Pascal:** `https://vnschgjxkzzwzefqlrji.supabase.co/functions/v1/copecart-webhook`.
