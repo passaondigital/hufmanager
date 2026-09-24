@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Mail, KeyRound, Copy, Check } from "lucide-react";
+import { Loader2, Mail, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -23,7 +23,8 @@ interface InviteByEmailModalProps {
 interface SuccessState {
   fullName: string;
   email: string;
-  tempPassword?: string;
+  /** Angelegter Kunde — fuer einen erneuten Versand der Einladung. */
+  userId?: string;
   /** P1-4: false, wenn der Kunde angelegt wurde, der Mailversand aber fehlschlug. */
   emailSent: boolean;
 }
@@ -35,14 +36,14 @@ export function InviteByEmailModal({ open, onOpenChange }: InviteByEmailModalPro
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<SuccessState | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const reset = () => {
     setFirstName("");
     setLastName("");
     setEmail("");
     setSuccess(null);
-    setCopied(false);
+    setResending(false);
   };
 
   const handleClose = (open: boolean) => {
@@ -70,7 +71,7 @@ export function InviteByEmailModal({ open, onOpenChange }: InviteByEmailModalPro
       }
 
       const emailSent = data?.emailSent !== false;
-      setSuccess({ fullName, email: email.trim().toLowerCase(), tempPassword: data.tempPassword, emailSent });
+      setSuccess({ fullName, email: email.trim().toLowerCase(), userId: data.userId, emailSent });
       queryClient.invalidateQueries({ queryKey: ["provider-clients"] });
       if (emailSent) {
         toast.success(`Einladung an ${fullName} gesendet`);
@@ -84,12 +85,26 @@ export function InviteByEmailModal({ open, onOpenChange }: InviteByEmailModalPro
     }
   };
 
-  const handleCopy = async () => {
-    if (!success?.tempPassword) return;
-    const text = `Login: ${window.location.origin}/auth\nE-Mail: ${success.email}\nEinmalpasswort: ${success.tempPassword}`;
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // Kein Klartext-Passwort im Browser: bei Zustellfehler setzt der Server
+  // ein NEUES Einmalpasswort und stellt es ausschliesslich per Mail zu.
+  const handleResend = async () => {
+    if (!success?.userId) return;
+    setResending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("invite-client-with-password", {
+        body: { action: "resend", userId: success.userId },
+      });
+      if (error || data?.error) {
+        toast.error(data?.error || "Erneuter Versand fehlgeschlagen");
+      } else if (data?.emailSent) {
+        setSuccess({ ...success, emailSent: true });
+        toast.success(`Einladung an ${success.fullName} erneut gesendet`);
+      } else {
+        toast.error("E-Mail konnte weiterhin nicht zugestellt werden. Bitte später erneut versuchen.");
+      }
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -122,27 +137,17 @@ export function InviteByEmailModal({ open, onOpenChange }: InviteByEmailModalPro
                   Kunde angelegt — E-Mail nicht zugestellt
                 </p>
                 <p className="text-sm text-amber-700 dark:text-amber-400">
-                  <strong>{success.fullName}</strong> ({success.email}) kann sich einloggen, hat aber keine E-Mail bekommen.
-                  Bitte die Zugangsdaten unten selbst weitergeben.
+                  <strong>{success.fullName}</strong> ({success.email}) wurde angelegt, die E-Mail mit den Zugangsdaten kam aber nicht an.
+                  Beim erneuten Versand wird ein neues Einmalpasswort erzeugt.
                 </p>
               </div>
             )}
 
-            {success.tempPassword && (
-            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Zugangsdaten zum Weitergeben</p>
-              <div className="flex items-center gap-3">
-                <KeyRound className="h-4 w-4 text-primary shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground">{success.email}</p>
-                  <p className="text-xl font-bold font-mono tracking-[0.15em] break-all text-primary">{success.tempPassword}</p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" className="w-full gap-2" onClick={handleCopy}>
-                {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? "Kopiert!" : "Zugangsdaten kopieren"}
+            {!success.emailSent && success.userId && (
+              <Button variant="outline" className="w-full gap-2" onClick={handleResend} disabled={resending}>
+                {resending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Einladung erneut senden
               </Button>
-            </div>
             )}
 
             <p className="text-xs text-center text-muted-foreground">

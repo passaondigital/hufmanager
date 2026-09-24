@@ -260,12 +260,28 @@ export function InviteClientButton({
       if (error || data?.error) {
         toast.error(data?.error || error?.message || "Fehler beim Erstellen des Kontos");
       } else if (data?.emailSent === false) {
-        // Konto existiert, nur der Mailversand hat nicht geklappt. Das
-        // Einmalpasswort darf nicht verlorengehen.
-        toast.warning(
-          `Konto erstellt, die E-Mail konnte aber nicht versendet werden. Einmalpasswort: ${data.tempPassword}`,
-          { duration: 30000 },
-        );
+        // Konto existiert, nur der Mailversand hat nicht geklappt. Kein
+        // Klartext-Passwort im Browser: erneuter Versand setzt serverseitig
+        // ein neues Einmalpasswort und stellt es nur per Mail zu.
+        const userId: string | undefined = data?.userId;
+        toast.warning("Konto erstellt, die E-Mail konnte aber nicht zugestellt werden.", {
+          duration: 30000,
+          action: userId
+            ? {
+                label: "Erneut senden",
+                onClick: async () => {
+                  const { data: r, error: e } = await supabase.functions.invoke("invite-client-with-password", {
+                    body: { action: "resend", userId },
+                  });
+                  if (e || r?.error || !r?.emailSent) {
+                    toast.error(r?.error || "E-Mail konnte weiterhin nicht zugestellt werden.");
+                  } else {
+                    toast.success(`Zugangsdaten wurden an ${email} gesendet`);
+                  }
+                },
+              }
+            : undefined,
+        });
         setCreateAccountOpen(false);
       } else {
         toast.success(`Konto erstellt – Zugangsdaten wurden an ${email} gesendet`);

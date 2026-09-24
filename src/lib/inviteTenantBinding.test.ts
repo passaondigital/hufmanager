@@ -150,7 +150,11 @@ describe("Pending-Invite-Vertrag: Edge Function", () => {
 
   it("nimmt die Provider-ID aus dem verifizierten Aufrufer, nie aus dem Request", () => {
     expect(inviteFunction).toContain("p_provider_id: callerUser.id");
-    expect(inviteFunction).toContain("await req.json() as { email: string; fullName: string }");
+    expect(inviteFunction).toContain("await req.json() as { email?: string; fullName?: string; action?: string; userId?: string }");
+    expect(inviteFunction).not.toMatch(/body\.(providerId|provider_id)/);
+    for (const arg of inviteFunction.match(/p_provider_id:\s*[\w.]+/g) ?? []) {
+      expect(arg).toMatch(/callerUser\.id$/);
+    }
   });
 
   it("verifiziert den Aufrufer weiterhin als Provider mit Pro-Abo, bevor irgendetwas entsteht", () => {

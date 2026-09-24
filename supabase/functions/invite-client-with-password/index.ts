@@ -53,6 +53,96 @@ function providerHasPro(provider: {
   );
 }
 
+// Einladungsmail mit bis zu 3 Versuchen. Resend v2 wirft bei API-Fehlern
+// nicht, sondern liefert { error } — beides zaehlt als Fehlschlag. Es wird
+// weder Passwort noch Empfaengeradresse geloggt.
+async function sendInviteMail(args: {
+  to: string; fullName: string; providerName: string; providerEmail: string; loginUrl: string; tempPassword: string;
+}): Promise<boolean> {
+  const safeFullName = escapeHtml(args.fullName);
+  const safeProviderName = escapeHtml(args.providerName);
+  const safeProviderEmail = escapeHtml(args.providerEmail);
+  const emailHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; }
+    .header { background: linear-gradient(135deg, #F47B20 0%, #e06b10 100%); color: white; padding: 30px; text-align: center; }
+    .content { background: #fff; padding: 30px; }
+    .password-box {
+      background: #f8f4ff; border: 2px dashed #F47B20; border-radius: 12px;
+      padding: 24px; text-align: center; margin: 24px 0;
+    }
+    .password-label { font-size: 13px; color: #666; margin-bottom: 8px; }
+    .password-value { font-size: 26px; font-weight: 900; letter-spacing: 3px; word-break: break-all; color: #F47B20; font-family: 'Courier New', monospace; }
+    .cta-btn {
+      display: inline-block; background: #F47B20; color: white !important;
+      padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;
+    }
+    .hint { background: #fff8f0; border-left: 4px solid #F47B20; padding: 12px 16px; border-radius: 4px; font-size: 14px; color: #666; margin: 16px 0; }
+    .footer { background: #f5f5f5; padding: 20px; text-align: center; font-size: 13px; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div style="font-size:48px;margin-bottom:8px">🐴</div>
+      <h1 style="margin:0;font-size:24px">Du wurdest eingeladen!</h1>
+    </div>
+    <div class="content">
+      <p>Hallo ${safeFullName},</p>
+      <p><strong>${safeProviderName}</strong> hat dich zur HufManager Kunden-App eingeladen.</p>
+      <p>Du kannst dich damit anmelden:</p>
+
+      <div class="password-box">
+        <div class="password-label">Dein Einmalpasswort</div>
+        <div class="password-value">${args.tempPassword}</div>
+      </div>
+
+      <div style="text-align:center">
+        <a href="${args.loginUrl}" class="cta-btn">🔐 Jetzt einloggen</a>
+      </div>
+
+      <div class="hint">
+        <strong>Login:</strong> <a href="${args.loginUrl}">${args.loginUrl}</a><br>
+        <strong>E-Mail:</strong> ${escapeHtml(args.to)}<br>
+        <strong>Einmalpasswort:</strong> ${args.tempPassword}
+      </div>
+
+      <p style="font-size:14px;color:#666">
+        Du wirst beim ersten Login aufgefordert, ein eigenes Passwort festzulegen.
+      </p>
+
+      <p>Mit freundlichen Grüßen,<br><strong>${safeProviderName}</strong></p>
+    </div>
+    <div class="footer">
+      ${safeProviderEmail ? `✉️ ${safeProviderEmail}<br>` : ""}
+      <p style="font-size:12px;margin-top:12px">Diese E-Mail wurde über HufManager gesendet.</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const { error } = await resend.emails.send({
+        from: "HufManager <info@hufmanager.de>",
+        to: [args.to],
+        subject: `🐴 ${safeProviderName} lädt dich zur HufManager Kunden-App ein`,
+        html: emailHtml,
+      });
+      if (!error) return true;
+      console.error(`invite-client-with-password: Mailversand Versuch ${attempt}/3 fehlgeschlagen:`, error.message);
+    } catch (mailErr) {
+      console.error(`invite-client-with-password: Mailversand Versuch ${attempt}/3 fehlgeschlagen:`, mailErr instanceof Error ? mailErr.message : String(mailErr));
+    }
+    if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 700));
+  }
+  return false;
+}
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -109,7 +199,76 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const { email, fullName } = await req.json() as { email: string; fullName: string };
+    const body = await req.json() as { email?: string; fullName?: string; action?: string; userId?: string };
+
+    // Absender-/Link-Daten, gemeinsam fuer Erst-Einladung und erneuten Versand.
+    const { data: businessSettings } = await supabaseAdmin
+      .from("business_settings")
+      .select("business_name, phone, email")
+      .eq("user_id", callerUser.id)
+      .maybeSingle();
+    const providerName = businessSettings?.business_name || callerProfile.full_name || "Dein Hufbearbeiter";
+    const providerEmail = businessSettings?.email || callerUser.email || "";
+    // Login-Link nur aus fester Allowlist — der Origin-Header ist vom Aufrufer
+    // frei setzbar und darf keinen fremden Link in die Einladungsmail bringen.
+    const ALLOWED_LOGIN_ORIGINS = ["https://app.hufmanager.de", "https://app.hufiapp.de"];
+    const requestOrigin = req.headers.get("origin") ?? "";
+    const loginOrigin = ALLOWED_LOGIN_ORIGINS.includes(requestOrigin) ? requestOrigin : "https://app.hufmanager.de";
+    const loginUrl = `${loginOrigin}/auth`;
+
+    // ── Erneuter Versand (kontrollierter Retry) ─────────────────────────────
+    // Das Einmalpasswort verlaesst den Server NIE in einer API-Antwort. Kam die
+    // Einladungsmail nicht an, setzt dieser Pfad ein NEUES Einmalpasswort und
+    // stellt es ausschliesslich per Mail zu. Erlaubt nur fuer eigene Kunden,
+    // die sich noch nie angemeldet haben.
+    if (body.action === "resend") {
+      const clientId = typeof body.userId === "string" ? body.userId : "";
+      if (!/^[0-9a-f-]{36}$/i.test(clientId)) {
+        return new Response(JSON.stringify({ error: "Ungültige Anfrage" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: clientProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("id, email, full_name, created_by_provider_id, has_logged_in, force_password_reset, deleted_at")
+        .eq("id", clientId)
+        .maybeSingle();
+      const { data: clientRole } = await supabaseAdmin
+        .from("user_roles").select("role").eq("user_id", clientId).eq("role", "client").maybeSingle();
+      const { data: ownGrant } = await supabaseAdmin
+        .from("access_grants").select("id")
+        .eq("client_id", clientId).eq("provider_id", callerUser.id).eq("is_active", true)
+        .limit(1).maybeSingle();
+      const resendAllowed = !!clientProfile && !!clientRole && !!ownGrant
+        && clientProfile.created_by_provider_id === callerUser.id
+        && clientProfile.deleted_at == null
+        && clientProfile.has_logged_in !== true
+        && clientProfile.force_password_reset === true
+        && !!clientProfile.email;
+      if (!resendAllowed) {
+        // Einheitliche Antwort — verraet nicht, ob der Account existiert.
+        return new Response(JSON.stringify({ error: "Erneuter Versand für diesen Kunden nicht möglich" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const newPassword = generateTempPassword();
+      const { error: pwError } = await supabaseAdmin.auth.admin.updateUserById(clientId, { password: newPassword });
+      if (pwError) {
+        console.error("invite-client-with-password: resend password reset failed:", pwError.message);
+        return new Response(JSON.stringify({ error: "Erneuter Versand fehlgeschlagen, bitte später erneut versuchen" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const resent = await sendInviteMail({
+        to: clientProfile.email!, fullName: clientProfile.full_name || "", providerName, providerEmail, loginUrl, tempPassword: newPassword,
+      });
+      return new Response(JSON.stringify({ success: true, emailSent: resent, userId: clientId }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const email = body.email ?? "";
+    const fullName = body.fullName ?? "";
 
     if (!email || !fullName) {
       return new Response(JSON.stringify({ error: "E-Mail und Name sind erforderlich" }), {
@@ -296,117 +455,16 @@ serve(async (req: Request): Promise<Response> => {
       }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Fetch provider/business info for email
-    const { data: businessSettings } = await supabaseAdmin
-      .from("business_settings")
-      .select("business_name, phone, email")
-      .eq("user_id", callerUser.id)
-      .maybeSingle();
-
-    const providerName = businessSettings?.business_name || callerProfile.full_name || "Dein Hufbearbeiter";
-    const providerEmail = businessSettings?.email || callerUser.email || "";
-    // Login-Link nur aus fester Allowlist — der Origin-Header ist vom Aufrufer
-    // frei setzbar und darf keinen fremden Link in die Einladungsmail bringen.
-    const ALLOWED_LOGIN_ORIGINS = ["https://app.hufmanager.de", "https://app.hufiapp.de"];
-    const requestOrigin = req.headers.get("origin") ?? "";
-    const loginOrigin = ALLOWED_LOGIN_ORIGINS.includes(requestOrigin) ? requestOrigin : "https://app.hufmanager.de";
-    const loginUrl = `${loginOrigin}/auth`;
-
-    const safeFullName = escapeHtml(fullName);
-    const safeProviderName = escapeHtml(providerName);
-    const safeProviderEmail = escapeHtml(providerEmail);
-
-    const emailHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 0 auto; }
-    .header { background: linear-gradient(135deg, #F47B20 0%, #e06b10 100%); color: white; padding: 30px; text-align: center; }
-    .content { background: #fff; padding: 30px; }
-    .password-box {
-      background: #f8f4ff; border: 2px dashed #F47B20; border-radius: 12px;
-      padding: 24px; text-align: center; margin: 24px 0;
-    }
-    .password-label { font-size: 13px; color: #666; margin-bottom: 8px; }
-    .password-value { font-size: 26px; font-weight: 900; letter-spacing: 3px; word-break: break-all; color: #F47B20; font-family: 'Courier New', monospace; }
-    .cta-btn {
-      display: inline-block; background: #F47B20; color: white !important;
-      padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;
-    }
-    .hint { background: #fff8f0; border-left: 4px solid #F47B20; padding: 12px 16px; border-radius: 4px; font-size: 14px; color: #666; margin: 16px 0; }
-    .footer { background: #f5f5f5; padding: 20px; text-align: center; font-size: 13px; color: #888; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <div style="font-size:48px;margin-bottom:8px">🐴</div>
-      <h1 style="margin:0;font-size:24px">Du wurdest eingeladen!</h1>
-    </div>
-    <div class="content">
-      <p>Hallo ${safeFullName},</p>
-      <p><strong>${safeProviderName}</strong> hat dich zur HufManager Kunden-App eingeladen.</p>
-      <p>Du kannst dich damit anmelden:</p>
-
-      <div class="password-box">
-        <div class="password-label">Dein Einmalpasswort</div>
-        <div class="password-value">${tempPassword}</div>
-      </div>
-
-      <div style="text-align:center">
-        <a href="${loginUrl}" class="cta-btn">🔐 Jetzt einloggen</a>
-      </div>
-
-      <div class="hint">
-        <strong>Login:</strong> <a href="${loginUrl}">${loginUrl}</a><br>
-        <strong>E-Mail:</strong> ${escapeHtml(email)}<br>
-        <strong>Einmalpasswort:</strong> ${tempPassword}
-      </div>
-
-      <p style="font-size:14px;color:#666">
-        Du wirst beim ersten Login aufgefordert, ein eigenes Passwort festzulegen.
-      </p>
-
-      <p>Mit freundlichen Grüßen,<br><strong>${safeProviderName}</strong></p>
-    </div>
-    <div class="footer">
-      ${safeProviderEmail ? `✉️ ${safeProviderEmail}<br>` : ""}
-      <p style="font-size:12px;margin-top:12px">Diese E-Mail wurde über HufManager gesendet.</p>
-    </div>
-  </div>
-</body>
-</html>`;
-
     // P1-4: Ab hier ist der Kunde definitiv angelegt. Ein Fehler beim
-    // Mailversand darf deshalb NICHT als "nichts passiert" (500) zurückgehen
-    // — das wäre genau die unklare Zwischenlage, die vermieden werden soll.
-    // Der Aufrufer bekommt den Erfolg plus emailSent:false und kann das
-    // Einmalpasswort selbst weitergeben (die UI zeigt es ohnehin an).
-    // Resend v2 wirft bei API-Fehlern nicht, sondern liefert { error } —
-    // beides zaehlt als "nicht zugestellt", sonst ginge das Passwort verloren.
-    let emailSent = true;
-    try {
-      const { error: sendError } = await resend.emails.send({
-        from: "HufManager <info@hufmanager.de>",
-        to: [email],
-        subject: `🐴 ${safeProviderName} lädt dich zur HufManager Kunden-App ein`,
-        html: emailHtml,
-      });
-      if (sendError) {
-        emailSent = false;
-        console.error("invite-client-with-password: Kunde angelegt, Mailversand fehlgeschlagen:", sendError.message);
-      }
-    } catch (mailErr) {
-      emailSent = false;
-      console.error("invite-client-with-password: Kunde angelegt, Mailversand fehlgeschlagen:", mailErr instanceof Error ? mailErr.message : String(mailErr));
-    }
+    // Mailversand darf deshalb NICHT als "nichts passiert" (500) zurückgehen.
+    // Das Einmalpasswort wird trotzdem NICHT an den Browser gegeben — der
+    // Provider kann ueber action:"resend" einen neuen Versand ausloesen.
+    const emailSent = await sendInviteMail({
+      to: email, fullName, providerName, providerEmail, loginUrl, tempPassword,
+    });
 
-    // Das Einmalpasswort verlässt den Server nur, wenn die Mail NICHT
-    // zugestellt wurde — dann muss der Provider es selbst weitergeben.
     return new Response(
-      JSON.stringify(emailSent ? { success: true, emailSent } : { success: true, emailSent, tempPassword }),
+      JSON.stringify({ success: true, emailSent, userId: newUserId }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 

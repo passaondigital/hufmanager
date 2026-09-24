@@ -290,19 +290,31 @@ describe("Invite-Security-Haertung (2026-09-24)", () => {
     expect(withPasswordCode).toMatch(/crypto\.getRandomValues/);
   });
 
-  it("gibt das Einmalpasswort nur bei fehlgeschlagenem Mailversand zurueck", () => {
-    expect(withPasswordCode).not.toMatch(/JSON\.stringify\(\{\s*success:\s*true,\s*tempPassword,\s*emailSent\s*\}\)/);
-    expect(withPasswordCode).toMatch(/emailSent\s*\?\s*\{\s*success:\s*true,\s*emailSent\s*\}\s*:\s*\{\s*success:\s*true,\s*emailSent,\s*tempPassword\s*\}/);
+  it("gibt das Einmalpasswort NIE in einer API-Antwort zurueck", () => {
+    const responses = withPasswordCode.match(/JSON\.stringify\(\{[^)]*\}\)/g) ?? [];
+    expect(responses.length).toBeGreaterThan(0);
+    for (const r of responses) expect(r).not.toMatch(/tempPassword|newPassword|password/i);
+    expect(withPasswordCode).toMatch(/JSON\.stringify\(\{ success: true, emailSent, userId: newUserId \}\)/);
   });
 
-  it("zeigt im Modal Zugangsdaten nur, wenn ein Passwort geliefert wurde", () => {
-    expect(inviteModal).toMatch(/tempPassword\?:\s*string/);
-    expect(inviteModal).toMatch(/\{success\.tempPassword && \(/);
+  it("erlaubt erneuten Versand nur fuer eigene, nie eingeloggte Kunden", () => {
+    expect(withPasswordCode).toMatch(/body\.action === "resend"/);
+    expect(withPasswordCode).toMatch(/clientProfile\.created_by_provider_id === callerUser\.id/);
+    expect(withPasswordCode).toMatch(/\.eq\("provider_id", callerUser\.id\)\.eq\("is_active", true\)/);
+    expect(withPasswordCode).toMatch(/clientProfile\.has_logged_in !== true/);
+    expect(withPasswordCode).toMatch(/clientProfile\.force_password_reset === true/);
   });
 
-  it("wertet den Resend-Rueckgabefehler als nicht zugestellt", () => {
-    expect(withPasswordCode).toMatch(/const \{ error: sendError \} = await resend\.emails\.send/);
-    expect(withPasswordCode).toMatch(/if \(sendError\) \{\s*emailSent = false;/);
+  it("zeigt im Frontend nie ein Einmalpasswort an", () => {
+    expect(inviteModal).not.toMatch(/tempPassword/);
+    expect(inviteButton).not.toMatch(/tempPassword/);
+    expect(inviteModal).toMatch(/action: "resend"/);
+  });
+
+  it("wertet den Resend-Rueckgabefehler als nicht zugestellt und versucht bis zu 3x", () => {
+    expect(withPasswordCode).toMatch(/const \{ error \} = await resend\.emails\.send/);
+    expect(withPasswordCode).toMatch(/if \(!error\) return true;/);
+    expect(withPasswordCode).toMatch(/attempt <= 3/);
   });
 
   it("baut den Login-Link nur aus einer festen Origin-Allowlist", () => {
