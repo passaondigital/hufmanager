@@ -23,7 +23,7 @@ interface InviteByEmailModalProps {
 interface SuccessState {
   fullName: string;
   email: string;
-  tempPassword: string;
+  tempPassword?: string;
   /** P1-4: false, wenn der Kunde angelegt wurde, der Mailversand aber fehlschlug. */
   emailSent: boolean;
 }
@@ -85,7 +85,7 @@ export function InviteByEmailModal({ open, onOpenChange }: InviteByEmailModalPro
   };
 
   const handleCopy = async () => {
-    if (!success) return;
+    if (!success?.tempPassword) return;
     const text = `Login: ${window.location.origin}/auth\nE-Mail: ${success.email}\nEinmalpasswort: ${success.tempPassword}`;
     await navigator.clipboard.writeText(text);
     setCopied(true);
@@ -128,13 +128,14 @@ export function InviteByEmailModal({ open, onOpenChange }: InviteByEmailModalPro
               </div>
             )}
 
+            {success.tempPassword && (
             <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Zugangsdaten (zur Sicherheit)</p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Zugangsdaten zum Weitergeben</p>
               <div className="flex items-center gap-3">
                 <KeyRound className="h-4 w-4 text-primary shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-muted-foreground">{success.email}</p>
-                  <p className="text-2xl font-bold font-mono tracking-[0.3em] text-primary">{success.tempPassword}</p>
+                  <p className="text-xl font-bold font-mono tracking-[0.15em] break-all text-primary">{success.tempPassword}</p>
                 </div>
               </div>
               <Button variant="outline" size="sm" className="w-full gap-2" onClick={handleCopy}>
@@ -142,6 +143,7 @@ export function InviteByEmailModal({ open, onOpenChange }: InviteByEmailModalPro
                 {copied ? "Kopiert!" : "Zugangsdaten kopieren"}
               </Button>
             </div>
+            )}
 
             <p className="text-xs text-center text-muted-foreground">
               Der Kunde muss beim ersten Login ein eigenes Passwort festlegen.

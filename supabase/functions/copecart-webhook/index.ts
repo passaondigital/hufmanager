@@ -324,9 +324,9 @@ async function sendBhsWelcomeEmail(
   <p>Mit freundlichen Grüßen<br><strong>Pascal Schmid – Barhufservice Schmid</strong></p>
 </body></html>`,
     });
-    console.log("[copecart][bhs] Welcome email sent to:", to);
+    console.log("[copecart][bhs] Welcome email sent");
   } catch (err) {
-    console.error("[copecart][bhs] Welcome email failed:", err);
+    console.error("[copecart][bhs] Welcome email failed:", err instanceof Error ? err.message : String(err));
   }
 }
 
@@ -454,9 +454,9 @@ async function sendPaymentConfirmationEmail(
         </html>
       `,
     });
-    console.log(`[copecart] Payment confirmation email sent to ${isProvider ? 'provider' : 'client'}: ${to}`);
+    console.log(`[copecart] Payment confirmation email sent to ${isProvider ? 'provider' : 'client'}`);
   } catch (error) {
-    console.error(`[copecart] Failed to send email to ${to}:`, error);
+    console.error(`[copecart] Failed to send payment confirmation email:`, error instanceof Error ? error.message : String(error));
   }
 }
 
@@ -796,6 +796,27 @@ const handler = async (req: Request): Promise<Response> => {
     const planOverride = getPlanOverrideFromProductId(productId);
     const newSaasMeta = getNewSaasProductMeta(productId);
     const vaultMeta = getVaultProductMeta(productId);
+
+    // ─── Produkt-Allowlist: fail closed ────────────────────────────────────
+    // Nur explizit bekannte Produkt-IDs duerfen irgendetwas veraendern.
+    // Unbekannte ID → keine Mutation, keine Kontoerstellung, keine
+    // Planaenderung — fuer ALLE Eventtypen (auch Kuendigung/Refund/Fehlzahlung,
+    // die sonst das Profil mit derselben E-Mail umschreiben wuerden).
+    // Rechnungszahlungen laufen vorher ueber ihren eigenen Zweig (metadata).
+    // Quittung mit "OK", damit CopeCart nicht 10× wiederholt.
+    const isKnownProduct = subscriptionPlan !== null
+      || newSaasMeta !== null
+      || vaultMeta !== null
+      || getVoiceCreditAmountCents(productId) !== null
+      || getBhsProductMeta(productId) !== null;
+    if (!isKnownProduct) {
+      console.error("[copecart] Unbekannte Produkt-ID — keine Mutation", {
+        productId,
+        eventType,
+        product_id_present: productId !== "",
+      });
+      return okResponse();
+    }
 
     // Handle payment/order events - these are when we should create users
     const isPaymentEvent = PAYMENT_EVENTS.includes(eventType);
@@ -1512,7 +1533,7 @@ const handler = async (req: Request): Promise<Response> => {
               duo: { description: "HufManager Duo – Monatslizenz", price: 49.00 },
               team: { description: "HufManager Team – Monatslizenz", price: 79.00 },
             };
-            const planItem = PLAN_ITEMS[subscriptionPlan] || PLAN_ITEMS.starter;
+            const planItem = (subscriptionPlan && PLAN_ITEMS[subscriptionPlan]) || PLAN_ITEMS.starter;
 
             // Fetch readable_id for provider_pid
             const { data: provProfile } = await supabase

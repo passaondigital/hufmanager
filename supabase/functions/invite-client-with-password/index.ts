@@ -19,12 +19,17 @@ function escapeHtml(str: string | null | undefined): string {
     .replace(/'/g, "&#039;");
 }
 
-function generateTempPassword(): string {
+// Einmalpasswort aus dem kryptografischen RNG (nicht Math.random).
+// Rejection Sampling verhindert Modulo-Bias; 12 Zeichen aus 31 ≈ 59 Bit.
+function generateTempPassword(length = 12): string {
   // No ambiguous chars (0/O, 1/I/l)
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const limit = 256 - (256 % chars.length);
   let pass = "";
-  for (let i = 0; i < 6; i++) {
-    pass += chars[Math.floor(Math.random() * chars.length)];
+  const buf = new Uint8Array(1);
+  while (pass.length < length) {
+    crypto.getRandomValues(buf);
+    if (buf[0] < limit) pass += chars[buf[0] % chars.length];
   }
   return pass;
 }
@@ -320,7 +325,7 @@ serve(async (req: Request): Promise<Response> => {
       padding: 24px; text-align: center; margin: 24px 0;
     }
     .password-label { font-size: 13px; color: #666; margin-bottom: 8px; }
-    .password-value { font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #F47B20; font-family: 'Courier New', monospace; }
+    .password-value { font-size: 26px; font-weight: 900; letter-spacing: 3px; word-break: break-all; color: #F47B20; font-family: 'Courier New', monospace; }
     .cta-btn {
       display: inline-block; background: #F47B20; color: white !important;
       padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0;
@@ -387,8 +392,10 @@ serve(async (req: Request): Promise<Response> => {
       console.error("invite-client-with-password: Kunde angelegt, Mailversand fehlgeschlagen:", mailErr);
     }
 
+    // Das Einmalpasswort verlässt den Server nur, wenn die Mail NICHT
+    // zugestellt wurde — dann muss der Provider es selbst weitergeben.
     return new Response(
-      JSON.stringify({ success: true, tempPassword, emailSent }),
+      JSON.stringify(emailSent ? { success: true, emailSent } : { success: true, emailSent, tempPassword }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 

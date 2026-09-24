@@ -281,3 +281,38 @@ describe("Invariante: kein erreichbarer Pfad umgeht den Vertrag", () => {
     expect(inviteClientCode).not.toContain("admin.createUser");
   });
 });
+
+describe("Invite-Security-Haertung (2026-09-24)", () => {
+  it("erzeugt Einmalpasswoerter nicht mit Math.random", () => {
+    for (const code of [withPasswordCode, adminCreateClientCode, inviteClientCode]) {
+      expect(code).not.toMatch(/Math\.random/);
+    }
+    expect(withPasswordCode).toMatch(/crypto\.getRandomValues/);
+  });
+
+  it("gibt das Einmalpasswort nur bei fehlgeschlagenem Mailversand zurueck", () => {
+    expect(withPasswordCode).not.toMatch(/JSON\.stringify\(\{\s*success:\s*true,\s*tempPassword,\s*emailSent\s*\}\)/);
+    expect(withPasswordCode).toMatch(/emailSent\s*\?\s*\{\s*success:\s*true,\s*emailSent\s*\}\s*:\s*\{\s*success:\s*true,\s*emailSent,\s*tempPassword\s*\}/);
+  });
+
+  it("zeigt im Modal Zugangsdaten nur, wenn ein Passwort geliefert wurde", () => {
+    expect(inviteModal).toMatch(/tempPassword\?:\s*string/);
+    expect(inviteModal).toMatch(/\{success\.tempPassword && \(/);
+  });
+
+  it("uebernimmt im Self-Service keine Provider-ID aus dem Request-Body", () => {
+    expect(withPasswordCode).not.toMatch(/providerId|provider_id\s*[,}]\s*=\s*await req\.json/);
+    const rpcProviderArgs = withPasswordCode.match(/p_provider_id:\s*([\w.]+)/g) ?? [];
+    expect(rpcProviderArgs.length).toBeGreaterThan(0);
+    for (const arg of rpcProviderArgs) expect(arg).toMatch(/callerUser\.id$/);
+  });
+});
+
+describe("create-demo-business-user ist stillgelegt", () => {
+  const demo = read("supabase/functions/create-demo-business-user/index.ts");
+  const demoCode = codeOnly(demo);
+  it("antwortet 410 und fuehrt keine Mutation aus", () => {
+    expect(demoCode).toMatch(/status:\s*410/);
+    expect(demoCode).not.toMatch(/createClient|createUser|SERVICE_ROLE|password/i);
+  });
+});
