@@ -308,11 +308,10 @@ describe("Invite-Security-Haertung (2026-09-24)", () => {
   });
 });
 
-describe("create-demo-business-user ist stillgelegt", () => {
-  const demo = read("supabase/functions/create-demo-business-user/index.ts");
-  const demoCode = codeOnly(demo);
+describe.each(["create-demo-business-user", "create-demo-stallbetreiber-user"])("%s ist stillgelegt", (fn) => {
+  const demoCode = codeOnly(read(`supabase/functions/${fn}/index.ts`));
   it("antwortet 410 und fuehrt keine Mutation aus", () => {
     expect(demoCode).toMatch(/status:\s*410/);
-    expect(demoCode).not.toMatch(/createClient|createUser|SERVICE_ROLE|password/i);
+    expect(demoCode).not.toMatch(/createClient|createUser|deleteUser|SERVICE_ROLE|password/i);
   });
 });

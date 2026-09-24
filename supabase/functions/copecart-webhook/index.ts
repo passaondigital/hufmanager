@@ -516,6 +516,48 @@ function okResponse(): Response {
   });
 }
 
+// ─── Verarbeitungs-Schalter (fail-closed) ─────────────────────────────────────
+// Entscheidung Pascal 2026-09-24: copecart-webhook quittiert vorerst NUR.
+// Nach gueltiger Signatur wird mit "OK" geantwortet, aber nichts veraendert,
+// solange die Produktgruppe nicht explizit freigeschaltet ist.
+//
+//   COPECART_WEBHOOK_ENABLED_GROUPS="legacy_plan,vault"   (Komma-Liste)
+//
+// Erlaubte Gruppen: invoice, legacy_plan, vault, voice_credit, bhs,
+// saas_hufiapp. Kein Wildcard/"all". Unbekannte Namen werden ignoriert.
+//
+// HufManager Slim (saas_hufmanager) ist hier HART gesperrt: kanonische und
+// einzige Abo-Wahrheit fuer Slim ist hufi-data-core. Eine Aktivierung in
+// diesem Webhook waere eine zweite Abo-Wahrheit und braucht eine
+// Code-Aenderung mit Review — per Env laesst sie sich bewusst nicht setzen.
+type ProcessingGroup =
+  | "invoice" | "legacy_plan" | "vault" | "voice_credit" | "bhs"
+  | "saas_hufmanager" | "saas_hufiapp";
+
+const ENABLEABLE_GROUPS: ReadonlySet<ProcessingGroup> = new Set([
+  "invoice", "legacy_plan", "vault", "voice_credit", "bhs", "saas_hufiapp",
+]);
+
+function enabledProcessingGroups(): Set<ProcessingGroup> {
+  const raw = Deno.env.get("COPECART_WEBHOOK_ENABLED_GROUPS") ?? "";
+  const out = new Set<ProcessingGroup>();
+  for (const name of raw.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean)) {
+    if (ENABLEABLE_GROUPS.has(name as ProcessingGroup)) out.add(name as ProcessingGroup);
+    else console.warn("[copecart] Ignoriere nicht freischaltbare Gruppe:", name);
+  }
+  return out;
+}
+
+function productGroup(productId: string): ProcessingGroup | null {
+  const saas = getNewSaasProductMeta(productId);
+  if (saas) return saas.product === "HUFMANAGER" ? "saas_hufmanager" : "saas_hufiapp";
+  if (getPlanFromProductId(productId) !== null) return "legacy_plan";
+  if (getVaultProductMeta(productId) !== null) return "vault";
+  if (getVoiceCreditAmountCents(productId) !== null) return "voice_credit";
+  if (getBhsProductMeta(productId) !== null) return "bhs";
+  return null;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Copecart webhook received");
 
@@ -609,6 +651,22 @@ const handler = async (req: Request): Promise<Response> => {
     const customField = (typeof payload.metadata === "string" ? payload.metadata : "") || payload.custom || "";
 
     console.log("[copecart] Event:", eventType, "| Produkt:", productId, "| Betrag:", paidAmount, "| metadata gesetzt:", !!customField);
+
+    // ─── Gate 1: Verarbeitungs-Schalter (vor JEDEM DB-Zugriff) ─────────────
+    const enabledGroups = enabledProcessingGroups();
+    const invoiceCandidate = !!customField && customField.length > 10;
+    const group: ProcessingGroup | null = invoiceCandidate ? "invoice" : productGroup(productId);
+    const prodGroup = productGroup(productId);
+    if (group === null || !enabledGroups.has(group)
+        || (!invoiceCandidate && (prodGroup === null || !enabledGroups.has(prodGroup)))) {
+      console.log("[copecart] Quittiert ohne Verarbeitung", {
+        eventType,
+        productId,
+        group: group ?? "unknown",
+        reason: group === null ? "unknown_product" : "group_not_enabled",
+      });
+      return okResponse();
+    }
 
     // Check if this is an invoice payment (custom field contains invoice ID)
     const isInvoicePayment = customField && customField.length > 10; // UUID length check
@@ -809,6 +867,15 @@ const handler = async (req: Request): Promise<Response> => {
       || vaultMeta !== null
       || getVoiceCreditAmountCents(productId) !== null
       || getBhsProductMeta(productId) !== null;
+    const fallThroughGroup = productGroup(productId);
+    if (isKnownProduct && (fallThroughGroup === null || !enabledGroups.has(fallThroughGroup))) {
+      console.log("[copecart] Produktgruppe nicht freigeschaltet — keine Mutation", {
+        eventType,
+        productId,
+        group: fallThroughGroup ?? "unknown",
+      });
+      return okResponse();
+    }
     if (!isKnownProduct) {
       console.error("[copecart] Unbekannte Produkt-ID — keine Mutation", {
         productId,

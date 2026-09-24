@@ -11,7 +11,12 @@
 //   B  unbekannte product_id + payment.refunded   → "OK", keine Mutation
 //   C  unbekannte product_id + payment.failed     → "OK", keine Mutation
 //   D  falsche Signatur                            → 401, kein DB-Zugriff
-//   E  bekannte product_id (Legacy pro) + payment.failed → PATCH profiles findet statt
+//   G  Standard (kein Schalter): bekanntes Legacy-Produkt → "OK", 0 DB-Aufrufe
+//   H  Standard: Rechnungszahlung (metadata) → "OK", 0 DB-Aufrufe
+//   I  Schalter "legacy_plan,saas_hufmanager" + Slim 3a97bd25 → keine Mutation
+//      (Slim hart gesperrt, hufi-data-core bleibt einzige Abo-Wahrheit)
+//   K  Schalter "invoice": Rechnung nicht gefunden, Durchfall zu Legacy-Produkt → keine Mutation
+//   E  Schalter "legacy_plan" + Legacy pro + payment.failed → PATCH profiles
 //      (Positivkontrolle: der Mock sieht Mutationen wirklich)
 //   F  kein Log enthaelt Kaeufer-E-Mail oder Secret
 
@@ -47,6 +52,9 @@ Deno.env.set("SUPABASE_URL", `http://127.0.0.1:${MOCK_PORT}`);
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "runtime-check-service-key");
 Deno.env.set("COPECART_IPN_PASSWORD", SECRET);
 Deno.env.delete("RESEND_API_KEY");
+Deno.env.delete("COPECART_WEBHOOK_ENABLED_GROUPS");
+const setGroups = (v: string | null) =>
+  v === null ? Deno.env.delete("COPECART_WEBHOOK_ENABLED_GROUPS") : Deno.env.set("COPECART_WEBHOOK_ENABLED_GROUPS", v);
 
 await import("./index.ts");
 await new Promise((r) => setTimeout(r, 300));
@@ -77,6 +85,25 @@ calls = [];
 const d = await send({ ...base, event_type: "payment.made", product_id: "1996da6f" }, false);
 results.push(["D bad signature", d.status === 401 && calls.length === 0, `status=${d.status} calls=${calls.length}`]);
 
+calls = [];
+const g = await send({ ...base, event_type: "payment.made", product_id: "1996da6f" });
+results.push(["G default ack-only, known product", g.status === 200 && g.text === "OK" && calls.length === 0, `status=${g.status} calls=${calls.length}`]);
+
+calls = [];
+const h = await send({ ...base, event_type: "payment.made", product_id: "1996da6f", metadata: "00000000-0000-0000-0000-000000000001" });
+results.push(["H default ack-only, invoice payment", h.status === 200 && h.text === "OK" && calls.length === 0, `status=${h.status} calls=${calls.length}`]);
+
+setGroups("legacy_plan,saas_hufmanager");
+calls = [];
+const i = await send({ ...base, event_type: "payment.made", product_id: "3a97bd25", transaction_id: "tx-i" });
+results.push(["I Slim hard-blocked even if listed", i.status === 200 && mutations().length === 0, `status=${i.status} mutations=${JSON.stringify(mutations())}`]);
+
+setGroups("invoice");
+calls = [];
+const k = await send({ ...base, event_type: "payment.made", product_id: "1996da6f", metadata: "00000000-0000-0000-0000-000000000002", transaction_id: "tx-k" });
+results.push(["K invoice fall-through blocked", k.status === 200 && mutations().length === 0, `status=${k.status} mutations=${JSON.stringify(mutations())}`]);
+
+setGroups("legacy_plan");
 calls = [];
 const e = await send({ ...base, event_type: "payment.failed", product_id: "1996da6f", transaction_id: "tx-e" });
 const em = mutations();
