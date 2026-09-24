@@ -305,7 +305,12 @@ serve(async (req: Request): Promise<Response> => {
 
     const providerName = businessSettings?.business_name || callerProfile.full_name || "Dein Hufbearbeiter";
     const providerEmail = businessSettings?.email || callerUser.email || "";
-    const loginUrl = `${req.headers.get("origin") || "https://app.hufiapp.de"}/auth`;
+    // Login-Link nur aus fester Allowlist — der Origin-Header ist vom Aufrufer
+    // frei setzbar und darf keinen fremden Link in die Einladungsmail bringen.
+    const ALLOWED_LOGIN_ORIGINS = ["https://app.hufmanager.de", "https://app.hufiapp.de"];
+    const requestOrigin = req.headers.get("origin") ?? "";
+    const loginOrigin = ALLOWED_LOGIN_ORIGINS.includes(requestOrigin) ? requestOrigin : "https://app.hufmanager.de";
+    const loginUrl = `${loginOrigin}/auth`;
 
     const safeFullName = escapeHtml(fullName);
     const safeProviderName = escapeHtml(providerName);

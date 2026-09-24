@@ -300,6 +300,11 @@ describe("Invite-Security-Haertung (2026-09-24)", () => {
     expect(inviteModal).toMatch(/\{success\.tempPassword && \(/);
   });
 
+  it("baut den Login-Link nur aus einer festen Origin-Allowlist", () => {
+    expect(withPasswordCode).not.toMatch(/\$\{req\.headers\.get\("origin"\)/);
+    expect(withPasswordCode).toMatch(/ALLOWED_LOGIN_ORIGINS\.includes\(requestOrigin\)/);
+  });
+
   it("uebernimmt im Self-Service keine Provider-ID aus dem Request-Body", () => {
     expect(withPasswordCode).not.toMatch(/providerId|provider_id\s*[,}]\s*=\s*await req\.json/);
     const rpcProviderArgs = withPasswordCode.match(/p_provider_id:\s*([\w.]+)/g) ?? [];
