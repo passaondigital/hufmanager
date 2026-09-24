@@ -274,6 +274,21 @@ Weitere Beobachtungen: RPC `get_product_membership_context` fehlt in Prod (404 b
 - **P2 Restrisiko:** Kunden legen Grants selbst an (Freigabe-Modell „Verbinden“). Wer sich als Kunde bei einem Provider
   verbindet, sieht dessen aktive Leistungen wie ein echter Kunde. Vorher sah jeder eingeloggte Nutzer alles.
 
+### Golden Flow E2E (Production, QA-Trial, Browser 390×844) — 25.09.2026, läuft
+
+- ✅ Kunde anlegen (Kunden & Pferde → Neuer Kunde), ✅ Pferd anlegen, ✅ Termin planen (Formular zeigt nur eigene
+  Leistungen bzw. Standardvorlagen), ✅ Tour starten → Termin öffnen → Abschluss speichern (DB: `completed`).
+- ❌ **P0 Rechnung erstellen:** `create_invoice_with_items` → 409 `invoices_invoice_number_key` (RE-2026-0002 existiert bei
+  anderem Betrieb). Zähler `invoice_number_counters` ist pro Provider, Unique-Constraint aber global → jeder neue Provider
+  kollidiert. Fix = Repo-Migration `20260910063819_tenant_scope_invoice_number_uniqueness` (auf PROD nie angewendet, nicht
+  im Ledger). Lokal getestet (2. Betrieb gleiche Nummer erlaubt, gleicher Betrieb doppelt blockiert), keine Lookups nur über
+  `invoice_number`, keine FKs darauf, 0 Duplikate pro Provider. Apply-/Rollback-Dateien: `docs/backups/mig12_*`.
+  **PROD-Apply wartet auf Owner-Freigabe.** Nebeneffekt: fehlgeschlagene Versuche verbrauchen Nummern (Lücken).
+- Befunde UX: „Termin planen“ springt aus der Slim-Shell nach `/kalender`; Provider ohne eigene Leistungen bekommen
+  Standardvorlagen mit 0 € (vorher fremde Preise) → Onboarding sollte Leistungen anlegen lassen (Claudia: 0 eigene).
+- QA-Testdaten bleiben im QA-Tenant: Kunde „QA GoldenFlow“, Pferd „QA Goldie“, 1 abgeschlossener Termin.
+- Offen: Rechnung/PDF, Mobile/PWA-Details.
+
 #### Ursprüngliche Analyse (vor Fix)
 
 - Ungefilterte Provider-Lesepfade: `AppointmentFormModal` (Z. ~193), `QuickAddAppointmentFAB` (Z. ~81). Alle anderen filtern auf `provider_id`.
