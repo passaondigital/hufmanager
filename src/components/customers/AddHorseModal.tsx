@@ -34,6 +34,7 @@ import {
   UsageType
 } from "@/components/horse-detail/types";
 
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 const horseSchema = z.object({
   name: z.string().trim().min(1, "Pferdename ist erforderlich").max(100),
   breed: z.string().trim().max(100).optional(),
@@ -74,6 +75,7 @@ interface Props {
   onClose: () => void;
   onCreated?: (horse: CreatedHorse) => void;
 }
+
 
 export function AddHorseModal({ customerId, customerName, open, onClose, onCreated }: Props) {
   const { user } = useAuth();
@@ -120,6 +122,7 @@ export function AddHorseModal({ customerId, customerName, open, onClose, onCreat
     });
   };
 
+  const runLocked = useSubmitLock();
   const createHorse = useMutation({
     mutationFn: async (data: {
       owner_id: string;
@@ -216,7 +219,7 @@ export function AddHorseModal({ customerId, customerName, open, onClose, onCreat
       return;
     }
 
-    createHorse.mutate({
+    await createHorse.mutateAsync({
       owner_id: customerId,
       name: result.data.name,
       equine_type: form.equineType,
@@ -232,7 +235,7 @@ export function AddHorseModal({ customerId, customerName, open, onClose, onCreat
       holding_type: (form.holding_type || undefined) as HoldingType | undefined,
       usage_type: (form.usage_type || undefined) as UsageType | undefined,
       height_cm: form.height_cm ? Number(form.height_cm) : undefined,
-    });
+    }).catch(() => { /* Fehler-Toast kommt aus onError der Mutation */ });
   };
 
   return (
@@ -419,7 +422,7 @@ export function AddHorseModal({ customerId, customerName, open, onClose, onCreat
             Abbrechen
           </Button>
           {hasDraft && <Button variant="ghost" onClick={() => { discardDraft(); onClose(); }}>Entwurf verwerfen</Button>}
-          <Button onClick={handleSubmit} disabled={createHorse.isPending}>
+          <Button onClick={() => { void runLocked(handleSubmit); }} disabled={createHorse.isPending}>
             {createHorse.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Pferd anlegen
           </Button>

@@ -15,6 +15,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { useFormDraft } from "@/hooks/useFormDraft";
 
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 const emptyCustomer = { first_name: "", last_name: "", email: "", phone: "", street: "", zip_code: "", city: "" };
 
 function getErrorMessage(error: unknown): string | undefined {
@@ -60,9 +61,11 @@ interface Props {
  * SlimCustomerHorseWorkspace, jetzt extrahiert, damit AppointmentFormModal
  * dieselbe Anlage-Logik ohne Duplikat nutzen kann.
  */
+
 export function AddCustomerModal({ open, onClose, onCreated, draftKey = "new-customer", draftRoute = "/kunden" }: Props) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const runLocked = useSubmitLock();
   const { value: form, setValue: setForm, hasDraft, clearDraft, discardDraft } = useFormDraft(
     draftKey,
     emptyCustomer,
@@ -137,7 +140,7 @@ export function AddCustomerModal({ open, onClose, onCreated, draftKey = "new-cus
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Abbrechen</Button>
           {hasDraft && <Button variant="ghost" onClick={() => { discardDraft(); onClose(); }}>Entwurf verwerfen</Button>}
-          <Button onClick={() => createCustomer.mutate()} disabled={createCustomer.isPending}>
+          <Button onClick={() => { void runLocked(() => createCustomer.mutateAsync()).catch(() => {}); }} disabled={createCustomer.isPending}>
             {createCustomer.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
             Kunde anlegen
           </Button>

@@ -65,6 +65,7 @@ import {
 } from "@/lib/appointmentFormGuards";
 import type { AppointmentSelectionState } from "@/lib/appointmentFormGuards";
 
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 const appointmentSchema = z.object({
   horseIds: z.array(z.string()).min(1, "Bitte wählen Sie mindestens ein Pferd aus"),
   time: z.string().regex(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, "Ungültiges Zeitformat"),
@@ -119,6 +120,7 @@ const RECURRENCE_OPTIONS = [
   { value: "8", label: "Alle 8 Wochen" },
   { value: "custom", label: "Benutzerdefiniert" },
 ];
+
 
 export function AppointmentFormModal({
   isOpen,
@@ -318,6 +320,7 @@ export function AppointmentFormModal({
     }
   }, [isSeriesService]);
 
+  const runLocked = useSubmitLock();
   const createAppointments = useMutation({
     networkMode: "always",
     onMutate: (appointments: any[]) => {
@@ -687,7 +690,7 @@ export function AppointmentFormModal({
 
     if (import.meta.env.DEV) console.log("[AppointmentFormModal] submitting", appointments.length);
 
-    createAppointments
+    return createAppointments
       .mutateAsync(appointments)
       .catch((error: any) => {
         console.error(error);
@@ -1422,7 +1425,7 @@ export function AppointmentFormModal({
             </Button>
           )}
           <Button
-            onClick={handleSubmit}
+            onClick={() => { void runLocked(handleSubmit); }}
             disabled={createAppointments.isPending || isUploading || formData.horseIds.length === 0 || isAppointmentSaveBlockedByLoad(appointmentsLoading, appointmentsLoadError)}
             className="w-full sm:w-auto"
           >

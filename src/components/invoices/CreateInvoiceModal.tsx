@@ -35,6 +35,7 @@ import { useInvoiceNumber } from "@/hooks/useInvoiceNumber";
 import { useFormDraft } from "@/hooks/useFormDraft";
 import { assertCreateInvoiceWithItemsResult } from "@/lib/invoiceRpc";
 
+import { useSubmitLock } from "@/hooks/useSubmitLock";
 // Haversine formula to calculate distance between two coordinates
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371; // Earth's radius in km
@@ -112,6 +113,7 @@ const invoiceSchema = z.object({
   status: z.enum(["sent", "paid", "overdue"]),
   notes: z.string().max(1000, "Notizen zu lang").optional(),
 });
+
 
 export function CreateInvoiceModal({ 
   open, 
@@ -508,6 +510,7 @@ export function CreateInvoiceModal({
     }
   };
 
+  const runLocked = useSubmitLock();
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -1288,7 +1291,7 @@ export function CreateInvoiceModal({
           <DialogTitle>Neue Rechnung erstellen</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <form onSubmit={(e) => { e.preventDefault(); void runLocked(() => handleSubmit(e)); }} className="flex-1 flex flex-col overflow-hidden min-h-0">
           <div className="flex-1 overflow-y-auto pr-2 pb-4 [&_input]:text-base [&_textarea]:text-base [&_select]:text-base">
             {/* 2-Column Layout on Desktop */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
