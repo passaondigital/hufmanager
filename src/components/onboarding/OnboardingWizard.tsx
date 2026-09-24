@@ -110,11 +110,11 @@ export function OnboardingWizard({ onComplete, onSkip }: OnboardingWizardProps) 
     }
   };
 
+  // Grenze aus der tatsaechlichen Slide-Anzahl (frueher hart 3/2 — der
+  // Provider-Assistent hat aber 5 Slides; "Weiter" blieb im Business-Name-
+  // Schritt stehen und "Loslegen" wurde nie erreicht).
   const handleNext = () => {
-    const maxSlides = isProvider ? 3 : 2;
-    if (currentSlide < maxSlides) {
-      setCurrentSlide(currentSlide + 1);
-    }
+    setCurrentSlide((s) => Math.min(s + 1, slides.length - 1));
   };
 
   const handlePrev = () => {
