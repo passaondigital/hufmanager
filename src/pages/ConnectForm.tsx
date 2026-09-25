@@ -22,7 +22,7 @@ const registerSchema = z.object({
 const ConnectForm = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [step, setStep] = useState<"welcome" | "register" | "success">("welcome");
+  const [step, setStep] = useState<"welcome" | "register" | "success" | "confirm-email">("welcome");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -144,10 +144,13 @@ const ConnectForm = () => {
         sessionStorage.setItem("huf_invite_code", slug);
       }
 
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: result.data.email,
         password: result.data.password,
         options: {
+          // Bestätigungslink muss auf diese App zurückführen, nicht auf die
+          // gemeinsame Supabase-Site-URL (hufiapp.de).
+          emailRedirectTo: `${window.location.origin}/client-home`,
           data: {
             full_name: result.data.name,
             role: "client",
@@ -181,6 +184,12 @@ const ConnectForm = () => {
       // Increment usage
       if (linkData?.id) {
         await supabase.rpc("increment_magic_link_uses", { link_id: linkData.id });
+      }
+
+      // Mit aktiver E-Mail-Bestätigung gibt es noch keine Session.
+      if (!signUpError && !signUpData?.session) {
+        setStep("confirm-email");
+        return;
       }
 
       setStep("success");
@@ -217,6 +226,24 @@ const ConnectForm = () => {
             <h2 className="text-xl font-semibold mb-2">Link ungültig</h2>
             <p className="text-muted-foreground">
               Dieser Einladungslink ist nicht mehr aktiv oder existiert nicht.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (step === "confirm-email") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="py-12 text-center space-y-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center">
+              <CheckCircle className="h-8 w-8 text-green-500" />
+            </div>
+            <h2 className="text-xl font-semibold">Bitte bestätige deine E-Mail</h2>
+            <p className="text-muted-foreground">
+              Wir haben dir einen Bestätigungslink an {formData.email} geschickt. Nach dem Klick bist du angemeldet.
             </p>
           </CardContent>
         </Card>
