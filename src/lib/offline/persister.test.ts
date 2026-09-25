@@ -8,7 +8,7 @@ vi.mock("idb-keyval", () => ({
 }));
 
 import { createIDBPersister } from "@/lib/offline/persister";
-import { getCacheOwner, setCacheOwner } from "@/lib/offline/cacheOwner";
+import { clearUserScopedLocalData, getCacheOwner, sessionOwnsLocalData, setCacheOwner } from "@/lib/offline/cacheOwner";
 
 class MemoryStorage {
   private m = new Map<string, string>();
@@ -23,6 +23,7 @@ class MemoryStorage {
 const TOKEN_KEY = "sb-vnschgjxkzzwzefqlrji-auth-token";
 const client = (tag: string) => ({ timestamp: 1, buster: "v3", clientState: { queries: [{ queryKey: ["horses-with-price-group"], state: { data: [tag] } }], mutations: [] } }) as never;
 let session: MemoryStorage;
+let local: MemoryStorage;
 
 function loginAs(uid: string | null) {
   session.clear();
@@ -32,7 +33,8 @@ function loginAs(uid: string | null) {
 beforeEach(() => {
   store.clear();
   session = new MemoryStorage();
-  vi.stubGlobal("window", { sessionStorage: session, localStorage: new MemoryStorage() });
+  local = new MemoryStorage();
+  vi.stubGlobal("window", { sessionStorage: session, localStorage: local });
   setCacheOwner(null);
 });
 
@@ -76,5 +78,42 @@ describe("owner-bound query cache persister", () => {
     loginAs("user-a");
     expect(await p.restoreClient()).toBeUndefined();
     expect(store.size).toBe(0);
+  });
+
+  it("does not persist while the cache still belongs to the previous user", async () => {
+    const p = createIDBPersister();
+    loginAs("user-a");
+    setCacheOwner("user-a");
+    loginAs("user-b"); // Token schon B, Wechsel-Clear läuft noch
+    await p.persistClient(client("A-horse"));
+    expect(store.size).toBe(0);
+  });
+});
+
+describe("persistent data owner marker", () => {
+  it("remembers the last owner across a fresh app entry (module state lost)", () => {
+    setCacheOwner("user-a");
+    setCacheOwner(null); // neuer Einstieg ohne Session
+    expect(getCacheOwner()).toBe("user-a");
+  });
+
+  it("offline queues only replay for the owner of the local data", () => {
+    setCacheOwner("user-a");
+    loginAs("user-b");
+    expect(sessionOwnsLocalData()).toBe(false);
+    loginAs(null);
+    expect(sessionOwnsLocalData()).toBe(false);
+    loginAs("user-a");
+    expect(sessionOwnsLocalData()).toBe(true);
+  });
+
+  it("clears unscoped user-local stores", () => {
+    local.setItem("hm-employee-notebook", "[notes of A]");
+    local.setItem("huf_work_tracking_session", "{}");
+    local.setItem("theme", "dark");
+    clearUserScopedLocalData();
+    expect(local.getItem("hm-employee-notebook")).toBeNull();
+    expect(local.getItem("huf_work_tracking_session")).toBeNull();
+    expect(local.getItem("theme")).toBe("dark");
   });
 });

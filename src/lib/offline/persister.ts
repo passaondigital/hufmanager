@@ -1,6 +1,6 @@
 import { PersistedClient, Persister } from "@tanstack/react-query-persist-client";
 import { get, set, del } from "idb-keyval";
-import { readSessionUserId, setCacheOwner } from "@/lib/offline/cacheOwner";
+import { getCacheOwner, readSessionUserId, setCacheOwner } from "@/lib/offline/cacheOwner";
 
 const IDB_KEY = "hufmanager-query-cache";
 
@@ -25,6 +25,8 @@ export function createIDBPersister(): Persister {
           await del(IDB_KEY);
           return;
         }
+        // Während eines Nutzerwechsels (Cache wird gerade geleert) nichts schreiben.
+        if (getCacheOwner() !== null && getCacheOwner() !== owner) return;
         const entry: OwnedPersistedClient = { owner, client };
         await set(IDB_KEY, entry);
       } catch (error) {

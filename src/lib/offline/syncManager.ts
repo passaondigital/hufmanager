@@ -1,3 +1,4 @@
+import { sessionOwnsLocalData } from "@/lib/offline/cacheOwner";
 import { supabase } from "@/integrations/supabase/client";
 import { getSyncQueue, removeFromSyncQueue, updateSyncActionRetry, SyncAction } from "./syncQueue";
 import { processOfflineImages } from "./imageSyncManager";
@@ -68,6 +69,8 @@ async function processSyncAction(action: SyncAction): Promise<boolean> {
  * Process all pending sync actions
  */
 export async function processSyncQueue(): Promise<void> {
+  // P0 25.09.: nie Offline-Änderungen eines anderen Nutzers mit dieser Session abspielen.
+  if (!sessionOwnsLocalData()) return;
   const queue = await getSyncQueue();
   
   if (queue.length === 0) {

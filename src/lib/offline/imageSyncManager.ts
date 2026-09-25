@@ -1,3 +1,4 @@
+import { sessionOwnsLocalData } from "@/lib/offline/cacheOwner";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   getOfflineImages, 
@@ -55,6 +56,8 @@ async function uploadOfflineImage(image: OfflineImage): Promise<boolean> {
  * Process all pending offline images
  */
 export async function processOfflineImages(): Promise<void> {
+  // P0 25.09.: nie Offline-Änderungen eines anderen Nutzers mit dieser Session abspielen.
+  if (!sessionOwnsLocalData()) return;
   const images = await getOfflineImages();
   
   if (images.length === 0) {

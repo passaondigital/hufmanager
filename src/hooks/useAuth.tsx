@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { clear } from "idb-keyval";
 import { getAttribution } from "@/lib/attribution";
 import { restorePendingSignup } from "@/lib/pendingSignup";
-import { getCacheOwner, setCacheOwner } from "@/lib/offline/cacheOwner";
+import { clearUserScopedLocalData, getCacheOwner, setCacheOwner } from "@/lib/offline/cacheOwner";
 import { resolveTrustedRole } from "@/lib/authRoleResolution";
 import type { RoleResolution, RoleResolutionStatus, TrustedUserRole } from "@/lib/authRoleResolution";
 
@@ -181,13 +181,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // neue Nutzer Daten sieht.
         const nextOwner = session?.user?.id ?? null;
         const previousOwner = getCacheOwner();
-        if (previousOwner !== nextOwner) {
-          if (previousOwner !== null) {
-            queryClient.clear();
-            void clear().catch(() => undefined);
-          }
-          setCacheOwner(nextOwner);
+        if (nextOwner !== null && previousOwner !== null && previousOwner !== nextOwner) {
+          queryClient.clear();
+          clearUserScopedLocalData();
+          void clear().catch(() => undefined);
         }
+        if (nextOwner !== null) setCacheOwner(nextOwner);
 
         // Detect PASSWORD_RECOVERY event and set flag
         if (event === "PASSWORD_RECOVERY") {
