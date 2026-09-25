@@ -1,4 +1,4 @@
--- Aufruf: psql -v mig_body=/pfad/zum/migrations-body-ohne-BEGIN-COMMIT.sql -f scripts/hufmanager-slim-trial-producer-tests.sql
+-- Aufruf: psql -v mig_body=/pfad/zu/allen-trial-migrations-bodies-ohne-BEGIN-COMMIT.sql -f scripts/hufmanager-slim-trial-producer-tests.sql
 -- Laeuft komplett in einer Transaktion und endet mit ROLLBACK.
 \set ON_ERROR_STOP 1
 BEGIN;
@@ -6,7 +6,7 @@ BEGIN;
 CREATE TEMP TABLE r(t text, ok boolean, info text);
 -- T1 neue Provider-Registrierung
 INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
-VALUES ('00000000-0000-4000-8000-0000000000a1','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t1-provider@example.invalid','{"full_name":"T1","role":"provider"}','{}',now(),now(),now());
+VALUES ('00000000-0000-4000-8000-0000000000a1','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t1-provider@example.invalid','{"full_name":"T1","role":"provider","signup_app":"hufmanager"}','{}',now(),now(),now());
 INSERT INTO r SELECT 'T1 provider signup -> TRIAL_ACTIVE 14d', (status='TRIAL_ACTIVE' AND trial_status='ACTIVE' AND abs(extract(epoch from (trial_ends_at - trial_started_at)) - 14*86400) < 1), status||' '||trial_ends_at FROM product_entitlements WHERE user_id='00000000-0000-4000-8000-0000000000a1';
 INSERT INTO r SELECT 'T1b exactly one trial event', count(*)=1, count(*)::text FROM hm_lifecycle_events WHERE subject_id='00000000-0000-4000-8000-0000000000a1' AND event_name='trial_started';
 -- T1c access via RPC as that user
@@ -40,10 +40,29 @@ INSERT INTO r SELECT 'T7 anon/authenticated cannot execute producer', NOT has_fu
 INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
 VALUES ('00000000-0000-4000-8000-0000000000c8','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t8-client@example.invalid','{"full_name":"T8","role":"client"}','{}',now(),now(),now());
 INSERT INTO r SELECT 'T8 producer refuses non-provider', hm_start_hufmanager_slim_trial_v1('00000000-0000-4000-8000-0000000000c8')='skipped_not_provider', '';
+-- T11 HufiApp-Provider -> kein HufManager-Trial (Trial-Begrenzung 20260925080000)
+INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
+VALUES ('00000000-0000-4000-8000-0000000000b1','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t11-hufiapp@example.invalid','{"full_name":"T11","role":"provider","signup_app":"hufiapp"}','{}',now(),now(),now());
+INSERT INTO r SELECT 'T11 hufiapp provider -> provider role, no entitlement', (SELECT count(*) FROM user_roles WHERE user_id='00000000-0000-4000-8000-0000000000b1' AND role='provider')=1 AND count(*)=0, count(*)::text FROM product_entitlements WHERE user_id='00000000-0000-4000-8000-0000000000b1';
+INSERT INTO r SELECT 'T11b hufiapp provider -> no trial event', count(*)=0, count(*)::text FROM hm_lifecycle_events WHERE subject_id='00000000-0000-4000-8000-0000000000b1';
+-- T12 Provider ohne signup_app (Skript/Admin) -> kein automatischer Trial
+INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
+VALUES ('00000000-0000-4000-8000-0000000000b2','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t12-noapp@example.invalid','{"full_name":"T12","role":"provider"}','{}',now(),now(),now());
+INSERT INTO r SELECT 'T12 provider without signup_app -> no entitlement', count(*)=0, count(*)::text FROM product_entitlements WHERE user_id='00000000-0000-4000-8000-0000000000b2';
+-- T13 manueller Producer-Aufruf bleibt fuer bewusste Freischaltung moeglich
+INSERT INTO r SELECT 'T13 manual producer still works for provider', hm_start_hufmanager_slim_trial_v1('00000000-0000-4000-8000-0000000000b2','manual')='trial_started', '';
+-- T14 HufManager-Client (signup_app hufmanager, Rolle client) -> kein Trial
+INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
+VALUES ('00000000-0000-4000-8000-0000000000b4','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t14-client@example.invalid','{"full_name":"T14","role":"client","signup_app":"hufmanager"}','{}',now(),now(),now());
+INSERT INTO r SELECT 'T14 hufmanager client -> no entitlement', count(*)=0, count(*)::text FROM product_entitlements WHERE user_id='00000000-0000-4000-8000-0000000000b4';
+-- T15 abweichende Schreibweise wird nicht akzeptiert (fail-closed)
+INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
+VALUES ('00000000-0000-4000-8000-0000000000b5','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t15-other@example.invalid','{"full_name":"T15","role":"provider","signup_app":"HufiApp"}','{}',now(),now(),now());
+INSERT INTO r SELECT 'T15 other signup_app value -> no entitlement', count(*)=0, count(*)::text FROM product_entitlements WHERE user_id='00000000-0000-4000-8000-0000000000b5';
 -- T10 erzwungener Producer-Fehler bricht Registrierung NICHT ab
 CREATE OR REPLACE FUNCTION public.hm_start_hufmanager_slim_trial_v1(p_user_id uuid, p_reason text DEFAULT 'x') RETURNS text LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'forced test failure'; END $$;
 INSERT INTO auth.users (id, instance_id, aud, role, email, raw_user_meta_data, raw_app_meta_data, created_at, updated_at, email_confirmed_at)
-VALUES ('00000000-0000-4000-8000-0000000000e1','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t10-provider@example.invalid','{"full_name":"T10","role":"provider"}','{}',now(),now(),now());
+VALUES ('00000000-0000-4000-8000-0000000000e1','00000000-0000-0000-0000-000000000000','authenticated','authenticated','t10-provider@example.invalid','{"full_name":"T10","role":"provider","signup_app":"hufmanager"}','{}',now(),now(),now());
 INSERT INTO r SELECT 'T10 signup survives producer failure', count(*)=1, count(*)::text FROM user_roles WHERE user_id='00000000-0000-4000-8000-0000000000e1' AND role='provider';
 INSERT INTO r SELECT 'T10b failure recorded as issue', count(*)=1, count(*)::text FROM hm_lifecycle_reconciliation_issues WHERE issue_type='TRIAL_START_UNEXPECTED_ERROR' AND subject_id='00000000-0000-4000-8000-0000000000e1';
 -- T9 kein TRIAL_START_UNEXPECTED_ERROR
