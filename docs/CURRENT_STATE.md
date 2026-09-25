@@ -440,3 +440,44 @@ gebunden, 7 T.). SMTP-Konfiguration nicht prüfbar (kein Management-Token) → D
 
 **Weitere Befunde:** Betriebsname aus Signup-Schritt wird nie gespeichert (`hm_pending_business_name` ohne Consumer, P2);
 neue Provider ohne Standard-Leistungen (`create_default_service_presets` → 0 Services, P2); `/management/abo` zeigt Legacy-Status.
+
+## 25.09.2026 abends — Auth-Routing-Audit HufManager / HufiApp (vor „Confirm email“)
+
+**Korrektur der Annahme „gleiches Supabase-Projekt“:** Das live unter `hufiapp.de` ausgelieferte Frontend
+(nginx → `/srv/hufi/hufiapp/repo/dist`, Repo `passaondigital/hufiappde`, Bundle `index-75c17AwV.js`) spricht mit
+Supabase **`oortmejcefbiewaceccc`**, nicht mit `vnschgjxkzzwzefqlrji`. Auf `vnschg…` laufen: `app.hufmanager.de` (live),
+`preview.hufiapp.de` (Build 06.08.) und der tote Alt-Build `/srv/hufi/business/hufiapp/app` (nginx-Konflikt, nicht ausgeliefert).
+`app.hufiapp.de` zeigt auf 85.13.137.120 mit ungültigem Zertifikat. Nutzer in `vnschg…`: 61 ohne `signup_app`, 8 `hufmanager`,
+2 `hufiapp` (1 QA 25.09., 1 echter vom 08.08.).
+⇒ Die Site URL `https://hufiapp.de` von `vnschg…` ist als Fallback **doppelt falsch**: Links landen in einer App mit anderem Backend
+(Token wird dort nicht erkannt → Nutzer „nicht eingeloggt“).
+
+**Mail-Templates (empirisch, echte Mails an QA-Adressen, Absender `team@hufmanager.de` via Resend):**
+- Reset password: `{{ .ConfirmationURL }}` → `…/auth/v1/verify?…&type=recovery&redirect_to=https://app.hufmanager.de/reset-password` ✅;
+  ohne `redirect_to` → `redirect_to=https://hufiapp.de` (Beleg für Fallback).
+- Magic link: `{{ .ConfirmationURL }}`, Betreff „Ihr Login-Link für HufManager“, `redirect_to=https://app.hufmanager.de/home` ✅.
+- Confirm signup / Invite / Change email / Reauthentication: **nicht prüfbar** (kein Management-Token; Autoconfirm verhindert Mail).
+- Link-Klick (Token-Einlösung) nicht ausgeführt — bleibt Pascal-/Post-Enable-Test.
+
+**Code HufManager (Frontend):** `signUp` (`useAuth` → `/home`), Reset (`/reset-password`), Admin-OTP, Botschafter setzen
+`window.location.origin` ✅. **Fehler:** `ConnectForm` (`/connect/:slug`, 10 aktive Magic-Links, 0 Nutzungen) ohne
+`emailRedirectTo` und ohne Bestätigungs-Zustand → **gefixt `1d1d33fe`** (Redirect `/client-home`, Hinweis „Bitte bestätige deine
+E-Mail“), Guard-Test `authRedirectGuard.test.ts` (Negativkontrolle: alter Stand FAIL). vitest 333/333, tsc 131 = Baseline.
+**NICHT deployt** (Deploy braucht Freigabe).
+Nicht genutzt im Frontend: Email-Change (`updateUser({email})`), Reauthentication, `inviteUserByEmail`.
+
+**Edge-Functions (eigene Resend-Mails, unabhängig von Confirm email):**
+- `admin-create-user` v132 + `send-provider-invitation` v110: `generateLink(magiclink)` mit `redirectTo: https://hufiapp.de/auth`
+  → Provider landet in fremder App (P1, nur Admin-Pfad).
+- `send-employee-invitation` v94: `APP_URL || https://app.hufiapp.de` (Zertifikat ungültig; Secret-Wert unbekannt) (P1).
+- `send-partner-invitation` v81: `APP_URL || https://hufiapp.de` (P2); `send-client-invitation`: Origin-Header, Fallback hufiapp.de (P2).
+- `copecart-webhook` Repo-Fassung `inviteUserByEmail` → hufiapp.de/auth; live v165 ack-only → derzeit tot.
+
+**Termin-DB-Schutz (Pferd/Kunde ↔ Provider): NICHT umgesetzt** — auf `appointments` nur `trg_hm_guard_service_owner_v1`.
+
+**Infra-Nachtrag:** DB 194 MB; `cron.job_run_details` 2.321 Zeilen/2,3 MB (Job 24 lief 25.09. 03:17); 0 Cron-Fehler seit Neustart
+(169 Fehler/24 h alle ≤ 24.09. 21:05 UTC); `net._http_response` 2,8 MB, `last_autovacuum` weiterhin 05.08. → beobachten.
+
+```
+SAFE_TO_ENABLE_CONFIRM_EMAIL = NO (bis Deploy 1d1d33fe) → danach YES mit Template-Sichtprüfung + QA-Signup direkt nach Aktivierung
+```
