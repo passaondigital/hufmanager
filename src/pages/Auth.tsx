@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PricingModal } from "@/components/subscription/PricingModal";
 import { DemoAccessCards } from "@/components/auth/DemoAccessCards";
 import { MultiStepSignup } from "@/components/auth/MultiStepSignup";
+import { savePendingSignup } from "@/lib/pendingSignup";
 import { clear } from "idb-keyval";
 
 // NOTE: Admin access is controlled server-side via user_roles table and RLS policies
@@ -611,7 +612,7 @@ export default function Auth() {
                 onComplete={async (data) => {
                   setLoading(true);
                   try {
-                    const { error } = await signUp(data.email, data.password, data.fullName, data.role);
+                    const { error, needsEmailConfirmation } = await signUp(data.email, data.password, data.fullName, data.role);
                     if (error) {
                       if (error.message.includes("already registered")) {
                         toast.error("Diese E-Mail ist bereits registriert. Bitte melden Sie sich an.");
@@ -638,6 +639,9 @@ export default function Auth() {
                       sessionStorage.setItem("hm_pending_country", data.country);
                       // Store widerrufsausschluss consent for logging after email confirmation
                       sessionStorage.setItem("hm_pending_widerruf_consent", new Date().toISOString());
+                      if (needsEmailConfirmation) {
+                        savePendingSignup(data.email);
+                      }
                       toast.success("Registrierung erfolgreich! Bitte bestätigen Sie Ihre E-Mail.");
                     }
                   } catch (err: any) {

@@ -207,7 +207,7 @@ export function AppointmentFormModal({
   const isSeriesService = currentService?.billing_type === "series";
 
   const { data: horses = [] } = useQuery({
-    queryKey: ["horses-with-price-group"],
+    queryKey: ["horses-with-price-group", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("horses")

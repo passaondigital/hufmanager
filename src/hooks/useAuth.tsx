@@ -5,6 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { clear } from "idb-keyval";
 import { getAttribution } from "@/lib/attribution";
+import { restorePendingSignup } from "@/lib/pendingSignup";
+import { getCacheOwner, setCacheOwner } from "@/lib/offline/cacheOwner";
 import { resolveTrustedRole } from "@/lib/authRoleResolution";
 import type { RoleResolution, RoleResolutionStatus, TrustedUserRole } from "@/lib/authRoleResolution";
 
@@ -22,7 +24,7 @@ interface AuthContextType {
   clearPasswordRecovery: () => void;
   clearForcePasswordChange: () => void;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, role?: "provider" | "client" | "partner") => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, role?: "provider" | "client" | "partner") => Promise<{ error: Error | null; needsEmailConfirmation?: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -174,6 +176,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // P0 25.09.: Query-Cache gehört genau einem Nutzer. Bei jedem Wechsel
+        // der uid (Logout, anderer Login ohne Logout) alles verwerfen, bevor der
+        // neue Nutzer Daten sieht.
+        const nextOwner = session?.user?.id ?? null;
+        const previousOwner = getCacheOwner();
+        if (previousOwner !== nextOwner) {
+          if (previousOwner !== null) {
+            queryClient.clear();
+            void clear().catch(() => undefined);
+          }
+          setCacheOwner(nextOwner);
+        }
+
         // Detect PASSWORD_RECOVERY event and set flag
         if (event === "PASSWORD_RECOVERY") {
           setIsPasswordRecovery(true);
@@ -212,6 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   console.warn("Botschafter redirect check failed:", err);
                 }
               }
+              restorePendingSignup(session.user.email);
               processInviteCode(session.user.id);
               processHmConnectInvite(session.user.id);
               const partnerToken = sessionStorage.getItem("partner_invite_token");
@@ -459,7 +475,7 @@ function _checkProviderHasPro(provider: {
   const signUp = async (email: string, password: string, fullName: string, role: "provider" | "client" | "partner" = "client") => {
     const redirectUrl = `${window.location.origin}/home`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -471,7 +487,8 @@ function _checkProviderHasPro(provider: {
         },
       },
     });
-    return { error };
+    // Ohne Session muss die E-Mail erst bestätigt werden (Link öffnet ggf. neuen Tab).
+    return { error, needsEmailConfirmation: !error && !data?.session };
   };
 
   const signOut = async () => {

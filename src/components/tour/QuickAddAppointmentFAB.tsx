@@ -54,7 +54,7 @@ export function QuickAddAppointmentFAB({
 
   // Fetch horses for quick selection
   const { data: horses = [] } = useQuery({
-    queryKey: ["horses-quick-add"],
+    queryKey: ["horses-quick-add", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("horses")
