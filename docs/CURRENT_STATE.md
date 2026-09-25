@@ -481,3 +481,13 @@ Nicht genutzt im Frontend: Email-Change (`updateUser({email})`), Reauthenticatio
 ```
 SAFE_TO_ENABLE_CONFIRM_EMAIL = NO (bis Deploy 1d1d33fe) → danach YES mit Template-Sichtprüfung + QA-Signup direkt nach Aktivierung
 ```
+
+### Deploy + Production-Verifikation 25.09. ~22:15 MESZ
+- Frontend `6cd8715b` (= Fix `1d1d33fe` + Doku) via `./deploy.sh hufmanager`, previous `25d88773`; Deploy-Smoke 0 Errors;
+  `ConnectForm-DaNnDvmT.js` enthält `emailRedirectTo: …/client-home` + Confirm-Hinweis.
+- Playwright PROD: Login/Reload/Logout/`/home` ohne Session → `/auth`/Re-Login PASS, 0 Page-Errors; Same-Tab-Wechsel (Neu-Einstieg + Logout)
+  0 Leak bei Positivkontrolle, 12-Bereiche-Sweep 0 Leak; UI: Kunde „QA Verify0925“ + Pferd „QA VerifyHorse“ (Reload ✓) + Termin 201
+  (Provider/Kunde/Pferd/Grant konsistent, 1 Datensatz, ohne Leistung); UI-Signup `+qa-ui-0925b` → provider, `hufmanager`, TRIAL_ACTIVE bis 09.10.
+- `mailer_autoconfirm=true` (Confirm Email AUS), Site URL unverändert.
+- Termin-DB-Guard: NICHT live, NICHT als Datei vorbereitet. Datenlage: 301 Termine; 254 Alt-Termine (bis 14.08.) ohne `client_id`
+  (253 mit Grant-Historie Pferdebesitzer↔Provider, 1 ohne); wo `client_id` gesetzt: 0 Abweichung Pferd↔Kunde, 1 ohne aktiven Grant.
