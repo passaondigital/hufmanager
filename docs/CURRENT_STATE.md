@@ -404,3 +404,39 @@ Frontend-Rollback nach erstem Deploy: `./deploy.sh hufmanager --rollback` (Symli
 - Edge-Functions nur namentlich deployen, nie pauschal
 
 Release-Gates und Next Steps: `docs/HUFMANAGER_RELEASE_GATES.md`.
+
+## 25.09.2026 — Trial-Begrenzung, P0 Cross-User-Cache, E-Mail-Bestätigung (Vorbereitung)
+
+**Trial-Begrenzung — LIVE:** Migration `20260925080000_limit_slim_trial_to_hufmanager_signup_v1` (Commit `79be9b9a`),
+PROD per Transaktion inkl. Ledger (Ledger-md5 = Datei `992b8767…`, Body `d9eefa70…`). Auto-Trial nur bei
+`profiles.signup_app = 'hufmanager'` (fail-closed). Tests 23/23 lokal, Negativkontrolle 18/23. PROD: API-Signup HufManager →
+`TRIAL_ACTIVE` 14,000 T.; API-Signup `signup_app=hufiapp` → kein Entitlement; UI-Signup (`+qa-ui-0925`) sendet
+`signup_app=hufmanager`, Trial aktiv, Login/Reload/Logout/Re-Login PASS. Rollback: `docs/backups/mig13_*`.
+
+**P0 Tenant-Isolation (manueller Test Pascal) — BEHOBEN + PROD-verifiziert:**
+- Session: Hauptkonto `99e50f7f` 07:56 UTC, danach Demo-Konto `ecb7497b` 08:01 UTC im selben Browser ohne Logout.
+- Helga/Balu/Ginebra/Milow gehören 2 Kunden des Hauptkontos (aktive Grants nur zu `99e50f7f`); Demo-Konto hat keine Beziehung.
+- DB/RLS: Demo-Konto sieht unter RLS 0 dieser Pferde, 15 eigene (alle mit aktivem Grant an `ecb7497b`, inkl. Akex/Alex/micky
+  „Mia Berger“, Finn, HM-SENTINEL, QA_PO, Fenja-Hope) → **kein DB-Leak**.
+- Ursache: TanStack-Query-Cache wird in IndexedDB persistiert und beim Start ohne Besitzer-Bindung wiederhergestellt; beim neuen
+  App-Einstieg (`/`, `/auth`) werden nur Auth-Tokens gelöscht. Termin-Dialog `["horses-with-price-group"]` / Schnell-Termin
+  `["horses-quick-add"]` ohne User-ID + staleTime 5 min → fremde Pferdeliste. „Kunden & Pferde“ nutzt Key mit User-ID.
+- Reproduziert auf PROD mit QA `+qa-trial` → `+qa-ui-0925` (Pferd „QA-LeakProbe“ im QA-Tenant angelegt).
+- Fix `afb43d95` + `25d88773` (deployt, previous = `84eefb13`): Cache an uid gebunden, Besitzer-Marker persistent, Wechsel leert
+  Query-Cache + IndexedDB (Sync-/Bild-Queues) + unscoped localStorage (Mitarbeiter-Notizbuch, Arbeitszeit); Queues nur für Besitzer.
+- Tests: vitest 332/332, tsc Baseline 131, Negativkontrolle alter Persister 5/5 FAIL. PROD: A/B neuer Einstieg + Logout: 0 Leak,
+  12 Bereiche gesweept: 0 Leak; Reload behält eigenen Cache.
+- Termin Fenja-Hope `25de12f1`: Provider/Kunde/Pferd/Leistung/Grant konsistent, 1 Datensatz. Meldung „Kunde konnte nicht
+  ermittelt werden“ = Speicher-Guard (bricht ab, kein Datensatz), ausgelöst durch veraltete Pferdeliste.
+- 30 Tage: 0 Termine mit Pferd ohne Grant zum Provider.
+- **P1 offen:** `appointments` INSERT prüft nur `provider_id = auth.uid()`, nicht Pferd/Kunde ↔ Provider → DB-Guard vorbereiten.
+- Security Review: keine Findings ≥8 nach Folgefix; Hinweise: Cross-Tab-Auth-Broadcast (P2), weitere Keys ohne uid (Hygiene).
+- QA-Artefakte: QA A Kunde „QA LeakProbe Kunde“ (`66c99e4e`, kein Pferd), QA-Trial Kunde `dac2f06e` + Pferd `412f484e`.
+
+**E-Mail-Bestätigung — vorbereitet, NICHT aktiv:** `mailer_autoconfirm=true`. 11 unbestätigte Konten haben sich nie eingeloggt
+(7 Demo, 4 Alt) → niemand Aktives wird ausgesperrt. Flow `implicit`, Redirect `app.hufmanager.de/home` wird akzeptiert,
+GoTrue-Default-Redirect (Site URL) wirkt wie `hufiapp.de`. Signup-Daten überleben jetzt neuen Tab (`pendingSignup`, an E-Mail
+gebunden, 7 T.). SMTP-Konfiguration nicht prüfbar (kein Management-Token) → Dashboard-Check nötig.
+
+**Weitere Befunde:** Betriebsname aus Signup-Schritt wird nie gespeichert (`hm_pending_business_name` ohne Consumer, P2);
+neue Provider ohne Standard-Leistungen (`create_default_service_presets` → 0 Services, P2); `/management/abo` zeigt Legacy-Status.

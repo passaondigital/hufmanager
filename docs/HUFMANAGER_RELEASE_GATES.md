@@ -1,6 +1,8 @@
 # HufManager Slim — Release Gates
 
-**Stand:** 24.09.2026 abends · Frontend `992f9117` · Trial-Migration `20260924120000` · Production `vnschgjxkzzwzefqlrji`
+**Stand:** 25.09.2026 · Frontend `25d88773` · letzte Migration `20260925080000` · Production `vnschgjxkzzwzefqlrji`
+
+> 25.09.: Trial-Begrenzung live; P0 Cross-User-Cache behoben + PROD-verifiziert; offen: E-Mail-Bestätigung (Dashboard), P1 Termin-Schreibguard, Mobile-Realgerät, CopeCart-Testkauf, UX-Konsolidierung. Details `docs/CURRENT_STATE.md` (25.09.).
 Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CURRENT_STATE.md`.
 
 | Gate | Status | Evidenz / was fehlt |
