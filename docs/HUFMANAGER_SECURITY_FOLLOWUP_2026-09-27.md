@@ -85,3 +85,42 @@ Mitarbeiter: kein Schreibzugriff über den Agenten (entspricht DB-Regel: Mitarbe
 enthält noch die ungescopten update/cancel/send_notification/create_horse-Zweige (derzeit unerreichbar).
 
 **Veröffentlichung:** Repo ist öffentlich → diese Doku und der Hotfix bleiben lokal committed, **Push erst nach Deploy des Hotfix**.
+
+## 4. PROD-Umsetzung 27.09.2026 (Owner-Freigabe)
+
+### hufi-agent v41 — LIVE
+- Vorher: Live v40 per SHA256 = Sicherung bestätigt (Rollback belastbar).
+- Deploy via Supabase-MCP: Version **41**, `verify_jwt=false` (unverändert), deployte Dateien SHA256-identisch mit Repo
+  (`index.ts f53cc516…`, `horse-knowledge.ts d6a919f7…`).
+- **Befund beim Smoke:** Der Assistent ist live funktionslos — jeder Aufruf endet mit Anthropic „credit balance too low“,
+  Ollama-Fallback 405 → HTTP 503. Tools liefen deshalb über die Function nicht; die Lücke war zuletzt praktisch unerreichbar
+  (seit wann: unbekannt).
+- Deshalb PROD-Test ohne LLM: exakt der deployte `executeTool`-Code mit echten QA-JWTs gegen die PROD-API, Push an lokalen
+  Mitschnitt (`test/prod_tool_test.ts`): **19/19 PASS** — fremde Termine ändern/absagen blockiert, keine Push bei Ablehnung,
+  fremde Pferdeakte/Kundenübersicht blockiert, geteilter Kunde zeigt keine Termine/Rechnungen des anderen Betriebs,
+  Push an fremde/beliebige Nutzer blockiert, Mitarbeiter ohne Ausweitung, eigene Aktionen ok.
+- REST-Gegenprobe mit denselben Abfragen (`test/prod_smoke.py`, Teil 2): 9/9.
+- Admin: keine Sonderregel im Agenten (nur RLS + `provider_id = eigener Nutzer`); kein Admin-QA-Konto → nicht live getestet.
+
+### Termin-DB-Guard — LIVE
+- Vorcheck: Ledger `20260925080000`, kein Guard vorhanden, Tests erneut 39/39, Datei = Commit.
+- Apply: kanonische Datei (Migration + Ledger in einer Transaktion). Ledger-md5 = Datei `1f9c36ad…`,
+  Funktionskörper-md5 = Datei `f5395766…`, SECURITY DEFINER + `search_path=public`, kein EXECUTE für anon/authenticated.
+- Bestandsdaten: md5 aller Termine vor = nach Apply.
+- PROD-Tests: REST mit QA-JWT 9/9 (eigener Kunde/Pferd ok; fremder Kunde, fremdes Pferd, Pferd≠Kunde, Umbiegen auf fremdes
+  Pferd/Kunde blockiert; Datum/Uhrzeit/Notiz ändern ok). SQL mit Rollback: eigener Mitarbeiter ok, fremder Mitarbeiter
+  blockiert, fremden Mitarbeiter zuweisen blockiert, Serverpfad ohne Nutzer + fremdes Pferd blockiert, echter Alttermin ohne
+  Grant bearbeitbar (zurückgerollt), Umbiegen blockiert.
+- **Designbefund:** Das Hauptkonto `99e50f7f` ist Master-Admin; die Admin-Ausnahme greift deshalb auch im normalen
+  Betriebsalltag dieses Kontos. Vorschlag v2: Admin-Ausnahme nur, wenn Admin für einen ANDEREN Betrieb handelt.
+- Alt-Bug bestätigt: 65 Termine mit Status `scheduled` sind nur bei gleichzeitiger Statusänderung bearbeitbar (`validate_appointment_status`).
+- QA-Fixtures danach entfernt (Termine/Rechnung/Grants/Mitarbeiter gelöscht, QA-Pferd/-Kunde soft-deleted wegen Audit-Log);
+  Terminbestand wieder 301. Nebeneffekt: Anlage des QA-Kunden löste 1 `admin-notifications new_user` aus.
+
+### 108 Termine der getrennten Kunden (read-only)
+- 3 Kunden, alle Termine gehören dem Hauptkonto `99e50f7f`, alle vor der Trennung angelegt (12/2025–05/2026, 12 Serien).
+- Trennung = Verbindung am 28.07.2026 18:43–18:44 UTC auf `ended` gesetzt; **am selben Tag wurden alle 54 Termine ab 27.08.
+  abgesagt** (davon 38 in der Zukunft). Pferde und Kundenprofile bestehen weiter.
+- Zukünftige Termine: 38, **alle bereits `cancelled`** → keine aktiven Zukunftstermine, keine Erinnerungen fällig.
+- Offen in der Vergangenheit: 54 (23 planned, 30 scheduled, 1 confirmed; 29.12.2025–27.07.2026), nie abgeschlossen, 0 Rechnungen.
+- Dubletten: 4 Paare am 16.07.2026 (offen, Vergangenheit), 12 Paare abgesagt.

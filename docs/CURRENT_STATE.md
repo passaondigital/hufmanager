@@ -500,3 +500,10 @@ Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`. Kein PROD-Write, kei
 - Termin-DB-Guard `20260927120000_add_appointment_relation_guard_v1` fertig: 39/39, Negativkontrolle 19/39, Apply+Rollback geprobt → wartet auf Apply-Freigabe.
 - **P0 (Release-Blocker): Live-`hufi-agent` v40 BOLA** — fremde Termine änderbar/stornierbar, fremde Pferdeakten/Kundendaten lesbar, Push an beliebige Nutzer.
   Hotfix v41 `scripts/ops/edge-hotfix/hufi-agent-v41/` (21/21, Negativkontrolle 2/21) → wartet auf Deploy-Freigabe.
+
+### 27.09. abends — Security-Deploys LIVE (Owner-Freigabe)
+- `hufi-agent` **v41 live** (SHA256 = Repo). PROD-Tooltest 19/19. Befund: Assistent live funktionslos (Anthropic-Guthaben leer, Ollama 405).
+- Termin-DB-Guard **live**, Ledger `20260927120000`, PROD-Tests 9/9 REST + 7/7 SQL (Rollback), Bestandsdaten unverändert.
+- Designbefund: Hauptkonto ist Master-Admin → Admin-Ausnahme des Guards greift im Betriebsalltag (v2-Vorschlag).
+- 108 Termine getrennter Kunden: 0 aktive Zukunftstermine (38 zukünftige schon am 28.07. abgesagt), 54 alte offene.
+- Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md` Abschnitt 4.
