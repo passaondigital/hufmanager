@@ -124,3 +124,13 @@ enthält noch die ungescopten update/cancel/send_notification/create_horse-Zweig
 - Zukünftige Termine: 38, **alle bereits `cancelled`** → keine aktiven Zukunftstermine, keine Erinnerungen fällig.
 - Offen in der Vergangenheit: 54 (23 planned, 30 scheduled, 1 confirmed; 29.12.2025–27.07.2026), nie abgeschlossen, 0 Rechnungen.
 - Dubletten: 4 Paare am 16.07.2026 (offen, Vergangenheit), 12 Paare abgesagt.
+
+## 5. net._http_response — Ursache + vorbereitete Retention (NICHT angewendet)
+- Zeilen-Retention funktioniert (pg_net.ttl 6 h → 514 Zeilen). Speicher wird nicht frei: 7,7 MB Heap für 514 Zeilen, ~3 MB/Tag.
+- Ursache: pg_net- und pg_cron-Hintergrundworker melden Inserts/Deletes nicht an die Statistik (150 statt 514 Zeilen,
+  0 tote Tupel bei 311.236 Deletes; job_run_details 390 statt 6.778) → Autovacuum startet nie (letzter Lauf 05.08.).
+  Kein Snapshot-Halter → normales VACUUM wirkt.
+- Migration `20260927180000_add_pg_net_cron_vacuum_jobs_v1.sql`: pg_cron-Jobs `VACUUM (ANALYZE)` alle 6 h für
+  `net._http_response`, täglich 03:47 UTC für `cron.job_run_details`. Kein FULL, keine Sperre für pg_net/pg_cron, keine
+  Geschäftsdaten. Probelauf auf Supabase-Postgres 17.6.1.054: Job `succeeded`, idempotent. Rollback: `cron.unschedule` beider Jobs.
+- Weitere große Tabellen (beobachten, nicht Teil dieser Maßnahme): `system_health_checks` 110 MB, `notifications` 29 MB.
