@@ -2,6 +2,7 @@
 
 **Stand:** 25.09.2026 · Frontend `25d88773` · letzte Migration `20260925080000` · Production `vnschgjxkzzwzefqlrji`
 
+> 27.09.: Termin-DB-Guard fertig (39/39, wartet auf Apply-Freigabe); P0 hufi-agent-BOLA live gefunden, Hotfix v41 fertig (21/21, wartet auf Deploy-Freigabe). Details `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`.
 > 25.09. abends: Auth-Routing-Audit — hufiapp.de live nutzt ANDERES Supabase-Projekt; ConnectForm-Redirect-Fix `1d1d33fe` (nicht deployt); Termin-DB-Guard offen. Gesamtbericht `docs/HUFMANAGER_SLIM_GESAMTBERICHT_2026-09-25.md`.
 > 25.09.: Trial-Begrenzung live; P0 Cross-User-Cache behoben + PROD-verifiziert; offen: E-Mail-Bestätigung (Dashboard), P1 Termin-Schreibguard, Mobile-Realgerät, CopeCart-Testkauf, UX-Konsolidierung. Details `docs/CURRENT_STATE.md` (25.09.).
 Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CURRENT_STATE.md`.

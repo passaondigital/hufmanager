@@ -491,3 +491,12 @@ SAFE_TO_ENABLE_CONFIRM_EMAIL = NO (bis Deploy 1d1d33fe) → danach YES mit Templ
 - `mailer_autoconfirm=true` (Confirm Email AUS), Site URL unverändert.
 - Termin-DB-Guard: NICHT live, NICHT als Datei vorbereitet. Datenlage: 301 Termine; 254 Alt-Termine (bis 14.08.) ohne `client_id`
   (253 mit Grant-Historie Pferdebesitzer↔Provider, 1 ohne); wo `client_id` gesetzt: 0 Abweichung Pferd↔Kunde, 1 ohne aktiven Grant.
+
+## 27.09.2026 — Resume nach 48 h: Stand verifiziert, Termin-Guard vorbereitet, hufi-agent-BOLA gefunden
+
+Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`. Kein PROD-Write, kein Deploy.
+- Stand unverändert zu 25.09. (Frontend `6cd8715b`, Ledger `20260925080000`, Edge-Versionen gleich, Confirm Email AUS, DB stabil, Job 20 aus / 21 an).
+- `net._http_response` 9 MB / 150 Zeilen, Autovacuum seit 05.08. nie → beobachten (P1).
+- Termin-DB-Guard `20260927120000_add_appointment_relation_guard_v1` fertig: 39/39, Negativkontrolle 19/39, Apply+Rollback geprobt → wartet auf Apply-Freigabe.
+- **P0 (Release-Blocker): Live-`hufi-agent` v40 BOLA** — fremde Termine änderbar/stornierbar, fremde Pferdeakten/Kundendaten lesbar, Push an beliebige Nutzer.
+  Hotfix v41 `scripts/ops/edge-hotfix/hufi-agent-v41/` (21/21, Negativkontrolle 2/21) → wartet auf Deploy-Freigabe.
