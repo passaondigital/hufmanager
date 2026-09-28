@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Crown, ExternalLink, Check, AlertCircle, Clock, Loader2, ArrowUpRight } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PricingModal } from "./PricingModal";
+import { SlimSubscriptionCard } from "./SlimSubscriptionCard";
+import { ACTIVE_FLAVOR } from "@/config/appFlavor";
 
 const PLAN_NAMES: Record<string, string> = {
   starter: "Starter",
@@ -23,6 +25,12 @@ const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secon
 const COPECART_LOGIN_URL = "https://copecart.com/login";
 
 export function SubscriptionCard() {
+  // HufManager: kanonischer Slim-Zustand statt Legacy-Mehrstufenmodell (Starter/Advanced/Profi).
+  if (ACTIVE_FLAVOR === "hufmanager") return <SlimSubscriptionCard />;
+  return <LegacySubscriptionCard />;
+}
+
+function LegacySubscriptionCard() {
   const { status, plan, loading } = useSubscription();
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
 

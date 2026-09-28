@@ -22,7 +22,7 @@ export function SlimTrialBanner() {
           <strong>Testphase aktiv</strong> · noch {info.daysLeft} {info.daysLeft === 1 ? "Tag" : "Tage"} (bis {info.endDateLabel})
         </span>
       </div>
-      <Button size="sm" className="h-10 shrink-0" onClick={() => navigate("/management/abo")}>
+      <Button size="sm" className="h-auto min-h-10 shrink-0 whitespace-normal py-2 text-left sm:text-center" onClick={() => navigate("/management/abo")}>
         Jetzt HufManager freischalten – 19,95 €/Monat
       </Button>
     </div>
