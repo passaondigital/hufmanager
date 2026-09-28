@@ -93,6 +93,15 @@ interface AdminProviderTabProps {
   onQuickView: (provider: ProviderData) => void;
 }
 
+// Nur der Hostname des Supabase-Projekts (kein Key) – zeigt in der Diagnose, wohin die Anfrage geht.
+function supabaseHost(): string {
+  try {
+    return new URL(import.meta.env.VITE_SUPABASE_URL).host;
+  } catch {
+    return "unbekannt";
+  }
+}
+
 export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuickView }: AdminProviderTabProps) {
   const { logActivity } = useAdminActivityLog();
   const [searchTerm, setSearchTerm] = useState("");
@@ -200,20 +209,30 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
   };
 
   const handleCreateUser = async () => {
+    // Diagnose (28.09.2026): jeder Schritt sichtbar, damit auf dem Handy klar ist, ob Klick → Handler → Edge-Request
+    // → Antwort ankommen. Keine Secrets: nur Plan, Zielhost und HTTP-Status.
+    const diagId = "provider-create-diag";
+    toast.dismiss(diagId); toast.dismiss(`${diagId}-1`);
+    toast.info(`1/3 Klick angekommen – Anlage gestartet (Plan: ${newUserPlanOverride})`, { id: `${diagId}-1`, duration: 60000 });
     if (!newUserEmail || !newUserFirstName || !newUserLastName) {
-      toast.error("Bitte E-Mail, Vorname und Nachname ausfüllen");
+      toast.error("Abgebrochen: Bitte E-Mail, Vorname und Nachname ausfüllen", { id: diagId });
       return;
     }
     setCreating(true);
+    let watchdog: ReturnType<typeof setTimeout> | undefined;
     try {
       // Kein erfundenes Datum: Barzahlung/Beta brauchen ein explizites Enddatum, Standard/Lifetime keins.
       const grantCheck = validateProviderPlanGrant(newUserPlanOverride, newUserAccessValidUntil);
       if ("error" in grantCheck) {
-        toast.error(grantCheck.error);
+        toast.error(`Abgebrochen: ${grantCheck.error}`, { id: diagId });
         return;
       }
       const accessDate = planRequiresEndDate(newUserPlanOverride) ? newUserAccessValidUntil : null;
       const enabledServices = newUserServices.filter(s => s.enabled).map(s => ({ name: s.name, price: s.price }));
+      toast.loading(`2/3 Anfrage an Server gesendet (${supabaseHost()}) …`, { id: diagId });
+      watchdog = setTimeout(() => {
+        toast.warning("Keine Antwort nach 20 s – Anfrage hängt im Browser oder Netz. Seite neu laden und erneut versuchen.", { id: diagId, duration: 60000 });
+      }, 20000);
       const { data, error } = await supabase.functions.invoke("admin-create-user", {
         body: {
           email: newUserEmail, password: newUserPassword || null,
@@ -226,8 +245,10 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
           initialServices: enabledServices.length > 0 ? enabledServices : null,
         },
       });
+      clearTimeout(watchdog);
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || "Keine Bestätigung vom Server – Provider wurde nicht angelegt");
+      toast.success(`3/3 Server-Antwort OK (slimTrial: ${data.slimTrial ?? "-"}, Zugang: ${data.manualAccess ?? "-"})`, { id: diagId, duration: 15000 });
       await logActivity({ actionType: "provider_created", targetType: "provider", targetId: data.user?.id, targetName: `${newUserFirstName} ${newUserLastName} (${newUserEmail})`, details: { planOverride: newUserPlanOverride, email: newUserEmail } });
       if (data.manualAccess === "failed") {
         toast.error("Provider angelegt, aber der Zugang (Grant) konnte nicht gesetzt werden – bitte prüfen");
@@ -246,8 +267,10 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
       ]);
       onRefresh();
     } catch (error: unknown) {
-      toast.error(await edgeFunctionErrorMessage(error, "Fehler beim Erstellen"));
+      clearTimeout(watchdog);
+      toast.error(`3/3 Fehler: ${await edgeFunctionErrorMessage(error, "Fehler beim Erstellen")}`, { id: diagId, duration: 60000 });
     } finally {
+      clearTimeout(watchdog);
       setCreating(false);
     }
   };
