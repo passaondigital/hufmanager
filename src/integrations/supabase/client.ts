@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { ACTIVE_FLAVOR } from '@/config/appFlavor';
+import { tabScopedAuthStorageKey } from './tabScopedAuthKey';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -38,10 +39,17 @@ const authStorage = ACTIVE_FLAVOR === 'hufmanager' ? sessionStorage : localStora
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// HufManager: Auth-Lock + Broadcast tab-lokal wie die Session (siehe tabScopedAuthKey.ts).
+const authStorageKey =
+  ACTIVE_FLAVOR === 'hufmanager' && typeof window !== 'undefined'
+    ? tabScopedAuthStorageKey(sessionStorage, SUPABASE_URL)
+    : undefined;
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: authStorage,
     persistSession: true,
     autoRefreshToken: true,
+    ...(authStorageKey ? { storageKey: authStorageKey } : {}),
   }
 });
