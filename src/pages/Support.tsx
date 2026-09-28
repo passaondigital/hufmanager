@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { MessageCircle, Mail } from "lucide-react";
 import { Tile, TileCategory, TileHubHeader } from "@/components/ui/TileHub";
 import { Badge } from "@/components/ui/badge";
+import { isFeatureEnabled } from "@/config/featureFlags";
 
 interface SupportProps {
   basePath?: string;
@@ -22,7 +23,7 @@ const Support = ({ basePath }: SupportProps) => {
       <TileHubHeader icon="🛟" title="Hilfe & Support" subtitle="Finde Antworten oder kontaktiere uns" />
 
       <TileCategory title="Support-Optionen">
-        <Tile
+        {isFeatureEnabled("hufiAssistant") && <Tile
           icon={<MessageCircle className="w-10 h-10 text-primary" />}
           title="Chat starten"
           description="Frag Hufi — KI-Assistent, Sofort-Hilfe, 24/7 verfügbar"
@@ -32,7 +33,7 @@ const Support = ({ basePath }: SupportProps) => {
             </Badge>
           }
           onClick={handleChatOpen}
-        />
+        />}
         <Tile
           icon={<Mail className="w-10 h-10 text-primary" />}
           title="E-Mail"

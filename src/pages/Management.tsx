@@ -53,6 +53,8 @@ import { CompanyLocationCard } from "@/components/settings/CompanyLocationCard";
 import { TutorialSettingsCard } from "@/components/settings/TutorialSettingsCard";
 import { ManagementTab } from "@/components/management/ManagementTab";
 import { HufiRoutinesManager } from "@/components/routines/HufiRoutinesManager";
+import { HufiAssistantUnavailableCard } from "@/components/settings/HufiAssistantUnavailableCard";
+import { isFeatureEnabled } from "@/config/featureFlags";
 import { EmailAccountConnect } from "@/components/settings/EmailAccountConnect";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -441,9 +443,11 @@ const Management = ({ tabs: tabFilter, hideChrome }: ManagementProps = {}) => {
           { value: "b2b-management", icon: Briefcase, label: "Management" },
           { value: "routines", icon: Zap, label: "Routinen" },
         ];
+        const assistantEnabled = isFeatureEnabled("hufiAssistant");
+        const enabledTabs = ALL_TAB_DEFS.filter((t) => assistantEnabled || t.value !== "routines");
         const visibleTabs = tabFilter
-          ? ALL_TAB_DEFS.filter((t) => tabFilter.includes(t.value))
-          : ALL_TAB_DEFS;
+          ? enabledTabs.filter((t) => tabFilter.includes(t.value))
+          : enabledTabs;
         const defaultTab = visibleTabs[0]?.value || "business";
 
         return (
@@ -1002,7 +1006,7 @@ Steuernummer: 43/150/40518
           <CommunicationSettingsCard />
           <EmailAccountConnect userId={user?.id ?? ""} />
           <AppSettingsCard />
-          <KiSettingsCard userId={user?.id ?? ""} />
+          {isFeatureEnabled("hufiAssistant") ? <KiSettingsCard userId={user?.id ?? ""} /> : <HufiAssistantUnavailableCard />}
           <TutorialSettingsCard />
         </TabsContent>
 
@@ -1012,7 +1016,7 @@ Steuernummer: 43/150/40518
         </TabsContent>
 
         <TabsContent value="routines" className="mt-6">
-          <HufiRoutinesManager />
+          {isFeatureEnabled("hufiAssistant") ? <HufiRoutinesManager /> : <HufiAssistantUnavailableCard />}
         </TabsContent>
       </Tabs>
         );

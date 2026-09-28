@@ -57,6 +57,15 @@ export const FEATURE_FLAGS = {
     enabled: false,
     beschreibung: "Hey-Hufi-Wake-Word — temporär hinter Feature-Flag deaktiviert (Mikrofon-Kollision mit Sprachaufnahme), Tippen/Mic-Button unberührt",
   },
+  // Hufi-KI-Assistent (Chat, "Hufi spricht mich an", Routinen, Support-Chat).
+  // Vorübergehend aus der sichtbaren Oberfläche genommen (28.09.2026): Der
+  // KI-Anbieter ist derzeit nicht erreichbar (hufi-agent 503). Nichts gelöscht —
+  // Daten, Gedächtnis (/hufi/memory bleibt für DSGVO erreichbar), Komponenten und
+  // Edge Functions bleiben unverändert. Wiederaktivierung: enabled auf true.
+  hufiAssistant: {
+    enabled: false,
+    beschreibung: "Hufi-KI-Assistent — vorübergehend ausgeblendet (KI-Anbieter nicht erreichbar), Daten und Funktionen bleiben erhalten",
+  },
 } as const satisfies Record<string, FeatureFlag>;
 
 export type FeatureFlagKey = keyof typeof FEATURE_FLAGS;
