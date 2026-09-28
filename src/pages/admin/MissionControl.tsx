@@ -300,9 +300,10 @@ export default function MissionControl() {
             return;
           }
           // Anzeigefeld = kanonische exklusive Grenze aus dem Entitlement (Lifetime: kein Ende)
-          const { data: granted } = await supabase.from("product_entitlements").select("current_period_end")
+          // product_entitlements fehlt in den generierten Typen → bewusst untypisiert gelesen (Admin-RLS: lesen erlaubt)
+          const { data: granted } = await (supabase.from("product_entitlements" as never) as any).select("current_period_end")
             .eq("user_id", selectedProvider.id).eq("product", "HUFMANAGER").eq("plan", "HUFMANAGER_SLIM").maybeSingle();
-          nextAccessValidUntil = granted?.current_period_end ?? null;
+          nextAccessValidUntil = (granted as { current_period_end: string | null } | null)?.current_period_end ?? null;
         } else if (editPlanOverride === "standard" && MANUAL_GRANT_BY_PLAN[oldPlan]) {
           if (!window.confirm("Manuellen Zugang (Lifetime/Barzahlung/Beta) entziehen? Der Provider verliert den Zugang, bis er bezahlt.")) return;
           const { error: revokeError } = await supabase.rpc("hm_admin_set_hufmanager_manual_access_v1" as never, {
