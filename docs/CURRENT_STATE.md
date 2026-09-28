@@ -1,6 +1,6 @@
 # HufManager — CURRENT STATE / SOURCE OF TRUTH
 
-**Stand:** 24.09.2026, Nachmittag (live verifiziert, read-only gegen Production; MCP-Ziel per get_project = HufManager/eu-central-1 bestätigt)
+**Stand:** 28.09.2026 (neueste Einträge am Dateiende; Kopfabschnitte 1–7 = Stand 24.09.2026, live verifiziert, read-only gegen Production; MCP-Ziel per get_project = HufManager/eu-central-1 bestätigt)
 
 > Aktueller technischer Snapshot für Menschen und Agenten. Bei Widerspruch gilt:
 > Repo + aktuelle Runtime + aktuelle DB + reproduzierbare Testevidenz vor älterer Doku.
@@ -468,8 +468,8 @@ Nicht genutzt im Frontend: Email-Change (`updateUser({email})`), Reauthenticatio
 
 **Edge-Functions (eigene Resend-Mails, unabhängig von Confirm email):**
 - `admin-create-user` v132 + `send-provider-invitation` v110: `generateLink(magiclink)` mit `redirectTo: https://hufiapp.de/auth`
-  → Provider landet in fremder App (P1, nur Admin-Pfad).
-- `send-employee-invitation` v94: `APP_URL || https://app.hufiapp.de` (Zertifikat ungültig; Secret-Wert unbekannt) (P1).
+  → Provider landet in fremder App (P1, nur Admin-Pfad) — **behoben 28.09. (v133/v111)**.
+- `send-employee-invitation` v94: `APP_URL || https://app.hufiapp.de` (Zertifikat ungültig; Secret-Wert unbekannt) (P1) — **behoben 28.09. (v95)**.
 - `send-partner-invitation` v81: `APP_URL || https://hufiapp.de` (P2); `send-client-invitation`: Origin-Header, Fallback hufiapp.de (P2).
 - `copecart-webhook` Repo-Fassung `inviteUserByEmail` → hufiapp.de/auth; live v165 ack-only → derzeit tot.
 
@@ -512,5 +512,33 @@ Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`. Kein PROD-Write, kei
 - net-Retention `20260927180000` live (Jobs 25/26, Erstlauf ok), Ghost-Grant-Fix `20260928090000` live (PROD 9/9),
   Termin-Guard-Admin-Nachbesserung `20260928100000` live (PROD 7/7, Regression 45/45). Ledger `20260928100000`.
 - Security-/Production-Smoke 38/38. Bestandsdaten unverändert (Grants 71, Termine 301, md5 vor = nach).
-- Unverändert offen: Assistent live funktionslos (Anthropic-Guthaben), Confirm Email AUS, Auth-Routing-Fixes (Edge-Redirects hufiapp.de).
+- Unverändert offen: Assistent live funktionslos (Anthropic-Guthaben), Confirm Email AUS, ~~Auth-Routing-Fixes (Edge-Redirects hufiapp.de)~~ → **behoben**, s. u. (v133/v111/v95).
 - Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md` Abschnitt 6.
+
+### 28.09. mittags/nachmittags — Assistent ausgeblendet, Auth-Routing-Fix LIVE (Owner-Freigabe)
+- Frontend `84d7d45d` live: Hufi-Assistent per `FEATURE_FLAGS.hufiAssistant=false` ausgeblendet.
+- Edge-Deploy nur namentlich (verify_jwt unverändert): `admin-create-user` **v133**, `send-provider-invitation` **v111**,
+  `send-employee-invitation` **v95** (Code `9f6c129d`). Magic-Links → `https://app.hufmanager.de/reset-password`,
+  Mitarbeiter-Link → `https://app.hufmanager.de/employee-invite?token=…`, Token-Logging entfernt.
+  Rollback: `git show 9f6c129d~1:supabase/functions/<name>/index.ts`.
+- **E2E PROD:**
+  - `admin-create-user`: Admin-UI (Pascal) → QA-Provider `+qa-prov-0928`; Function-Log 09:38:56Z „Admin … creating provider …
+    usePassword: false“ → „Sending custom provider invitation email…“ → Resend `error: null`; Resend-Status DELIVERED;
+    Link `type=magiclink&redirect_to=https://app.hufmanager.de/reset-password` (extern verifiziert). **PASS**
+  - `send-employee-invitation`: QA-A → QA-Mitarbeiter → Mail mit `app.hufmanager.de/employee-invite?token=…`, Seite zeigt Einladung
+    (nicht angenommen, Testdatensatz gelöscht). **PASS**
+  - `send-provider-invitation`: v111 deployt, aber **kein Aufrufer** im Frontend-Quellcode/Live-Bundle → per UI nicht auslösbar;
+    E2E = N/A (Negativtest 403/401 PASS). Entscheidung offen: Function entfernen oder UI-Aufruf („Einladung erneut senden“) bauen (P2).
+  - Function-Logs 09:10–jetzt: kein Einladungslink/Token (nur `Employee invitation prepared { employeeId }`). Login/Reset/Signup-Settings
+    PASS, `mailer_autoconfirm=true`, Security-Smoke 38/38.
+- **Supabase-Projekte (verifiziert: Live-Bundles, `.env`, nginx):** HufManager `vnschgjxkzzwzefqlrji`, HufiApp `oortmejcefbiewaceccc`
+  → **getrennte Auth-Projekte** (Annahme „gleiche Instanz“ ist falsch).
+- **Neue Befunde (28.09.):**
+  - **P1 Admin-angelegte Provider ohne Slim-Entitlement:** `admin-create-user` setzt kein `signup_app` → Trial-Trigger
+    (nur `signup_app='hufmanager'`) greift nicht → kein `product_entitlements`-Eintrag, `_hm_has_hufmanager_access_v1 = false`.
+    Auswirkung auf Nutzbarkeit noch nicht geprüft. Nichts mutiert.
+  - **P1 Mission Control zeigt Legacy-Felder:** „Plan Starter / Status trialing“ = `profiles.subscription_plan/subscription_status`
+    (Spalten-Defaults `'starter'`/`'trialing'`, `trial_ends_at` Default +30 Tage) — nicht die Slim-Wahrheit (`product_entitlements`,
+    19,95 €/Monat, 14 Tage). „Preis 45 €“ = `services.base_price` der im Admin-Formular angelegten Leistung „Barhufbearbeitung“,
+    **kein Abo-Preis**. Kein falscher Billing-State gespeichert; nur irreführende Anzeige.
+  - **P1 Branding:** Provider-Mails (`admin-create-user`, `send-provider-invitation`) nennen `support@hufiapp.de`.

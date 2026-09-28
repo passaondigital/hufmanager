@@ -114,8 +114,10 @@ Live-Verifikation:
   (nicht angenommen). QA-Mitarbeiter danach gelöscht. **PASS**
 - `admin-create-user` v133 Live-Code gelesen = Repo (redirectTo `/reset-password`). v95 Live-Code = Repo.
 - Negativ: beide Admin-Functions als Nicht-Admin 403, ohne JWT 401.
-- Admin-/Provider-Invite **E2E offen**: kein QA-Admin-Konto; temporäre Admin-Rolle für QA vom Auto-Mode blockiert.
-- Function-Log-Abfrage auf Token: vom Auto-Mode blockiert → per Code belegt (kein Link-/Token-Logging).
+- Admin-Invite (`admin-create-user`): Pascal legt QA-Provider `+qa-prov-0928` ohne Passwort an → Log 09:38:56Z, Resend DELIVERED,
+  Link `type=magiclink&redirect_to=https://app.hufmanager.de/reset-password`. **PASS**
+- `send-provider-invitation`: kein Aufrufer im Frontend/Live-Bundle → per UI nicht auslösbar, E2E N/A (P2: entfernen oder anbinden).
+- Function-Logs: kein Link/Token (nur `employeeId`). **PASS**
 - Login QA-A 200, Reset-Mail an QA-B 200, `mailer_autoconfirm=true`, `prod_security_smoke.py` 38/38.
 
 Supabase-Projekte (live Bundles + nginx): HufManager `vnschgjxkzzwzefqlrji`, HufiApp `oortmejcefbiewaceccc`

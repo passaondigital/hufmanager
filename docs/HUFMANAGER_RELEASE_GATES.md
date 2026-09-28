@@ -2,6 +2,7 @@
 
 **Stand:** 25.09.2026 · Frontend `25d88773` · letzte Migration `20260925080000` · Production `vnschgjxkzzwzefqlrji`
 
+> 28.09. nachm.: Auth-Routing-Fix LIVE (admin-create-user v133, send-provider-invitation v111, send-employee-invitation v95; Admin- + Employee-Invite E2E PASS; send-provider-invitation ohne UI-Aufrufer). HufiApp = eigenes Supabase-Projekt `oortmejcefbiewaceccc`. Neu P1: Admin-angelegte Provider ohne Slim-Entitlement; Mission Control zeigt Legacy-Plan/Service-Preis; support@hufiapp.de in Provider-Mails.
 > 28.09.: net-Retention, Ghost-Grant-Fix und Termin-Guard-Admin-Nachbesserung LIVE (Ledger 20260928100000); Security-/Production-Smoke 38/38. Offen: Assistent (Anthropic-Guthaben), Confirm Email, Auth-Routing-Redirects, Billing-Zahlungs-E2E.
 > 27.09.: Termin-DB-Guard LIVE (Ledger 20260927120000, PROD 9/9+7/7); hufi-agent-BOLA behoben, v41 LIVE (PROD 19/19). KI-Assistent live funktionslos (Anthropic-Guthaben). Details `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`.
 > 25.09. abends: Auth-Routing-Audit — hufiapp.de live nutzt ANDERES Supabase-Projekt; ConnectForm-Redirect-Fix `1d1d33fe` (nicht deployt); Termin-DB-Guard offen. Gesamtbericht `docs/HUFMANAGER_SLIM_GESAMTBERICHT_2026-09-25.md`.
@@ -16,7 +17,7 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 | TYPECHECK | PARTIAL | 131 TS-Diagnosen = Baseline, 0 neue |
 | UNIT_TESTS | TESTED | vitest 309/309; copecart Laufzeit-Check 10/10 |
 | DB_TESTS | PARTIAL | Trial-Migration 17/17 lokal + Negativkontrollen; Invite-RPCs N4–N13; keine CI-Suite |
-| AUTH | PARTIAL | Signup/Login/Token-Pfade live (QA), 401/403/410 geprüft; Password-Recovery nicht getestet |
+| AUTH | PARTIAL | Signup/Login/Reset live (QA); Admin-Provider-Invite + Employee-Invite E2E PASS → app.hufmanager.de (28.09.); Confirm Email AUS, Template „Confirm signup“ ungeprüft |
 | FIRST_LOGIN | PARTIAL | Wizard-Hänger behoben (2668a344, Browser-verifiziert); Trial live; Mobile nicht getestet. Vorher: | Trial live: frische Registrierung → TRIAL_ACTIVE 14 T.; UI-Durchlauf (Onboarding-Wizard, Mobile) nicht getestet |
 | TENANT_ISOLATION | BLOCKED | Kunden/Grants/Kontakte/Invites isoliert (36/36), ABER Leistungskatalog (`services`) Cross-Tenant lesbar und in Terminen referenziert. Vorher: | Prod QA A↔B mit echten Kunden: 36/36 Adversarial-Checks (2× gelaufen), 0 fremde Grants |
 | CLIENT_INVITE | TESTED | Prod: Invite A/B, Grant/Kontakt/Invite korrekt, kein Fallback; Resend 8/8; kein Passwort im Browser |
