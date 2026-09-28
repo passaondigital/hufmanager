@@ -116,7 +116,7 @@ export function QuickAddAppointmentFAB({
         time: formData.time,
         service_type: formData.serviceType,
         notes: formData.notes,
-        status: "scheduled",
+        status: "planned",
         is_emergency: formData.isEmergency,
         added_during_tour: true,
         tour_order: currentAppointmentCount + 1,

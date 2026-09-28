@@ -737,7 +737,7 @@ export function DayCockpit() {
         time: format(new Date(), "HH:mm"),
         service_type: formData.serviceType,
         notes: formData.notes || "Notfall-Termin während Tour",
-        status: "scheduled",
+        status: "planned",
         is_emergency: true,
         added_during_tour: true,
         tour_order: insertIdx + 2, // After the insert position

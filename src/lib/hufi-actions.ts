@@ -303,7 +303,7 @@ async function _createInvoice(
           total_amount:   totalNetto,
           status:         "draft",
           payment_status: null,
-          customer_type:  "client",
+          customer_type:  "privat",
           notes:          (payload.notes as string | null) ?? notesDefault,
         },
         p_items: itemRows,

@@ -209,7 +209,7 @@ export default function ClientBooking() {
           duration: selectedService.duration || 60,
           service_type: selectedService.name,
           price: selectedService.base_price,
-          status: "scheduled",
+          status: "planned",
           notes: notes || null,
           is_confirmed_by_client: true,
           confirmed_at: new Date().toISOString(),

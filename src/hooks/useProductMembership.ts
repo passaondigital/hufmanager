@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ACTIVE_FLAVOR } from "@/config/appFlavor";
 import {
   PRODUCT_SPLITTER_MIGRATION_VERSION,
   resolveProductMembership,
@@ -43,11 +44,12 @@ export function clearProductMembershipCache() {
 }
 
 export function useProductMembership(userId?: string | null): ProductMembershipState {
+  const hufmanagerOnly = ACTIVE_FLAVOR === "hufmanager";
   const cached = userId ? membershipCache.get(userId) : undefined;
   const [memberships, setMemberships] = useState<ProductMembership[]>(cached?.memberships ?? []);
   const [activeProducts, setActiveProducts] = useState<ProductKey[]>(cached?.activeProducts ?? []);
-  const [resolution, setResolution] = useState<ProductMembershipResolution>(cached?.resolution ?? "resolving");
-  const [loading, setLoading] = useState(Boolean(userId) && !cached);
+  const [resolution, setResolution] = useState<ProductMembershipResolution>(cached?.resolution ?? (hufmanagerOnly ? "unavailable" : "resolving"));
+  const [loading, setLoading] = useState(Boolean(userId) && !cached && !hufmanagerOnly);
   const [error, setError] = useState<string | null>(cached?.error ?? null);
 
   const refresh = useCallback(async () => {
@@ -57,6 +59,19 @@ export function useProductMembership(userId?: string | null): ProductMembershipS
       setResolution("unavailable");
       setLoading(false);
       setError(null);
+      return;
+    }
+
+    // HufManager ist ein Einzelprodukt: Zugang entscheidet get_hufmanager_access_context_v1 (product_entitlements).
+    // Der Produkt-Splitter (get_product_membership_context) ist auf PROD nicht angewendet und lieferte bei
+    // jedem Seitenaufruf 404 → hier gar nicht erst fragen (gleiches Ergebnis wie bisher: "unavailable").
+    if (ACTIVE_FLAVOR === "hufmanager") {
+      membershipCache.set(userId, { memberships: [], activeProducts: [], resolution: "unavailable", error: null });
+      setMemberships([]);
+      setActiveProducts([]);
+      setResolution("unavailable");
+      setError(null);
+      setLoading(false);
       return;
     }
 
