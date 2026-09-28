@@ -542,3 +542,10 @@ Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`. Kein PROD-Write, kei
     19,95 €/Monat, 14 Tage). „Preis 45 €“ = `services.base_price` der im Admin-Formular angelegten Leistung „Barhufbearbeitung“,
     **kein Abo-Preis**. Kein falscher Billing-State gespeichert; nur irreführende Anzeige.
   - **P1 Branding:** Provider-Mails (`admin-create-user`, `send-provider-invitation`) nennen `support@hufiapp.de`.
+
+### 28.09. abends — Admin-Provider ↔ Slim-Trial: Fix VORBEREITET (nicht PROD)
+- Root Cause: `admin-create-user` übergibt kein `signup_app` im Auth-Insert → Trial-Trigger (nur `signup_app='hufmanager'`) greift nicht;
+  späteres Profil-Update zu spät. Fix: `user_metadata.signup_app='hufmanager'` nur bei Standard-Anlage (ohne planOverride),
+  kanonischer Writer `hm_start_hufmanager_slim_trial_v1` über bestehenden Trigger. DB-Tests 19/19 (Negativkontrolle 9/19),
+  Edge-Guard 4/4, vitest 347/347. Details + Plan-Override-Matrix: `docs/billing/ADMIN_PROVIDER_SLIM_TRIAL_2026-09-28.md`.
+- Offen P1 (Business-Entscheidung): Override-Pläne (lifetime/manual/copecart/beta/employee) erhalten bei Admin-Anlage **kein** Entitlement.

@@ -149,16 +149,28 @@ serve(async (req: Request) => {
     const fullName = `${firstName} ${lastName}`;
     let sendCustomInvitation = false;
 
+    // Standard-Anlage (kein planOverride) = normaler HufManager-Slim-Provider.
+    // signup_app muss schon im Auth-Insert stehen: handle_new_user schreibt das Profil
+    // (inkl. signup_app) VOR der Provider-Rolle, und nur dieser Rollen-Insert startet
+    // über den bestehenden Trigger den kanonischen 14-Tage-Trial
+    // (hm_start_hufmanager_slim_trial_v1, einmal pro Identität). Ein späteres
+    // Profil-Update würde keinen Trial mehr auslösen.
+    // Override-Pläne (Lifetime, Barzahlung, Mitarbeiter, CopeCart …) erhalten bewusst
+    // KEINEN Trial.
+    const isStandardSlimProvider = !planOverride;
+    const userMetadata: Record<string, string> = {
+      full_name: fullName,
+      role: "provider",
+      ...(isStandardSlimProvider ? { signup_app: "hufmanager" } : {}),
+    };
+
     if (password) {
       // Create user with password (direct login, no email confirmation needed)
       const result = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
         email_confirm: true, // Mark email as confirmed immediately
-        user_metadata: {
-          full_name: fullName,
-          role: "provider",
-        },
+        user_metadata: userMetadata,
       });
       newUser = result.data;
       createError = result.error;
@@ -168,10 +180,7 @@ serve(async (req: Request) => {
       const result = await supabaseAdmin.auth.admin.createUser({
         email,
         email_confirm: true, // Mark as confirmed so magic link works
-        user_metadata: {
-          full_name: fullName,
-          role: "provider",
-        },
+        user_metadata: userMetadata,
       });
       newUser = result.data;
       createError = result.error;
@@ -197,6 +206,23 @@ serve(async (req: Request) => {
     const userEmail = newUser.user.email;
 
     console.log("User created:", userId);
+
+    // Trial-Start läuft im Auth-Insert und bricht die Anlage bei Fehlern nie ab
+    // (Trigger protokolliert TRIAL_START_UNEXPECTED_ERROR). Hier nur sichtbar machen.
+    let slimTrial: "active" | "missing" | "not_applicable" = "not_applicable";
+    if (isStandardSlimProvider) {
+      const { data: entitlement } = await supabaseAdmin
+        .from("product_entitlements")
+        .select("status")
+        .eq("user_id", userId)
+        .eq("product", "HUFMANAGER")
+        .eq("plan", "HUFMANAGER_SLIM")
+        .maybeSingle();
+      slimTrial = entitlement?.status === "TRIAL_ACTIVE" ? "active" : "missing";
+      if (slimTrial === "missing") {
+        console.error("Slim trial missing after admin provider creation:", userId);
+      }
+    }
 
     // Update the profile with all fields
     const profileUpdate: Record<string, unknown> = {
@@ -470,7 +496,8 @@ serve(async (req: Request) => {
           full_name: fullName,
           readable_id: profile?.readable_id,
         },
-        invitationSent: sendCustomInvitation
+        invitationSent: sendCustomInvitation,
+        slimTrial,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
