@@ -95,3 +95,28 @@ Kein Management-Token auf dem Server (`~/.supabase/access-token` fehlt), MCP lie
 4. **Nichts ändern, nichts speichern.** Screenshot oder den Link-Teil des Quelltextes an Claude schicken.
 5. Gleiches für **Invite user**, **Change email address** und **Reauthentication** (nur ansehen).
 6. Für HufiApp dasselbe im Projekt `oortmejcefbiewaceccc` (falls in einer anderen Organisation/einem anderen Konto).
+
+## Deploy 28.09.2026 ~11:15 (Freigabe Pascal)
+
+Nur namentlich per Supabase-MCP, verify_jwt unverändert:
+
+| Function | vorher | nachher | verify_jwt |
+|---|---|---|---|
+| `send-employee-invitation` | v94 | **v95** | false |
+| `send-provider-invitation` | v110 | **v111** | true |
+| `admin-create-user` | v132 | **v133** | true |
+
+Rollback: `git show 9f6c129d~1:supabase/functions/<name>/index.ts` (= Live-Code v94/v110/v132, per MCP gelesen).
+
+Live-Verifikation:
+- Employee: QA-A legt QA-Mitarbeiter an → `send-employee-invitation` 200 → Mail (Resend) enthält
+  `https://app.hufmanager.de/employee-invite?token=…`; Seite zeigt „QA Provider A hat dich … eingeladen“
+  (nicht angenommen). QA-Mitarbeiter danach gelöscht. **PASS**
+- `admin-create-user` v133 Live-Code gelesen = Repo (redirectTo `/reset-password`). v95 Live-Code = Repo.
+- Negativ: beide Admin-Functions als Nicht-Admin 403, ohne JWT 401.
+- Admin-/Provider-Invite **E2E offen**: kein QA-Admin-Konto; temporäre Admin-Rolle für QA vom Auto-Mode blockiert.
+- Function-Log-Abfrage auf Token: vom Auto-Mode blockiert → per Code belegt (kein Link-/Token-Logging).
+- Login QA-A 200, Reset-Mail an QA-B 200, `mailer_autoconfirm=true`, `prod_security_smoke.py` 38/38.
+
+Supabase-Projekte (live Bundles + nginx): HufManager `vnschgjxkzzwzefqlrji`, HufiApp `oortmejcefbiewaceccc`
+→ **getrennte Auth-Projekte**.
