@@ -1,6 +1,6 @@
 # HufManager — CURRENT STATE / SOURCE OF TRUTH
 
-**Stand:** 28.09.2026 abends (neueste Einträge am Dateiende; Kopfabschnitte 1–7 = Stand 24.09.2026, live verifiziert, read-only gegen Production; MCP-Ziel per get_project = HufManager/eu-central-1 bestätigt)
+**Stand:** 28.09.2026 ~20:45 (neueste Einträge am Dateiende; Kopfabschnitte 1–7 = Stand 24.09.2026, live verifiziert, read-only gegen Production; MCP-Ziel per get_project = HufManager/eu-central-1 bestätigt)
 
 > Aktueller technischer Snapshot für Menschen und Agenten. Bei Widerspruch gilt:
 > Repo + aktuelle Runtime + aktuelle DB + reproduzierbare Testevidenz vor älterer Doku.
@@ -582,3 +582,22 @@ Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`. Kein PROD-Write, kei
 - Bestand: SAFE_MANUAL_FIXED_TERM 2 · MANUAL_REVIEW 2 (Lifetime ohne Beleg; copecart_pro nur Testzahlung) · GRANDFATHER 28 (+3 Alt-Trial)
   · UNKNOWN 1 · DO_NOT_MIGRATE 8. Details `docs/billing/OVERRIDE_ENTITLEMENTS_AUDIT_2026-09-28.md` §12–14,
   Architektur/Rollback `docs/billing/MANUAL_ACCESS_WRITER_ARCHITECTURE.md`.
+
+### 28.09. ~20:45 — Manual-Access-Writer + Profil-Härtung LIVE (PROD vnschgjxkzzwzefqlrji)
+- Pre-Deploy (frisch): Manual-Access 72/72 (inkl. Winter/Sommer/DST D1–D7, T06a/b 1 s vor/an Grenze), Härtung 7/7,
+  Trial-Regression 19/19, vitest 363/363, deno check admin-create-user PASS, tsc 0 Fehler in geänderten Dateien (131 Baseline).
+- PROD-Vorzustand = Rollback-Doku (Gates-md5, 42 Entitlements md5 da5543de, 0 manual).
+- A/B: `20260929090000` per kanonischem Apply-Skript (md5-Guard 32b429ca, Ledger-Version exakt); 6 Funktionen md5 = lokal getestet;
+  Grants: Kern nur service_role, Wrapper authenticated, anon nein; Entitlements unverändert.
+- C/D: `20260929100000` (md5 de4643ac); `prevent_billing_self_update` md5 c25b2d08 = lokal; Trigger BEFORE UPDATE aktiv.
+- E/F: `admin-create-user` **v135** (Stand ae2c7861), Rücklese inhaltlich = Repo, OPTIONS 200, ohne JWT 401.
+- G/H: Frontend `c8bbd096` via `./deploy.sh hufmanager` (Gates + Smoke 0 Errors), previous `84d7d45d`; Bundle enthält Wrapper-Aufruf
+  und neue Planliste.
+- I: nur die 2 bestätigten Barzahlungs-Fälle über `hm_set_hufmanager_manual_access_v1` (Akteur = ursprünglicher Anlage-Admin):
+  letzter Tag 15.01.2027 → Grenze 16.01.2027 00:00 Berlin; letzter Tag 27.02.2027 → Grenze 28.02.2027 00:00 Berlin.
+  ACTIVE / NONE / manual / MANUAL_GRANT, je 1 `manual_access_granted`-Event, `access_valid_until` gespiegelt. Genau 2 Entitlements
+  + 2 Profile berührt; Lifetime, copecart_pro, copecart_starter, Grandfather, Alt-Trial, 8 Nicht-Provider unverändert (Zugang unverändert).
+- Offen: Admin-E2E über Mission Control (Standard/Lifetime/Cash/Beta-Anlage, Legacy-Plan → 400, Non-Admin 403, Profil-Härtung per
+  Nutzer-JWT) — braucht Admin-Login. Code/Doku lokal committet, **Push erst nach QA-PASS**.
+- Rollback: `docs/backups/mig20260929_rollback_PROD.sql` (vorher 2 manual-Zeilen prüfen), Edge `git show e78f6c17:…` (= v134),
+  Frontend `./deploy.sh hufmanager --rollback`.

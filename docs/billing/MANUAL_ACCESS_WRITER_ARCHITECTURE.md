@@ -1,6 +1,6 @@
 # HufManager Slim — Manual-Access-Writer: Architektur + Rollback
 
-Status: **lokal gebaut und getestet, NICHT auf PROD** (Stand 28.09.2026). Owner-Matrix freigegeben 28.09.2026.
+Status: **LIVE auf PROD seit 28.09.2026 ~20:45** (Ledger 20260929090000 + 20260929100000, admin-create-user v135, Frontend c8bbd096). Owner-Matrix freigegeben 28.09.2026.
 
 ## Fluss
 ```
@@ -74,3 +74,11 @@ Bearbeiten-Dialog nur noch als „[Legacy] … – nicht mehr wählbar“ angeze
 - Härtung: `docs/backups/mig20260929_profile_hardening_prestate_LOCAL.sql` zurückspielen.
 - Edge: `git show b7bb6abd:supabase/functions/admin-create-user/index.ts` (= v134 = e78f6c17) erneut deployen.
 - Frontend: `./deploy.sh` Rollback auf vorheriges Release (`previous`-Symlink).
+
+## PROD-Deploy 28.09.2026 (Nachweis)
+- Vorzustand = Rollback-Doku; Apply über `docs/backups/mig20260929090000_apply_canonical.sql` / `…100000_apply_canonical.sql` (md5-Guard).
+- Nachher: alle Writer-/Gate-/Härtungsfunktionen md5-gleich mit dem lokal getesteten Stand; 2 Bestands-Cash-Fälle kanonisch.
+- Rollback-Reihenfolge: (1) Frontend `./deploy.sh hufmanager --rollback` (→ 84d7d45d), (2) Edge v134 aus `e78f6c17`,
+  (3) `docs/backups/mig20260929_rollback_PROD.sql` + Gates aus Pre-State — vorher die 2 manual-Zeilen bewerten
+  (mit altem Gate liefen sie ohne Ablauf weiter).
+

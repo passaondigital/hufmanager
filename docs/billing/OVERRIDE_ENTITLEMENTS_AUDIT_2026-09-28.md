@@ -153,3 +153,15 @@ Umgesetzt (Architektur + Rollback: `docs/billing/MANUAL_ACCESS_WRITER_ARCHITECTU
 ## 14. Tests (lokal, Funktionen md5 = PROD)
 Manual-Access T1–T20 + Migration M1–M3 + Security S1–S5: **59/59** · Härtung **7/7** (Negativkontrolle vorher 4/7) ·
 Trial-Regression **19/19** · vitest **358/358** (inkl. Planliste/Edge-Guard) · `deno check` admin-create-user sauber.
+
+## 15. PROD-Deploy + Bestandsmigration (28.09.2026 ~20:45)
+- Migrationen 20260929090000 + 20260929100000 live (md5-Guard, Funktionen = lokal getestet), admin-create-user v135, Frontend c8bbd096.
+- SAFE_MANUAL_FIXED_TERM (2) migriert über den kanonischen Writer, fachliches Datum = letzter gültiger Tag (Owner 28.09.):
+  | Anlage | letzter Tag | current_period_end (UTC) | lokal | Status |
+  |---|---|---|---|---|
+  | 15.01.2026 | 15.01.2027 | 2027-01-15 23:00 | 16.01.2027 00:00 Berlin | ACTIVE/NONE/manual |
+  | 27.02.2026 | 27.02.2027 | 2027-02-27 23:00 | 28.02.2027 00:00 Berlin | ACTIVE/NONE/manual |
+  Legacy-Timestamps (00:00Z bzw. 23:59:59Z) wurden bewusst nicht übernommen.
+- Unverändert (verifiziert, nicht berührt): Lifetime-Provider (MANUAL_REVIEW), copecart_pro (MANUAL_REVIEW), copecart_starter (UNKNOWN),
+  28 Grandfather + 3 Alt-Trial, 8 Lifetime-Nicht-Provider (DO_NOT_MIGRATE).
+
