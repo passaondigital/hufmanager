@@ -28,7 +28,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package, Info, Sparkles } from "lucide-react";
+import { Loader2, Car, MapPin, Plus, Trash2, Eye, Package, Info, Sparkles, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { missingIssuerInvoiceFields } from "@/lib/invoiceIssuer";
 import { z } from "zod";
 import { generateInvoicePdfPreview } from "@/lib/invoicePdfGenerator";
 import { SignaturePad } from "@/components/signature/SignaturePad";
@@ -68,6 +70,9 @@ interface BusinessSettings {
   address: string | null;
   travel_cost_per_km: number | null;
   travel_cost_flat: number | null;
+  business_name?: string | null;
+  tax_number?: string | null;
+  vat_id?: string | null;
 }
 
 interface ProviderPaymentSettings {
@@ -131,6 +136,7 @@ export function CreateInvoiceModal({
   const [filteredHorses, setFilteredHorses] = useState<Horse[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
+  const [issuerChecked, setIssuerChecked] = useState(false);
   const [showTravelCost, setShowTravelCost] = useState(false);
   const [travelCostMode, setTravelCostMode] = useState<"kilometer" | "pauschale">("kilometer");
   const [travelKm, setTravelKm] = useState<string>("");
@@ -198,11 +204,12 @@ export function CreateInvoiceModal({
       // Load business settings for travel costs
       const { data: settings } = await supabase
         .from("business_settings")
-        .select("address, travel_cost_per_km, travel_cost_flat")
+        .select("address, travel_cost_per_km, travel_cost_flat, business_name, tax_number, vat_id")
         .eq("user_id", user.id)
         .maybeSingle();
       
       setBusinessSettings(settings);
+      setIssuerChecked(true);
 
       // Lade ALLE Kunden (Profile mit Rolle 'client') aus der Datenbank
       const { data: clientRoles } = await supabase
@@ -1294,6 +1301,21 @@ export function CreateInvoiceModal({
 
         <form onSubmit={(e) => { e.preventDefault(); void runLocked(() => handleSubmit(e)); }} className="flex-1 flex flex-col overflow-hidden min-h-0">
           <div className="flex-1 overflow-y-auto pr-2 pb-4 [&_input]:text-base [&_textarea]:text-base [&_select]:text-base">
+            {issuerChecked && missingIssuerInvoiceFields(businessSettings).length > 0 && (
+              <div role="alert" className="mb-4 flex items-start gap-3 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-sm">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                <div className="space-y-1">
+                  <p className="font-medium text-foreground">
+                    Deine Betriebsdaten sind unvollständig: {missingIssuerInvoiceFields(businessSettings).join(", ")} fehlt.
+                  </p>
+                  <p className="text-muted-foreground">
+                    Diese Angaben erscheinen auf der Rechnung. Ergänze sie unter{" "}
+                    <Link to="/management/profil" className="underline" onClick={onClose}>Profil</Link> bzw.{" "}
+                    <Link to="/management/steuer" className="underline" onClick={onClose}>Steuer</Link>.
+                  </p>
+                </div>
+              </div>
+            )}
             {/* 2-Column Layout on Desktop */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
               {/* Left Column: Client & Details */}
