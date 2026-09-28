@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { isDemoEmail } from "@/lib/demo-accounts";
+import { isBusinessAccount } from "@/lib/accountClass";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -126,7 +126,7 @@ export function AdminPlatformOverview() {
         stallRes, orgsRes, bsRes,
       ] = await Promise.all([
         supabase.from("user_roles").select("user_id, role"),
-        supabase.from("profiles").select("id, email, full_name, phone, created_at, city, zip_code, readable_id, is_suspended, plan_override, subscription_status, access_valid_until").is("deleted_at", null),
+        supabase.from("profiles").select("id, account_class, email, full_name, phone, created_at, city, zip_code, readable_id, is_suspended, plan_override, subscription_status, access_valid_until").is("deleted_at", null),
         supabase.from("horses").select("id, owner_id", { count: "exact" }).is("deleted_at", null),
         supabase.from("access_grants").select("provider_id, client_id, is_active, status"),
         supabase.from("client_connections").select("id, requester_id, target_id, status"),
@@ -136,7 +136,7 @@ export function AdminPlatformOverview() {
       ]);
 
       const roles = rolesRes.data || [];
-      const profiles = (profilesRes.data || []).filter(p => !isDemoEmail(p.email));
+      const profiles = (profilesRes.data || []).filter(isBusinessAccount);
       const horses = horsesRes.data || [];
       const grants = grantsRes.data || [];
       const clientCons = clientConRes.data || [];

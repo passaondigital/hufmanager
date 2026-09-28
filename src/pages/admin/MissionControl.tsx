@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +26,7 @@ import {
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { useAdminActivityLog } from "@/hooks/useAdminActivityLog";
-import { isDemoEmail } from "@/lib/demo-accounts";
+import { ACCOUNT_CLASS_LABELS, accountClassOf, isBusinessAccount, type AccountClass } from "@/lib/accountClass";
 import { MissionControlNav, MissionControlNavMobile } from "@/components/admin/MissionControlNav";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -146,6 +146,8 @@ export default function MissionControl() {
   const [navOpen, setNavOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [providers, setProviders] = useState<ProviderData[]>([]);
+  // Kennzahlen/Zähler nur Echtkunden (account_class = real); QA/Demo/Fixtures bleiben über den Listen-Filter auffindbar.
+  const businessProviders = useMemo(() => providers.filter(isBusinessAccount), [providers]);
   const [loading, setLoading] = useState(true);
   const [escalations, setEscalations] = useState<any[]>([]);
 
@@ -158,6 +160,7 @@ export default function MissionControl() {
   const [providerToDelete, setProviderToDelete] = useState<ProviderData | null>(null);
 
   const [editPlanOverride, setEditPlanOverride] = useState("standard");
+  const [editAccountClass, setEditAccountClass] = useState<AccountClass>("real");
   const [editAccessValidUntil, setEditAccessValidUntil] = useState("");
   const [editFeatureFlags, setEditFeatureFlags] = useState(DEFAULT_FEATURE_FLAGS);
   const [editFeatureStatuses, setEditFeatureStatuses] = useState<FeatureStatuses>(DEFAULT_FEATURE_STATUSES);
@@ -233,7 +236,7 @@ export default function MissionControl() {
         let zipCode = profile.zip_code;
         if (!zipCode && bs?.address) { const m = bs.address.match(/\b(\d{5})\b/); if (m) zipCode = m[1]; }
         return {
-          id: profile.id, email: profile.email, full_name: profile.full_name,
+          id: profile.id, account_class: accountClassOf(profile), email: profile.email, full_name: profile.full_name,
           readable_id: profile.readable_id, subscription_status: profile.subscription_status,
           subscription_plan: profile.subscription_plan, is_manually_managed: profile.is_manually_managed,
           plan_override: profile.plan_override, access_valid_until: profile.access_valid_until,
@@ -250,7 +253,8 @@ export default function MissionControl() {
           horse_count: horseCountMap.get(profile.id) || 0,
         };
       });
-      setProviders(providersWithData.filter(p => !isDemoEmail(p.email)));
+      // Alle Klassen laden; Liste filtert (Default Echtkunden), Kennzahlen zählen nur account_class = real.
+      setProviders(providersWithData);
     } catch (error) {
       console.error("Error fetching providers:", error);
       toast.error("Fehler beim Laden der Provider");
@@ -262,6 +266,7 @@ export default function MissionControl() {
   const openEditDialog = (provider: ProviderData) => {
     setSelectedProvider(provider);
     setEditPlanOverride(provider.plan_override || "standard");
+    setEditAccountClass(provider.account_class);
     setEditAccessValidUntil(lastValidDayFromExclusiveEnd(provider.access_valid_until));
     setEditFeatureFlags({ ...DEFAULT_FEATURE_FLAGS, ...(provider.feature_flags || {}) });
     const migrated = migrateBooleanToStatus(provider.feature_flags, provider.feature_statuses || null);
@@ -318,6 +323,8 @@ export default function MissionControl() {
       const { error: profileError } = await supabase.from("profiles").update({
         plan_override: editPlanOverride === "standard" ? null : editPlanOverride,
         access_valid_until: nextAccessValidUntil,
+        // Nur Statistik-/Admin-Klassifizierung, kein Zugangskriterium (DB lässt nur Admin/service_role ändern).
+        account_class: editAccountClass,
         feature_flags: editFeatureFlags, feature_statuses: editFeatureStatuses as unknown as Record<string, string>,
         zip_code: editZipCode || null, city: editCity || null, phone: editPhone || null,
       }).eq("id", selectedProvider.id);
@@ -430,7 +437,7 @@ export default function MissionControl() {
             </div>
             <div>
               <h1 className="text-lg font-bold tracking-tight leading-none">Mission Control</h1>
-              <p className="text-[11px] text-muted-foreground">{providers.length} Provider aktiv</p>
+              <p className="text-[11px] text-muted-foreground">{businessProviders.length} Provider aktiv</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -470,7 +477,7 @@ export default function MissionControl() {
           {/* Desktop Sidebar */}
           {!isMobile && (
             <aside className="w-52 flex-shrink-0 sticky top-[68px] self-start max-h-[calc(100vh-84px)] overflow-y-auto">
-              <MissionControlNav activeTab={activeTab} onTabChange={setActiveTab} providerCount={providers.length} />
+              <MissionControlNav activeTab={activeTab} onTabChange={setActiveTab} providerCount={businessProviders.length} />
               <div className="mt-3 pt-3 border-t border-border space-y-1">
                 <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-[11px] text-muted-foreground h-7"
                   onClick={() => navigate("/admin/module-access-logs")}>
@@ -499,7 +506,7 @@ export default function MissionControl() {
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="p-3 rounded-xl border bg-card mb-4">
-                    <MissionControlNavMobile activeTab={activeTab} onTabChange={(t) => { setActiveTab(t); setNavOpen(false); }} providerCount={providers.length} />
+                    <MissionControlNavMobile activeTab={activeTab} onTabChange={(t) => { setActiveTab(t); setNavOpen(false); }} providerCount={businessProviders.length} />
                   </div>
                 </CollapsibleContent>
               </Collapsible>
@@ -517,7 +524,7 @@ export default function MissionControl() {
               )}
 
               {activeTab === "platform" && <AdminPlatformOverview />}
-              {activeTab === "stats" && <AdminStatsTab providers={providers} />}
+              {activeTab === "stats" && <AdminStatsTab providers={businessProviders} />}
               {activeTab === "blog" && <AdminBlogManager />}
               {activeTab === "activity" && <AdminActivityLogViewer limit={100} />}
               {activeTab === "tools" && (
@@ -703,6 +710,16 @@ export default function MissionControl() {
                     <Input type="date" value={editAccessValidUntil} onChange={(e) => setEditAccessValidUntil(e.target.value)} />
                   </div>
                 )}
+                <div className="space-y-2">
+                  <Label>Kontoart (Statistik)</Label>
+                  <Select value={editAccountClass} onValueChange={(v) => setEditAccountClass(v as AccountClass)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(ACCOUNT_CLASS_LABELS) as AccountClass[]).map(c => <SelectItem key={c} value={c}>{ACCOUNT_CLASS_LABELS[c]}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Nur Echtkunden zählen in Kennzahlen. Ändert keinen Zugang.</p>
+                </div>
               </TabsContent>
 
               <TabsContent value="features" className="space-y-4 mt-4 flex-1 overflow-y-auto pr-2">

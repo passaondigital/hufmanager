@@ -82,3 +82,8 @@ Bearbeiten-Dialog nur noch als „[Legacy] … – nicht mehr wählbar“ angeze
   (3) `docs/backups/mig20260929_rollback_PROD.sql` + Gates aus Pre-State — vorher die 2 manual-Zeilen bewerten
   (mit altem Gate liefen sie ohne Ablauf weiter).
 
+## Konto-Klassifizierung (account_class, 20260929110000 — lokal)
+- `profiles.account_class` ist KEIN Zugangskriterium: Gates, Writer, Trial-Producer lesen es nicht (Test T17b).
+- `admin-create-user` akzeptiert `accountClass` ∈ {real, qa} (Default real), setzt es im Profil-Update; andere Werte → 400 vor der Anlage.
+- Profil-Härtung schützt `account_class` gegen Nicht-Admin-Updates; neuer INSERT-Trigger erzwingt `real` bei Nutzer-JWT.
+

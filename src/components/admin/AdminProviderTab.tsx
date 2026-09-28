@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { ACCOUNT_CLASS_FILTER_OPTIONS, ACCOUNT_CLASS_LABELS, CREATE_ACCOUNT_CLASS_OPTIONS, looksLikeQaEmail, matchesAccountClassFilter, type AccountClass, type AccountClassFilter } from "@/lib/accountClass";
 import {
   UserPlus, Search, RefreshCw, MapPin, FileText, MessageSquare,
   Map as MapIcon, Sparkles, ArrowUpDown, ChevronUp, ChevronDown,
@@ -26,6 +27,7 @@ import { useAdminActivityLog } from "@/hooks/useAdminActivityLog";
 // Re-export shared types
 export interface ProviderData {
   id: string;
+  account_class: AccountClass;
   email: string | null;
   full_name: string | null;
   readable_id: string | null;
@@ -105,6 +107,8 @@ function supabaseHost(): string {
 export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuickView }: AdminProviderTabProps) {
   const { logActivity } = useAdminActivityLog();
   const [searchTerm, setSearchTerm] = useState("");
+  // Standard: nur Echtkunden; QA/Demo/Fixtures bleiben über den Filter auffindbar.
+  const [classFilter, setClassFilter] = useState<AccountClassFilter>("real");
   const [selectedProviderIds, setSelectedProviderIds] = useState<string[]>([]);
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -117,6 +121,7 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
   const [newUserPlanOverride, setNewUserPlanOverride] = useState("standard");
+  const [newUserAccountClass, setNewUserAccountClass] = useState<"real" | "qa">("real");
   const [newUserAccessValidUntil, setNewUserAccessValidUntil] = useState("");
   const [newUserZipCode, setNewUserZipCode] = useState("");
   const [newUserCity, setNewUserCity] = useState("");
@@ -156,6 +161,7 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
 
   const sortedAndFilteredProviders = useMemo(() => {
     let filtered = providers.filter((p) => {
+      if (!matchesAccountClassFilter(p, classFilter)) return false;
       const s = searchTerm.toLowerCase();
       return (
         p.email?.toLowerCase().includes(s) || p.full_name?.toLowerCase().includes(s) ||
@@ -176,7 +182,7 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
       return sortDirection === "asc" ? aVal - (bVal as number) : (bVal as number) - aVal;
     });
     return filtered;
-  }, [providers, searchTerm, sortField, sortDirection]);
+  }, [providers, searchTerm, classFilter, sortField, sortDirection]);
 
   const getStatusBadge = (provider: ProviderData) => {
     if (provider.is_suspended) return <Badge variant="destructive" className="text-[10px] px-1.5 py-0"><Ban className="w-3 h-3 mr-0.5" />Gesperrt</Badge>;
@@ -213,7 +219,7 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
     // → Antwort ankommen. Keine Secrets: nur Plan, Zielhost und HTTP-Status.
     const diagId = "provider-create-diag";
     toast.dismiss(diagId); toast.dismiss(`${diagId}-1`);
-    toast.info(`1/3 Klick angekommen – Anlage gestartet (Plan: ${newUserPlanOverride})`, { id: `${diagId}-1`, duration: 60000 });
+    toast.info(`1/3 Klick angekommen – Anlage gestartet (Plan: ${newUserPlanOverride}, Kontoart: ${ACCOUNT_CLASS_LABELS[newUserAccountClass]})`, { id: `${diagId}-1`, duration: 60000 });
     if (!newUserEmail || !newUserFirstName || !newUserLastName) {
       toast.error("Abgebrochen: Bitte E-Mail, Vorname und Nachname ausfüllen", { id: diagId });
       return;
@@ -238,6 +244,7 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
           email: newUserEmail, password: newUserPassword || null,
           firstName: newUserFirstName, lastName: newUserLastName,
           planOverride: newUserPlanOverride !== "standard" ? newUserPlanOverride : null,
+          accountClass: newUserAccountClass,
           accessValidUntil: accessDate || null,
           zipCode: newUserZipCode || null, city: newUserCity || null,
           phone: newUserPhone || null, businessName: newUserBusinessName || null,
@@ -256,7 +263,7 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
       toast.success(`Provider ${newUserEmail} erstellt. PID: ${data.user?.readable_id || 'wird generiert'}`);
       setCreateDialogOpen(false);
       setNewUserEmail(""); setNewUserPassword(""); setNewUserFirstName(""); setNewUserLastName("");
-      setNewUserPlanOverride("standard"); setNewUserAccessValidUntil("");
+      setNewUserPlanOverride("standard"); setNewUserAccessValidUntil(""); setNewUserAccountClass("real");
       setNewUserZipCode(""); setNewUserCity(""); setNewUserPhone(""); setNewUserBusinessName("");
       setNewUserFeatureFlags(DEFAULT_FEATURE_FLAGS);
       setNewUserServices([
@@ -332,6 +339,16 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
             className="pl-10 h-10"
           />
         </div>
+        <Select value={classFilter} onValueChange={(v) => setClassFilter(v as AccountClassFilter)}>
+          <SelectTrigger className="h-10 sm:w-40" aria-label="Kontoart-Filter"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {ACCOUNT_CLASS_FILTER_OPTIONS.map(o => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label} ({providers.filter(p => matchesAccountClassFilter(p, o.value)).length})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <div className="flex gap-2">
           <Button variant="outline" onClick={onRefresh} size="icon" className="h-10 w-10 shrink-0">
             <RefreshCw className="w-4 h-4" />
@@ -388,6 +405,19 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
                       <Input type="date" value={newUserAccessValidUntil} onChange={(e) => setNewUserAccessValidUntil(e.target.value)} />
                     </div>
                   )}
+                  <div className="space-y-2">
+                    <Label>Kontoart</Label>
+                    <Select value={newUserAccountClass} onValueChange={(v) => setNewUserAccountClass(v as "real" | "qa")}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>{CREATE_ACCOUNT_CLASS_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                    </Select>
+                    {newUserAccountClass === "real" && looksLikeQaEmail(newUserEmail) && (
+                      <div className="flex items-center justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs">
+                        <span>Diese Adresse sieht wie ein QA-Konto aus – als QA markieren?</span>
+                        <Button type="button" size="sm" variant="outline" className="h-7" onClick={() => setNewUserAccountClass("qa")}>Als QA markieren</Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <Separator />
                 <div className="space-y-4">
@@ -537,7 +567,7 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
                     <TableCell className="text-right text-sm">{p.base_price ? `${p.base_price.toFixed(0)}€` : "—"}</TableCell>
                     <TableCell className="text-center text-sm font-medium">{p.client_count}</TableCell>
                     <TableCell className="text-center text-sm font-medium">{p.horse_count}</TableCell>
-                    <TableCell>{getPlanBadge(p)}</TableCell>
+                    <TableCell>{getPlanBadge(p)}{p.account_class !== "real" && <Badge variant="outline" className="ml-1 text-[10px] px-1.5 py-0 border-dashed">{ACCOUNT_CLASS_LABELS[p.account_class]}</Badge>}</TableCell>
                     <TableCell>{getStatusBadge(p)}</TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={(e) => { e.stopPropagation(); onEditProvider(p); }}>

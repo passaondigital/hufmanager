@@ -165,3 +165,15 @@ Trial-Regression **19/19** · vitest **358/358** (inkl. Planliste/Edge-Guard) ·
 - Unverändert (verifiziert, nicht berührt): Lifetime-Provider (MANUAL_REVIEW), copecart_pro (MANUAL_REVIEW), copecart_starter (UNKNOWN),
   28 Grandfather + 3 Alt-Trial, 8 Lifetime-Nicht-Provider (DO_NOT_MIGRATE).
 
+
+## 16. Korrektur Bestandsklassen nach Konto-Klassifizierung (28.09.2026 spät, read-only)
+- Neue kanonische Spalte `profiles.account_class` (real | demo | qa | test_fixture), Migration `20260929110000` — LOKAL, nicht PROD.
+  Nur Statistik/Admin-Filter, kein Zugangskriterium.
+- Die bisherigen „28 Standard-Grandfather“ (LEGACY_BACKFILL_AMBIGUOUS_ACTIVE_ONLY) setzen sich zusammen aus
+  **19 echten Providern**, 8 Sicherheits-Testkonten (Aug. 2026) und 1 Demo-Konto → **REAL_GRANDFATHER = 19**.
+- Der „Lifetime-Provider ohne Beleg“ (MANUAL_REVIEW) ist das offizielle Demo-Konto `hufbearbeiter.hufmanager@gmail.com`
+  → account_class demo, kein echter Lifetime-Kunde, aus Business-/Migrationsentscheidungen entfernt.
+- Backfill nur explizite IDs: 11 qa, 8 test_fixture, 6 demo (`docs/backups/mig20260929110000_account_class_backfill_PROD.sql`).
+  Manuelle Prüfung: 1 Kundenprofil ohne Auth-Nutzer/Rolle mit Demo-Adresse (nicht klassifiziert, zählt in keiner Provider-KPI).
+- QA-Cleanup-Kandidaten (nicht gelöscht): qa 11 Konten (8 ohne Daten; 3 mit Kunden: 8 Kunden, 7 Pferde, 2 Termine, 1 Rechnung, 7 Grants),
+  test_fixture 8 Konten (7 ohne Daten; 1 mit 1 Termin).

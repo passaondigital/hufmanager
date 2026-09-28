@@ -13985,6 +13985,7 @@ export type Database = {
       profiles: {
         Row: {
           access_valid_until: string | null
+          account_class: Database["public"]["Enums"]["profile_account_class"]
           account_status: string | null
           address: string | null
           affiliate_opt_in: boolean | null
@@ -14151,6 +14152,7 @@ export type Database = {
         }
         Insert: {
           access_valid_until?: string | null
+          account_class?: Database["public"]["Enums"]["profile_account_class"]
           account_status?: string | null
           address?: string | null
           affiliate_opt_in?: boolean | null
@@ -14317,6 +14319,7 @@ export type Database = {
         }
         Update: {
           access_valid_until?: string | null
+          account_class?: Database["public"]["Enums"]["profile_account_class"]
           account_status?: string | null
           address?: string | null
           affiliate_opt_in?: boolean | null
@@ -19318,6 +19321,7 @@ export type Database = {
     }
     Enums: {
       app_role: "provider" | "client" | "admin" | "employee" | "partner"
+      profile_account_class: "real" | "demo" | "qa" | "test_fixture"
       appointment_status:
         | "scheduled"
         | "confirmed"
@@ -19507,6 +19511,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["provider", "client", "admin", "employee", "partner"],
+      profile_account_class: ["real", "demo", "qa", "test_fixture"],
       appointment_status: [
         "scheduled",
         "confirmed",

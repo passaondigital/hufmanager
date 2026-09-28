@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Shield, CheckCircle, XCircle, Search, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
-import { isDemoEmail } from "@/lib/demo-accounts";
+import { isBusinessAccount } from "@/lib/accountClass";
 
 interface ContractRow {
   user_id: string;
@@ -81,10 +81,10 @@ export function AdminContractTracking() {
       const provIds = provRoles?.map(r => r.user_id) || [];
       let provRows: ContractRow[] = [];
       if (provIds.length > 0) {
-        const { data: profiles } = await supabase.from("profiles").select("id, email, full_name").in("id", provIds).is("deleted_at", null);
+        const { data: profiles } = await supabase.from("profiles").select("id, account_class, email, full_name").in("id", provIds).is("deleted_at", null);
         const { data: contracts } = await supabase.from("provider_contracts").select("provider_id, avv_signed_at, avv_version");
         const cMap = new Map((contracts || []).map(c => [c.provider_id, c]));
-        provRows = (profiles || []).filter(p => !isDemoEmail(p.email)).map(p => ({
+        provRows = (profiles || []).filter(isBusinessAccount).map(p => ({
           user_id: p.id, email: p.email, full_name: p.full_name,
           avv_signed_at: cMap.get(p.id)?.avv_signed_at || null,
         }));
@@ -96,10 +96,10 @@ export function AdminContractTracking() {
       const partIds = partRoles?.map(r => r.user_id) || [];
       let partRows: ContractRow[] = [];
       if (partIds.length > 0) {
-        const { data: profiles } = await supabase.from("profiles").select("id, email, full_name").in("id", partIds).is("deleted_at", null);
+        const { data: profiles } = await supabase.from("profiles").select("id, account_class, email, full_name").in("id", partIds).is("deleted_at", null);
         const { data: contracts } = await supabase.from("partner_contracts" as any).select("partner_id, avv_signed_at") as any;
         const cMap = new Map((contracts?.data || contracts || []).map((c: any) => [c.partner_id, c]));
-        partRows = (profiles || []).filter(p => !isDemoEmail(p.email)).map(p => ({
+        partRows = (profiles || []).filter(isBusinessAccount).map(p => ({
           user_id: p.id, email: p.email, full_name: p.full_name,
           avv_signed_at: (cMap.get(p.id) as any)?.avv_signed_at || null,
         }));
@@ -111,10 +111,10 @@ export function AdminContractTracking() {
       const empIds = empRoles?.map(r => r.user_id) || [];
       let empRows: ContractRow[] = [];
       if (empIds.length > 0) {
-        const { data: profiles } = await supabase.from("profiles").select("id, email, full_name").in("id", empIds).is("deleted_at", null);
+        const { data: profiles } = await supabase.from("profiles").select("id, account_class, email, full_name").in("id", empIds).is("deleted_at", null);
         const { data: contracts } = await supabase.from("employee_contracts" as any).select("employee_user_id, avv_signed_at") as any;
         const cMap = new Map((contracts?.data || contracts || []).map((c: any) => [c.employee_user_id, c]));
-        empRows = (profiles || []).filter(p => !isDemoEmail(p.email)).map(p => ({
+        empRows = (profiles || []).filter(isBusinessAccount).map(p => ({
           user_id: p.id, email: p.email, full_name: p.full_name,
           avv_signed_at: (cMap.get(p.id) as any)?.avv_signed_at || null,
         }));
@@ -143,7 +143,7 @@ export function AdminContractTracking() {
           <Shield className="w-5 h-5 text-primary" />
           AVV & Vertragsübersicht
         </h2>
-        <p className="text-sm text-muted-foreground">Compliance-Status aller Nutzer (Demo ausgeschlossen)</p>
+        <p className="text-sm text-muted-foreground">Compliance-Status aller Echtkunden (QA/Demo/Test ausgeschlossen)</p>
       </div>
 
       {/* Global Stats */}

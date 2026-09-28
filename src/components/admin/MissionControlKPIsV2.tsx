@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Users, UserPlus, UserMinus, Euro, Crown, Ban, Link2, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { isDemoEmail } from "@/lib/demo-accounts";
-import { normalizeToMonthlyMRR } from "@/lib/plan-features";
+import { computeProviderKpis, isBusinessAccount } from "@/lib/accountClass";
 import { cn } from "@/lib/utils";
 
 interface RealKPIs {
@@ -21,6 +20,7 @@ interface RealKPIs {
   payingProviders: number;
   activeConnections: number;
   pendingConnections: number;
+  nonBusinessProviders: { demo: number; qa: number; test_fixture: number };
 }
 
 interface KpiTileProps {
@@ -84,46 +84,17 @@ export default function MissionControlKPIsV2() {
         .from("user_roles").select("user_id").eq("role", "provider");
       const providerIds = providerRoles?.map(r => r.user_id) || [];
 
+      // Business-KPIs zählen nur account_class = real (kanonisch, Migration 20260929110000).
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, email, is_suspended, plan_override, subscription_status, access_valid_until, created_at")
+        .select("id, account_class, is_suspended, plan_override, subscription_status, access_valid_until, created_at")
         .in("id", providerIds).is("deleted_at", null);
-
-      const realProviders = (profiles || []).filter(p => !isDemoEmail(p.email));
-      const now = new Date();
-      const oneWeekAgo = new Date(now.getTime() - 7 * 86400000);
-      const twoWeeksAgo = new Date(now.getTime() - 14 * 86400000);
-      const oneMonthAgo = new Date(now.getTime() - 30 * 86400000);
-
-      const activeProviders = realProviders.filter(p => {
-        if (p.is_suspended) return false;
-        if (p.plan_override === "lifetime_grant" || p.plan_override === "employee") return true;
-        if (p.access_valid_until) return new Date(p.access_valid_until) > now;
-        return p.subscription_status === "active";
-      });
-
-      const lifetimeUsers = realProviders.filter(p => p.plan_override === "lifetime_grant").length;
-      const suspendedUsers = realProviders.filter(p => p.is_suspended).length;
-      const newThisWeek = realProviders.filter(p => new Date(p.created_at) >= oneWeekAgo).length;
-      const newLastWeek = realProviders.filter(p => new Date(p.created_at) >= twoWeeksAgo && new Date(p.created_at) < oneWeekAgo).length;
-      const churned = realProviders.filter(p => {
-        if (p.is_suspended || p.plan_override === "lifetime_grant" || p.plan_override === "employee") return false;
-        if (p.access_valid_until) {
-          const d = new Date(p.access_valid_until);
-          return d < now && d >= oneMonthAgo;
-        }
-        return false;
-      }).length;
 
       const { data: clientRoles } = await supabase.from("user_roles").select("user_id").eq("role", "client");
       const clientIds = clientRoles?.map(r => r.user_id) || [];
       const { data: clientProfiles } = await supabase
-        .from("profiles").select("id, email").in("id", clientIds).is("deleted_at", null);
-      const realClients = (clientProfiles || []).filter(p => !isDemoEmail(p.email));
-
-      const demoClientIds = (clientProfiles || []).filter(p => isDemoEmail(p.email)).map(p => p.id);
-      const demoProviderIds = (profiles || []).filter(p => isDemoEmail(p.email)).map(p => p.id);
-      const allDemoIds = [...demoClientIds, ...demoProviderIds];
+        .from("profiles").select("id, account_class").in("id", clientIds).is("deleted_at", null);
+      const realClients = (clientProfiles || []).filter(isBusinessAccount);
 
       const { count: horseCount } = await supabase
         .from("horses").select("id", { count: "exact", head: true }).is("deleted_at", null);
@@ -131,10 +102,10 @@ export default function MissionControlKPIsV2() {
       const { data: partnerRoles } = await supabase.from("user_roles").select("user_id").eq("role", "partner");
       const partnerIds = partnerRoles?.map(r => r.user_id) || [];
       const { data: partnerProfiles } = await supabase
-        .from("profiles").select("id, email")
+        .from("profiles").select("id, account_class")
         .in("id", partnerIds.length > 0 ? partnerIds : ["00000000-0000-0000-0000-000000000000"])
         .is("deleted_at", null);
-      const realPartners = (partnerProfiles || []).filter(p => !isDemoEmail(p.email));
+      const realPartners = (partnerProfiles || []).filter(isBusinessAccount);
 
       const todayStr = new Date().toISOString().slice(0, 10);
       const { data: payments } = await supabase
@@ -142,24 +113,16 @@ export default function MissionControlKPIsV2() {
         .select("amount, provider_id, period_start, period_end")
         .lte("period_start", todayStr).gte("period_end", todayStr);
 
-      // Exclude demo AND lifetime/employee providers from MRR
-      const lifetimeIds = realProviders.filter(p => p.plan_override === "lifetime_grant" || p.plan_override === "employee").map(p => p.id);
-      const excludeFromMRR = new Set([...allDemoIds, ...lifetimeIds]);
-      const realPayments = (payments || []).filter(p => !excludeFromMRR.has(p.provider_id));
-      const mrrCents = realPayments.reduce((s, p) => s + normalizeToMonthlyMRR(p.amount || 0, p.period_start ?? null, p.period_end ?? null), 0);
-      const payingProviders = new Set(realPayments.map(p => p.provider_id)).size;
+      const providerKpis = computeProviderKpis(profiles || [], payments || []);
 
       const { data: grants } = await supabase.from("access_grants").select("status, is_active");
       const activeConnections = (grants || []).filter(g => g.is_active && g.status === "active").length;
       const pendingConnections = (grants || []).filter(g => g.status === "pending").length;
 
       setKpis({
-        totalProviders: realProviders.length,
-        activeProviders: activeProviders.length,
-        lifetimeUsers, suspendedUsers, newThisWeek, newLastWeek, churned,
-        churnRate: activeProviders.length > 0 ? (churned / activeProviders.length) * 100 : 0,
+        ...providerKpis,
         totalClients: realClients.length, totalHorses: horseCount || 0,
-        totalPartners: realPartners.length, mrrCents, payingProviders,
+        totalPartners: realPartners.length,
         activeConnections, pendingConnections,
       });
     } catch (err) {
@@ -268,7 +231,7 @@ export default function MissionControlKPIsV2() {
       </div>
 
       <p className="text-[10px] text-muted-foreground/40 text-right">
-        Demo-Accounts ausgeschlossen · MRR basiert auf manuellen Zahlungen
+        Nur Echtkunden · nicht gezählt: QA/Test {kpis.nonBusinessProviders.qa} · Test-Fixtures {kpis.nonBusinessProviders.test_fixture} · Demo {kpis.nonBusinessProviders.demo} · MRR basiert auf manuellen Zahlungen
       </p>
     </div>
   );

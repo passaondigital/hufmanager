@@ -55,6 +55,7 @@ interface CreateUserRequest {
   firstName: string;
   lastName: string;
   planOverride?: string | null;
+  accountClass?: string | null;
   accessValidUntil?: string | null;
   zipCode?: string | null;
   city?: string | null;
@@ -133,6 +134,7 @@ serve(async (req: Request) => {
       firstName, 
       lastName,
       planOverride,
+      accountClass,
       accessValidUntil,
       zipCode,
       city,
@@ -157,6 +159,14 @@ serve(async (req: Request) => {
     if (planOverride && !manualGrantType) {
       return new Response(
         JSON.stringify({ error: `Plan "${planOverride}" ist für neue Provider nicht mehr zulässig` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    // Kontoart (profiles.account_class, nur Statistik/Admin-Filter, kein Zugang): Neuanlage nur Echtkunde oder QA.
+    const resolvedAccountClass = accountClass == null || accountClass === "" ? "real" : accountClass;
+    if (resolvedAccountClass !== "real" && resolvedAccountClass !== "qa") {
+      return new Response(
+        JSON.stringify({ error: `Kontoart "${accountClass}" ist bei Neuanlage nicht zulässig` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -263,6 +273,7 @@ serve(async (req: Request) => {
       full_name: `${firstName} ${lastName}`,
       is_manually_managed: planOverride ? true : false,
       email: email,
+      account_class: resolvedAccountClass,
     };
 
     // Add optional fields
@@ -564,6 +575,7 @@ serve(async (req: Request) => {
         invitationSent: sendCustomInvitation,
         slimTrial,
         manualAccess,
+        accountClass: resolvedAccountClass,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

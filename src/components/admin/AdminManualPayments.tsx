@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { de } from "date-fns/locale";
-import { isDemoEmail } from "@/lib/demo-accounts";
+import { isBusinessAccount } from "@/lib/accountClass";
 import { normalizeToMonthlyMRR } from "@/lib/plan-features";
 
 interface Payment {
@@ -77,10 +77,10 @@ export function AdminManualPayments() {
       if (ids.length > 0) {
         const { data: profs } = await supabase
           .from("profiles")
-          .select("id, email, full_name")
+          .select("id, account_class, email, full_name")
           .in("id", ids)
           .is("deleted_at", null);
-        setProviders((profs || []).filter(p => !isDemoEmail(p.email)) as Provider[]);
+        setProviders((profs || []).filter(isBusinessAccount) as Provider[]);
       }
     } catch (err) {
       console.error(err);

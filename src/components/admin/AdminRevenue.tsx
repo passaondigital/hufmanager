@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { isDemoEmail } from "@/lib/demo-accounts";
+import { isBusinessAccount } from "@/lib/accountClass";
 import { normalizeToMonthlyMRR } from "@/lib/plan-features";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend, PieChart, Pie, Cell } from "recharts";
 import { format, startOfMonth, endOfMonth, subMonths, parseISO, isWithinInterval } from "date-fns";
@@ -111,7 +111,7 @@ export function AdminRevenue() {
       // Get provider profiles to filter
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, email, full_name, readable_id, plan_override, subscription_plan, access_valid_until")
+        .select("id, account_class, email, full_name, readable_id, plan_override, subscription_plan, access_valid_until")
         .is("deleted_at", null);
 
       const profileMap = new Map((profiles || []).map(p => [p.id, p]));
@@ -120,7 +120,7 @@ export function AdminRevenue() {
       const validPayments = (payments || []).filter(p => {
         const profile = profileMap.get(p.provider_id);
         if (!profile) return false;
-        if (isDemoEmail(profile.email)) return false;
+        if (!isBusinessAccount(profile)) return false;
         if (profile.plan_override === "lifetime_grant" || profile.plan_override === "employee") return false;
         // Must be a provider (PID prefix)
         if (profile.readable_id && !profile.readable_id.startsWith("PID-")) return false;
@@ -182,10 +182,10 @@ export function AdminRevenue() {
     try {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, email, readable_id, subscription_plan, plan_override, account_status")
+        .select("id, account_class, email, readable_id, subscription_plan, plan_override, account_status")
         .is("deleted_at", null);
 
-      const all = (profiles || []).filter(p => !isDemoEmail(p.email));
+      const all = (profiles || []).filter(isBusinessAccount);
       const now = new Date();
 
       // Segment by readable_id prefix
@@ -506,7 +506,7 @@ export function AdminRevenue() {
               ))}
             </div>
           )}
-          <p className="text-[10px] text-muted-foreground/50 mt-2">Demo-, Lifetime-, Admin- und Client-Accounts ausgeschlossen. Nur PID-Provider mit erfasster Zahlung.</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-2">Nur Echtkunden (QA/Demo/Test ausgeschlossen), ohne Lifetime-, Admin- und Client-Accounts. Nur PID-Provider mit erfasster Zahlung.</p>
         </CardContent>
       </Card>
 
