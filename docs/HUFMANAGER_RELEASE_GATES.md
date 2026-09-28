@@ -2,6 +2,7 @@
 
 **Stand:** 25.09.2026 · Frontend `25d88773` · letzte Migration `20260925080000` · Production `vnschgjxkzzwzefqlrji`
 
+> 28.09. abends: Admin-Provider-Trial-Fix LIVE (`admin-create-user` v134 = e78f6c17). PROD-E2E `+qa-trial-admin-0928c` PASS (1 Slim-Trial 14 T., 1 trial_started, Zugang, Login/Reload, kein Doppel-Trial). P1 Standard-Admin-Provider = DONE. Offen P1: Override-Pläne ohne Entitlement; Provider-Einladungsmail (info@hufmanager.de) kommt nicht in Gmail an; Mission-Control-Legacy-Anzeige; support@hufiapp.de.
 > 28.09. nachm.: Auth-Routing-Fix LIVE (admin-create-user v133, send-provider-invitation v111, send-employee-invitation v95; Admin- + Employee-Invite E2E PASS; send-provider-invitation ohne UI-Aufrufer). HufiApp = eigenes Supabase-Projekt `oortmejcefbiewaceccc`. Neu P1: Admin-angelegte Provider ohne Slim-Entitlement; Mission Control zeigt Legacy-Plan/Service-Preis; support@hufiapp.de in Provider-Mails.
 > 28.09.: net-Retention, Ghost-Grant-Fix und Termin-Guard-Admin-Nachbesserung LIVE (Ledger 20260928100000); Security-/Production-Smoke 38/38. Offen: Assistent (Anthropic-Guthaben), Confirm Email, Auth-Routing-Redirects, Billing-Zahlungs-E2E.
 > 27.09.: Termin-DB-Guard LIVE (Ledger 20260927120000, PROD 9/9+7/7); hufi-agent-BOLA behoben, v41 LIVE (PROD 19/19). KI-Assistent live funktionslos (Anthropic-Guthaben). Details `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`.
@@ -29,7 +30,7 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 | DOCUMENTATION | UNKNOWN | kein E2E |
 | MATERIAL | PARTIAL | Cross-Tenant-Inventory (N4.7); Flow ungetestet |
 | INVOICE_PDF | PARTIAL | Rechnungs-RPC Money/Atomicity PASS; PDF im Frontend live, nicht E2E getestet |
-| BILLING | PARTIAL | Slim-Wahrheit einzig `hufi-data-core`→Lifecycle→Entitlements; Trial-Producer live; kein echter Zahlungs-E2E |
+| BILLING | PARTIAL | Slim-Wahrheit einzig `hufi-data-core`→Lifecycle→Entitlements; Trial-Producer live; Admin-Standard-Provider → Slim-Trial LIVE+E2E (28.09., v134); Override-Pläne ohne Entitlement offen; kein echter Zahlungs-E2E |
 | COPECART_ROUTING | PARTIAL | IPN → copecart-webhook (ack-only v165) + hufi-data-core; Verifikation nach Rotation offen |
 | LIFECYCLE | PARTIAL | Writer + Guard + Trial live, 0 offene Issues; Step 2 nicht angewendet |
 | MOBILE | UNKNOWN | NOT_TESTED — E2E vor Mobile-Phase wegen P0 gestoppt |

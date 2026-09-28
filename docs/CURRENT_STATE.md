@@ -1,6 +1,6 @@
 # HufManager — CURRENT STATE / SOURCE OF TRUTH
 
-**Stand:** 28.09.2026 (neueste Einträge am Dateiende; Kopfabschnitte 1–7 = Stand 24.09.2026, live verifiziert, read-only gegen Production; MCP-Ziel per get_project = HufManager/eu-central-1 bestätigt)
+**Stand:** 28.09.2026 abends (neueste Einträge am Dateiende; Kopfabschnitte 1–7 = Stand 24.09.2026, live verifiziert, read-only gegen Production; MCP-Ziel per get_project = HufManager/eu-central-1 bestätigt)
 
 > Aktueller technischer Snapshot für Menschen und Agenten. Bei Widerspruch gilt:
 > Repo + aktuelle Runtime + aktuelle DB + reproduzierbare Testevidenz vor älterer Doku.
@@ -549,3 +549,14 @@ Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`. Kein PROD-Write, kei
   kanonischer Writer `hm_start_hufmanager_slim_trial_v1` über bestehenden Trigger. DB-Tests 19/19 (Negativkontrolle 9/19),
   Edge-Guard 4/4, vitest 347/347. Details + Plan-Override-Matrix: `docs/billing/ADMIN_PROVIDER_SLIM_TRIAL_2026-09-28.md`.
 - Offen P1 (Business-Entscheidung): Override-Pläne (lifetime/manual/copecart/beta/employee) erhalten bei Admin-Anlage **kein** Entitlement.
+
+### 28.09. abends — Admin-Provider ↔ Slim-Trial: Fix LIVE, PROD-E2E PASS
+- `admin-create-user` **v134** = `e78f6c17` deployt (Owner-Freigabe), Live-Code gegen Repo geprüft; OPTIONS 200 / ohne JWT 401.
+- Post-Fix-QA `+qa-trial-admin-0928c` (Mission Control, Standard, ohne Passwort): `signup_app=hufmanager`, genau 1 Slim-Entitlement
+  TRIAL_ACTIVE/ACTIVE/NONE, exakt 14 Tage (bis 2026-10-12 14:04:58Z), genau 1 `trial_started` vom kanonischen Writer,
+  Zugang true; Passwortsetzung + Login + Reload PASS; danach kein 2. Trial, `trial_ends_at` unverändert.
+- Pre-Fix-Beleg `+qa-trial-admin-0928` (v133) bewusst unverändert: kein `signup_app`, kein Entitlement, kein Zugang.
+- **P1 Standard-Admin-Provider ohne Trial → DONE.** Weiter **offen P1:** Override-Pläne ohne Entitlement (Business-Entscheidung);
+  Mission Control zeigt Legacy-Plan/Service-Preis; `support@hufiapp.de` in Provider-Mails; **neu:** Provider-Einladungsmail
+  (`info@hufmanager.de`) kommt trotz Resend-OK nicht in Gmail an.
+- Details: `docs/billing/ADMIN_PROVIDER_SLIM_TRIAL_2026-09-28.md` (Abschnitt PROD-Verifikation).

@@ -1,6 +1,7 @@
-# Admin-angelegte Provider ↔ Slim-Trial — Fix vorbereitet (28.09.2026)
+# Admin-angelegte Provider ↔ Slim-Trial — Fix LIVE (28.09.2026)
 
-Status: **vorbereitet, NICHT auf PROD** (wartet auf Owner-Freigabe). Kein PROD-Write, kein Deploy.
+Status: **LIVE auf PROD, E2E PASS** — `admin-create-user` **v134** (= Commit `e78f6c17`), deployt 28.09. ~14:02 UTC nach
+ausdrücklicher Owner-Freigabe. Standard-Admin-Provider-P1 = **DONE**. Override-Entitlement-P1 bleibt **OFFEN** (siehe unten).
 
 ## Root Cause (PROD read-only verifiziert)
 - `auth.users` AFTER INSERT → `handle_new_user`: schreibt `profiles` inkl. `signup_app := raw_user_meta_data->>'signup_app'`,
@@ -73,3 +74,35 @@ Beim Hash-Abgleich am 28.09. wurden die Migrationen 20260924120000/2026092508000
 `supabase_db_vnschgjxkzzwzefqlrji` versehentlich committet (Dateien enthalten eigenes `COMMIT`). Keine Daten erzeugt; lokale
 Funktionen jetzt md5-identisch mit PROD; lokaler Ledger unverändert (`20260920120000`). Rückbau bei Bedarf:
 `docs/backups/mig13_…prestate_rollback…sql`, `mig10_…prestate_rollback…sql`.
+
+## PROD-Verifikation (28.09.2026)
+
+**Deploy:** `admin-create-user` v133 → **v134** per Supabase-MCP, `verify_jwt=true`. Live-Code zurückgelesen und gegen
+`e78f6c17:supabase/functions/admin-create-user/index.ts` abgeglichen (identisch; `signup_app`-Zweig + `slimTrial` vorhanden).
+Smoke: OPTIONS 200, POST ohne JWT 401.
+
+**Pre-Fix-Beleg (unverändert, NICHT repariert):** `barhufserviceschmid+qa-trial-admin-0928@gmail.com`
+(`e77daad8-…`, angelegt 11:22 UTC mit v133, Standard, ohne Passwort) → `signup_app NULL`, 0 Entitlements, 0 Lifecycle-Events,
+`_hm_has_hufmanager_access_v1 = false`, nie eingeloggt. Bleibt dauerhaft als Beleg des alten Zustands.
+(`+qa-trial-admin-0928b` existiert in PROD nicht — Anlage kam nicht zustande.)
+
+**Post-Fix-QA:** `barhufserviceschmid+qa-trial-admin-0928c@gmail.com` (`63e95b6f-…`, angelegt 14:04:58 UTC via Mission Control,
+Standard, ohne Passwort, kein planOverride; Function-Log ohne „Slim trial missing“):
+
+| Prüfung | Ergebnis |
+|---|---|
+| `auth.users.raw_user_meta_data.signup_app` / `profiles.signup_app` | `hufmanager` / `hufmanager` |
+| `product_entitlements` | genau 1 · HUFMANAGER · HUFMANAGER_SLIM · TRIAL_ACTIVE · trial_status ACTIVE · billing_status NONE · source SYSTEM |
+| Trial | 2026-09-28 14:04:58.279479Z → 2026-10-12 14:04:58.279479Z = exakt **14 days** |
+| Lifecycle | genau 1 Event `trial_started` (source admin, producer `hm_start_hufmanager_slim_trial_v1`, reason `provider_role_assigned`, domain_event_key `hm-slim-trial-started:<uid>`) |
+| `_hm_has_hufmanager_access_v1` | true |
+| Passwortsetzung (Recovery-Link aus Gmail → `/update-password`) | PASS, kein neuer Trial |
+| Login (frischer Browser) / Reload | `/home`, kein Kein-Zugang-Screen, Onboarding-Wizard, 0 Page-Errors / identisch |
+| Nach Login: Entitlement-Count / Lifecycle-Count / `trial_ends_at` / `updated_at` | 1 / 1 / unverändert / unverändert |
+
+QA-Zugangsdaten nur in `~/.config/hufmanager-qa/credentials.env` (`QA_TRIAL_ADMIN_0928C_*`).
+
+**Nebenbefund (P1, offen):** Die Provider-Einladungsmail von `admin-create-user` (Absender `info@hufmanager.de`, Resend-ID
+jeweils vorhanden, `error: null`) ist für `+0928` (11:22) und `+0928c` (14:04) **nicht im Gmail-Postfach angekommen**
+(auch nicht Spam/Papierkorb). Auth-Mails von `team@hufmanager.de` (Recovery) kommen an. Login daher über „Passwort vergessen“
+verifiziert. Ursache (Resend-Zustellstatus/Domain `info@`) noch zu prüfen.
