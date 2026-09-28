@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { SlimTrialBanner } from "@/components/slim/SlimTrialBanner";
 import {
   CalendarDays,
   Map,
@@ -292,6 +293,7 @@ export function HufManagerSlimShell() {
 
         <main className="w-full min-w-0 max-w-full overflow-x-hidden px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-10">
           <div className="mx-auto w-full min-w-0 max-w-[1440px]">
+            <SlimTrialBanner />
             <Outlet />
           </div>
         </main>
