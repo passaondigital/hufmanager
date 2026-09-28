@@ -1,6 +1,6 @@
 # HufManager Slim — Release Gates
 
-**Stand:** 25.09.2026 · Frontend `25d88773` · letzte Migration `20260925080000` · Production `vnschgjxkzzwzefqlrji`
+**Stand:** 28.09.2026 spät (Final-Release-Sprint) · Frontend `ceacdcb4` · letzte Migration `20260929120000` · Production `vnschgjxkzzwzefqlrji` · Bericht `docs/release/HUFMANAGER_FINAL_RELEASE_REPORT_2026-09-28.md`
 
 > 28.09. ~20:45: Manual-Access-Writer + Profil-Härtung LIVE (Ledger 20260929100000), admin-create-user v135, Frontend c8bbd096. 2 Barzahlungs-Bestände kanonisch (letzter Tag 15.01./27.02.2027, Grenze Folgetag 00:00 Berlin). Pre-Tests 72/72+7/7+19/19+vitest 363/363. Offen: Admin-E2E Mission Control (Standard/Lifetime/Cash/Beta/Legacy-400/Non-Admin/Härtung per JWT).
 > 28.09. nachts: Owner-Matrix umgesetzt (LOKAL): admin-create-user + Mission Control an Manual-Writer angebunden, Beta mit Pflicht-Enddatum, Legacy-CopeCart/Employee aus Neuanlage entfernt, P2-Härtung Profil-Billing-Felder (20260929100000). Tests 59/59 + 7/7 + 19/19 + vitest 358/358. NICHT PROD — wartet auf Freigabe. Architektur/Rollback docs/billing/MANUAL_ACCESS_WRITER_ARCHITECTURE.md.
@@ -15,52 +15,50 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 
 | Gate | Status | Evidenz / was fehlt |
 |---|---|---|
-| SOURCE_OF_TRUTH | TESTED | Repo/Branch/Ledger/Edge/Webroot/DNS live 24.09.; Doku gepusht |
-| MIGRATION_LEDGER | TESTED | Prod-Ledger bis `20260924120000` (Trial), keine neue Drift; Legacy-Drift dokumentiert |
-| BUILD | TESTED | `./deploy.sh` Frontend `992f9117` inkl. Bundle-Gates, Deploy-Smoke 0 Errors |
-| TYPECHECK | PARTIAL | 131 TS-Diagnosen = Baseline, 0 neue |
-| UNIT_TESTS | TESTED | vitest 309/309; copecart Laufzeit-Check 10/10 |
-| DB_TESTS | PARTIAL | Trial-Migration 17/17 lokal + Negativkontrollen; Invite-RPCs N4–N13; keine CI-Suite |
-| AUTH | PARTIAL | Signup/Login/Reset live (QA); Admin-Provider-Invite + Employee-Invite E2E PASS → app.hufmanager.de (28.09.); Confirm Email AUS, Template „Confirm signup“ ungeprüft |
+| SOURCE_OF_TRUTH | TESTED | Repo/Branch/Ledger/Edge/Webroot live 28.09. spät; gepusht |
+| MIGRATION_LEDGER | TESTED | PROD-Ledger bis `20260929120000`, jede Migration mit md5-Guard + Rollback-Skript |
+| BUILD | TESTED | `./deploy.sh hufmanager` Frontend `ceacdcb4`, Bundle-Gates + Smoke 0 Errors |
+| TYPECHECK | PARTIAL | 131 TS-Diagnosen = Baseline, 0 in geänderten Dateien |
+| UNIT_TESTS | TESTED | vitest 392/392 (28.09. spät) |
+| DB_TESTS | TESTED | Manual-Access 72/72, Härtung 7/7, account_class 14/14, Trial 19/19, Release-Fixes 6/6 (lokal, frisch) |
+| AUTH | PARTIAL | Login/Logout/Reload/Multi-Tab PASS; Tab-Lock-Fix live; **Confirm Email AUS**, Site-URL/Template nur per Dashboard (Owner) |
 | FIRST_LOGIN | PARTIAL | Wizard-Hänger behoben (2668a344, Browser-verifiziert); Trial live; Mobile nicht getestet. Vorher: | Trial live: frische Registrierung → TRIAL_ACTIVE 14 T.; UI-Durchlauf (Onboarding-Wizard, Mobile) nicht getestet |
-| TENANT_ISOLATION | BLOCKED | Kunden/Grants/Kontakte/Invites isoliert (36/36), ABER Leistungskatalog (`services`) Cross-Tenant lesbar und in Terminen referenziert. Vorher: | Prod QA A↔B mit echten Kunden: 36/36 Adversarial-Checks (2× gelaufen), 0 fremde Grants |
+| TENANT_ISOLATION | TESTED | PROD 38/38 + Kernlauf-Fremdzugriff 6/6; `services`-Leak behoben (0 fremde Leistungen) |
 | CLIENT_INVITE | TESTED | Prod: Invite A/B, Grant/Kontakt/Invite korrekt, kein Fallback; Resend 8/8; kein Passwort im Browser |
 | PARTNER_INVITE | UNKNOWN | nicht geprüft |
 | INTAKE_IMPORT | UNKNOWN | nicht geprüft |
-| CUSTOMER_HORSE | TESTED | Prod-Browser: Kunde + Pferd anlegen, Reload, erneut öffnen; Doppelklick-Dublette gefunden und behoben (lokal+Prod verifiziert) |
-| APPOINTMENT | BLOCKED | Anlage funktioniert (Doppelklick-sicher seit 76679463), aber Leistungsauswahl zeigt fremde Provider-Leistungen (P0) |
+| CUSTOMER_HORSE | TESTED | PROD-Kernlauf 19/19 + UI Desktop/Mobil |
+| APPOINTMENT | TESTED | Anlage/Änderung/Abschluss/Folgetermin PROD; Status-Bug `scheduled` behoben; 22 Alt-Termine mit fremder Leistung = P2-Daten |
 | TOUR | UNKNOWN | kein E2E |
 | DOCUMENTATION | UNKNOWN | kein E2E |
 | MATERIAL | PARTIAL | Cross-Tenant-Inventory (N4.7); Flow ungetestet |
-| INVOICE_PDF | PARTIAL | Rechnungs-RPC Money/Atomicity PASS; PDF im Frontend live, nicht E2E getestet |
-| BILLING | PARTIAL | Slim-Wahrheit einzig `hufi-data-core`→Lifecycle→Entitlements; Trial-Producer live; Admin-Standard-Provider → Slim-Trial LIVE+E2E (28.09., v134); Override-Pläne: Manual-Access-Writer LIVE (28.09., Ledger 20260929090000/100000, 2 Cash-Bestände kanonisch), Admin-E2E offen; kein echter Zahlungs-E2E |
+| INVOICE_PDF | TESTED | Rechnung atomar + PDF (Pflichtfelder, §19) PROD; Kleinunternehmer-Fix; Hinweis bei fehlenden Anbieterdaten |
+| BILLING | PARTIAL | Trial/Manual/account_class live und getestet; echter CopeCart-Kauf-E2E offen (Owner) |
 | COPECART_ROUTING | PARTIAL | IPN → copecart-webhook (ack-only v165) + hufi-data-core; Verifikation nach Rotation offen |
 | LIFECYCLE | PARTIAL | Writer + Guard + Trial live, 0 offene Issues; Step 2 nicht angewendet |
-| MOBILE | UNKNOWN | NOT_TESTED — E2E vor Mobile-Phase wegen P0 gestoppt |
+| MOBILE | PARTIAL | Mobil-Emulation voll PASS; echtes Android nur Standard-Anlage |
 | DRAFT_RESUME | UNKNOWN | nicht geprüft |
-| SECURITY | BLOCKED | P0 vorbestehend: `services` für alle Authentifizierten lesbar, 22 echte Termine mit fremden Leistungen; SECRET_ROTATION = DEFERRED/RISK_ACCEPTED_BY_OWNER (kein Blocker). Vorher: | Invite-P0, PII-Log, Allowlist, Demo-Endpoints, Demo-Passwörter erledigt; offen: CopeCart-Secret-Rotation, P1 Provider darf Client-`email`/`created_by_provider_id` via RLS ändern, P2 fremde `profile_id` in Kontakt, Auto-Confirm Signup |
+| SECURITY | TESTED | PROD 38/38 + Billing/Access 11/11; Self-Grant/Non-Admin/Entitlement-Schreiben/account_class blockiert |
 | MONITORING | PARTIAL | Cron-Health-Checks; kein Alerting-Nachweis |
 | BACKUP | PARTIAL | Prod-Dump 24.09. verifiziert; kein Storage-Backup, kein Offsite |
 | RESTORE | PARTIAL | letzter Drill 11.09.; Rollback-SQL Trial lokal getestet |
-| ROLLBACK | PARTIAL | Frontend previous=`b15b6133`; Edge-Vorfassungen gesichert; Trial-Rollback lokal getestet; Prod-Rollback nicht geübt |
+| ROLLBACK | TESTED | previous-Symlink, Edge-Vorversionen, Rollback-SQL je Migration; account_class-Rollback lokal durchgespielt |
 | STAGING_SMOKE | PARTIAL | lokal Trial/Webhook; kein Staging-Browser-E2E |
-| PRODUCTION_SMOKE | TESTED | Final-Smoke 24.09.: Tenant 36/36, Resend 8/8, Trial, 410/401-Pfade, App 200, DB-Invarianten |
+| PRODUCTION_SMOKE | TESTED | 28.09. spät: Security 38/38, Billing 11/11, Kernlauf 19/19, UI-Sweep 0 HTTP≥400 |
 | SUPPORT_RECOVERY | UNKNOWN | nicht geprüft |
-| SALE_READY | BLOCKED | P0 `services`-Leak; Kernflow ab Termin, Mobile, Billing-Zahlungs-E2E nicht belegt. Secret-Rotation ist KEIN Blocker (Owner-Risikoakzeptanz) |
+| SALE_READY | BLOCKED | P0 = 0. Offen P1 (Owner): Confirm Email/Site URL, echter Kauf-E2E, Mail-Zustellung info@ |
 
 ## Blocker
 
-1. **P0 Tenant-Leak `services`** — RLS-Policy + ungefilterte Provider-Formulare; 22 echte Termine mit fremden Leistungen.
-2. **Kernflow ab Termin nicht E2E belegt** (Tour, Doku, Material, Rechnung/PDF) + Mobile NOT_TESTED — wegen STOP.
-3. **Billing-Zahlungs-E2E** (Kauf → Paid Entitlement → Login) nicht belegt.
-
-Nicht mehr blockierend: CopeCart-Secret-Rotation (`DEFERRED / RISK_ACCEPTED_BY_OWNER`, 24.09.2026).
+1. Confirm Email + Site URL + Template „Confirm signup“ (Supabase-Dashboard, Owner).
+2. Echter CopeCart-Kauf-E2E (Owner, echte Zahlung).
+3. Zustellung `info@hufmanager.de` (DMARC/Absender, DNS-Zugriff).
 
 ## Next 3
 
-1. Folgeauftrag P0 `services`: Provider-Formulare auf eigene Leistungen filtern + RLS so einschränken, dass Kunden nur Leistungen ihrer Provider (Grant) und Landing/Widget nur die eines Providers sehen; Bestandsaufnahme der 22 betroffenen Termine.
-2. Kernflow-E2E fortsetzen (Termin → Tour → Doku → Material → Rechnung/PDF) + Mobile 360/390/430.
-3. Billing-Zahlungs-E2E mit Pascal (Testkauf) nach Freigabe.
+1. P1 1–3 oben erledigen, danach SALE_READY neu bewerten.
+2. Echter Android-Durchlauf (Kunde → Termin → Rechnung → PDF) durch Pascal.
+3. QA-Cleanup-Dry-Run (SAFE_DELETE / KEEP_AS_QA_FIXTURE / MANUAL_REVIEW), keine Löschung ohne Freigabe.
 
 ## Safe tasks für günstigere Agents
 

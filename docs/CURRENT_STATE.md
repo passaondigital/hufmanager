@@ -1,6 +1,6 @@
 # HufManager — CURRENT STATE / SOURCE OF TRUTH
 
-**Stand:** 28.09.2026 ~20:45 (neueste Einträge am Dateiende; Kopfabschnitte 1–7 = Stand 24.09.2026, live verifiziert, read-only gegen Production; MCP-Ziel per get_project = HufManager/eu-central-1 bestätigt)
+**Stand:** 28.09.2026 spät (Final-Release-Sprint) (neueste Einträge am Dateiende; Kopfabschnitte 1–7 = Stand 24.09.2026, live verifiziert, read-only gegen Production; MCP-Ziel per get_project = HufManager/eu-central-1 bestätigt)
 
 > Aktueller technischer Snapshot für Menschen und Agenten. Bei Widerspruch gilt:
 > Repo + aktuelle Runtime + aktuelle DB + reproduzierbare Testevidenz vor älterer Doku.
@@ -601,3 +601,12 @@ Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`. Kein PROD-Write, kei
   Nutzer-JWT) — braucht Admin-Login. Code/Doku lokal committet, **Push erst nach QA-PASS**.
 - Rollback: `docs/backups/mig20260929_rollback_PROD.sql` (vorher 2 manual-Zeilen prüfen), Edge `git show e78f6c17:…` (= v134),
   Frontend `./deploy.sh hufmanager --rollback`.
+
+### 28.09. spät — Final-Release-Sprint (PROD vnschgjxkzzwzefqlrji)
+- Live: Frontend `ceacdcb4`, admin-create-user v136, Ledger `20260929120000`. Details + Gates + Rollback:
+  `docs/release/HUFMANAGER_FINAL_RELEASE_REPORT_2026-09-28.md`.
+- Neu live: account_class (+ Backfill 25), Tab-Lock-Fix, Termin-Status `planned`, Kleinunternehmer-Rechnung, Membership-404 weg,
+  Dunkel-Modus-Tokens, Anbieterdaten-Hinweis, Slim-Trial-Banner, Slim-Abo-Karte, `support@hufmanager.de` in Einladung.
+- Kennzahlen: real 28 Provider, qa 11 (+2 QA-Testkunden), test_fixture 8, demo 2 Provider; echte Grandfather 19.
+- Offen P1 (Owner): Confirm Email/Site URL, echter Kauf-E2E, Mail-Zustellung info@. P0 = 0.
+
