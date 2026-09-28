@@ -37,7 +37,14 @@ Bearbeiten-Dialog nur noch als „[Legacy] … – nicht mehr wählbar“ angeze
 - Revoke → `LOCKED`, Events + Metadaten bleiben, Re-Grant möglich (T14).
 - Audit: producer, grant_type, valid_from/until, reason (≤ 200, ohne E-Mail), actor_id, previous_status/source.
 - Projektor/Reconciler unverändert: neue Event-Namen sind dort No-Op.
-- Enddatum = `new Date("YYYY-MM-DD")` = 00:00 UTC des Tages; `profiles.access_valid_until` spiegelt denselben Wert (Anzeige).
+- Enddatum-Semantik (Owner-Regel 28.09.2026, ersetzt die frühere 00:00-UTC-Regel):
+  - ausgewähltes Datum = **letzter gültiger Kalendertag**, Zeitzone **Europe/Berlin**
+  - interne Grenze `current_period_end` = Beginn des Folgetages Europe/Berlin
+    (`hm_manual_access_exclusive_end_v1(D)` = `(D + 1)::timestamp AT TIME ZONE 'Europe/Berlin'`, DST-sicher)
+  - Zugang solange `now() < current_period_end`; keine generelle 23:59:59-UTC-Regel, kein +24h auf UTC-Timestamps
+  - Beispiele: 15.01.2027 → Ende 16.01.2027 00:00 Europe/Berlin (= 2027-01-15 23:00 UTC);
+    27.02.2027 → Ende 28.02.2027 00:00 Europe/Berlin (= 2027-02-27 23:00 UTC)
+  - Legacy-Timestamps (`profiles.access_valid_until`) werden nicht übernommen; maßgeblich ist das fachliche Datum.
 
 ## Dateien
 - `supabase/migrations/20260929090000_add_hufmanager_manual_access_writer_v1.sql` (Writer, Wrapper, Gates)
@@ -59,8 +66,8 @@ Bearbeiten-Dialog nur noch als „[Legacy] … – nicht mehr wählbar“ angeze
 
 ## Rollback
 - Gates: Pre-State-Definitionen zurückspielen (lokal: `docs/backups/mig20260929_manual_access_prestate_functions_LOCAL.sql`).
-- Writer: `DROP FUNCTION public.hm_admin_set_hufmanager_manual_access_v1(uuid,text,timestamptz,text);`
-  `DROP FUNCTION public.hm_set_hufmanager_manual_access_v1(uuid,text,timestamptz,text,uuid);`
+- Writer: `DROP FUNCTION public.hm_admin_set_hufmanager_manual_access_v1(uuid,text,date,text);`
+  `DROP FUNCTION public.hm_set_hufmanager_manual_access_v1(uuid,text,date,text,uuid);` `DROP FUNCTION public.hm_manual_access_exclusive_end_v1(date);` (komplett: `docs/backups/mig20260929_rollback_PROD.sql`)
 - Enum-Werte `manual_access_granted/revoked` bleiben (Postgres kann sie nicht entfernen; ungenutzt harmlos).
 - Bereits geschriebene Manual-Entitlements bleiben ACTIVE; mit altem Gate laufen befristete dann **nicht** mehr ab →
   vor Gate-Rollback betroffene Zeilen prüfen (`billing_provider='manual'`).
