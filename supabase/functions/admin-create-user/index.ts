@@ -291,14 +291,17 @@ serve(async (req: Request) => {
           type: "magiclink",
           email: email,
           options: {
-            redirectTo: "https://hufiapp.de/auth",
+            // HufManager-Provider landen in der HufManager-App (nicht hufiapp.de, anderes
+            // Supabase-Projekt). /reset-password akzeptiert die Magic-Link-Sitzung und
+            // lässt das Passwort festlegen — passend zum Mailtext.
+            redirectTo: "https://app.hufmanager.de/reset-password",
           },
         });
 
         if (linkError) {
           console.error("Error generating magic link:", linkError);
         } else {
-          const magicLinkUrl = linkData.properties?.action_link || "https://hufiapp.de/auth";
+          const magicLinkUrl = linkData.properties?.action_link || "https://app.hufmanager.de/auth";
           const planDisplayName = getPlanDisplayName(planOverride);
           
           // Escape all user-controlled data

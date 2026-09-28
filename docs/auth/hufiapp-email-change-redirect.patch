@@ -1,0 +1,15 @@
+--- a/src/pages/app/Einstellungen.tsx	2026-09-28 11:04:29.263915619 +0200
++++ b/src/pages/app/Einstellungen.tsx	2026-09-28 11:04:29.283754314 +0200
+@@ -41,7 +41,11 @@
+   const updateEmail = async () => {
+     if (!email || !user) return;
+     setSaving(true);
+-    const { error } = await supabase.auth.updateUser({ email });
++    const { error } = await supabase.auth.updateUser(
++      { email },
++      // Explizit zurück in die HufiApp statt Site-URL-Fallback des Projekts.
++      { emailRedirectTo: `${window.location.origin}/app/einstellungen` },
++    );
+     if (error) toast.error(error.message);
+     else toast.success("Bestätigungs-E-Mail gesendet! Bitte prüfe dein Postfach.");
+     setSaving(false);

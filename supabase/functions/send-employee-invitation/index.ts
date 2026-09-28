@@ -74,12 +74,13 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Failed to update invitation: " + updateError.message);
     }
 
-    // Get the app URL from environment or use default
-    const appUrl = Deno.env.get("APP_URL") || "https://app.hufiapp.de";
+    // Fest auf die HufManager-App: APP_URL ist ein projektweites Secret und zeigte
+    // mit dem Fallback auf app.hufiapp.de (ungültiges Zertifikat, anderes Projekt).
+    const appUrl = "https://app.hufmanager.de";
     const invitationLink = `${appUrl}/employee-invite?token=${invitationToken}`;
 
-    // For now, we'll log the invitation link (email sending can be added later)
-    console.log(`Invitation for ${employee.email}:`, invitationLink);
+    // Kein Logging des Links: er enthält das Einladungs-Token.
+    console.log("Employee invitation prepared", { employeeId });
 
     // In production, send email via Resend or similar
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
