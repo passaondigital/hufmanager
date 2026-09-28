@@ -1,6 +1,8 @@
 -- P1 Termin-DB-Guard: positive + negative Tests.
 -- Aufruf: psql -v mig_body=supabase/migrations/20260927120000_add_appointment_relation_guard_v1.sql -f scripts/appointment-guard-tests.sql
 -- Negativkontrolle: -v mig_body=/dev/null  (dann müssen die Verbots-Tests FAIL sein)
+-- Admin-Nachbesserung (20260928100000) zusätzlich: -v mig_body2=supabase/migrations/20260928100000_restrict_appointment_guard_admin_exception_v1.sql
+--   (ohne mig_body2 müssen T34/T38 FAIL sein = Negativkontrolle der Nachbesserung)
 -- Läuft komplett in einer Transaktion und endet mit ROLLBACK.
 \set ON_ERROR_STOP 1
 BEGIN;
@@ -70,10 +72,24 @@ INSERT INTO appointments(id, provider_id, horse_id, client_id, date, status) VAL
  ('00000000-0000-4000-8000-0000000007a3','00000000-0000-4000-8000-00000000a0a0','00000000-0000-4000-8000-0000000004aa','00000000-0000-4000-8000-0000000000aa',current_date+7,'planned'),
  ('00000000-0000-4000-8000-0000000007a4','00000000-0000-4000-8000-00000000a0a0','00000000-0000-4000-8000-0000000004c1','00000000-0000-4000-8000-0000000000aa',current_date-30,'completed');
 UPDATE appointments SET assigned_to_user_id='00000000-0000-4000-8000-00000000e0e0' WHERE id='00000000-0000-4000-8000-0000000007a1';
+-- Z = Betrieb, der zugleich Admin + Master-Admin ist (wie das Hauptkonto des Owners);
+--     aktiver Grant nur zu C; LZ = Z-Alttermin an HD (keine Verbindung Z<->D)
+INSERT INTO auth.users (id, email) VALUES ('00000000-0000-4000-8000-0000000000fa', 'ag-z@example.invalid');
+INSERT INTO profiles (id, email, full_name) VALUES ('00000000-0000-4000-8000-0000000000fa','ag-z@example.invalid','Z');
+INSERT INTO user_roles(user_id, role) VALUES ('00000000-0000-4000-8000-0000000000fa','provider'),('00000000-0000-4000-8000-0000000000fa','admin');
+INSERT INTO master_admins(email) VALUES ('ag-z@example.invalid');
+INSERT INTO product_entitlements(user_id,product,plan,status) VALUES ('00000000-0000-4000-8000-0000000000fa','HUFMANAGER','HUFMANAGER_SLIM','ACTIVE');
+INSERT INTO access_grants(provider_id, client_id, is_active, status) VALUES
+ ('00000000-0000-4000-8000-0000000000fa','00000000-0000-4000-8000-00000000c0c0',true,'active');
+INSERT INTO appointments(id, provider_id, horse_id, client_id, date, status) VALUES
+ ('00000000-0000-4000-8000-0000000007f1','00000000-0000-4000-8000-0000000000fa','00000000-0000-4000-8000-0000000004d1',NULL,current_date-20,'planned');
 CREATE TEMP TABLE pre AS SELECT (SELECT count(*) FROM appointments) appt,
   (SELECT md5(string_agg(to_jsonb(a)::text, '' ORDER BY id)) FROM appointments a) appt_md5;
 
 \i :mig_body
+\if :{?mig_body2}
+\i :mig_body2
+\endif
 
 INSERT INTO r SELECT 'M0 migration does not touch rows', appt=(SELECT count(*) FROM appointments)
   AND appt_md5=(SELECT md5(string_agg(to_jsonb(a)::text, '' ORDER BY id)) FROM appointments a), '' FROM pre;
@@ -164,6 +180,22 @@ SELECT pg_temp.chk('T27 admin may create appt for A without grant',
   $q$INSERT INTO appointments(provider_id,horse_id,date) VALUES ('00000000-0000-4000-8000-00000000a0a0','00000000-0000-4000-8000-0000000004d1',current_date+4)$q$, true);
 SELECT pg_temp.chk('T28 admin still cannot mismatch horse and client',
   $q$INSERT INTO appointments(provider_id,horse_id,client_id,date) VALUES ('00000000-0000-4000-8000-00000000a0a0','00000000-0000-4000-8000-0000000004c1','00000000-0000-4000-8000-0000000000cc',current_date+4)$q$, false, 'Pferd gehört nicht zu diesem Kunden');
+RESET ROLE;
+
+-- ── Admin, der selbst Betrieb ist (Nachbesserung 20260928100000) ───────────
+SELECT pg_temp.as_user('00000000-0000-4000-8000-0000000000fa'); SET LOCAL ROLE authenticated;
+SELECT pg_temp.chk('T34 admin-provider Z: own appt for horse without grant (HD) -> rejected',
+  $q$INSERT INTO appointments(provider_id,horse_id,date) VALUES ('00000000-0000-4000-8000-0000000000fa','00000000-0000-4000-8000-0000000004d1',current_date+6)$q$, false, 'Kunde/Pferd gehört nicht');
+SELECT pg_temp.chk('T35 admin-provider Z: own appt with own grant (HC) -> allowed',
+  $q$INSERT INTO appointments(provider_id,horse_id,client_id,date) VALUES ('00000000-0000-4000-8000-0000000000fa','00000000-0000-4000-8000-0000000004c1','00000000-0000-4000-8000-00000000c0c0',current_date+6)$q$, true);
+SELECT pg_temp.chk('T36 admin-provider Z: acting for other business A without grant -> allowed (support)',
+  $q$INSERT INTO appointments(provider_id,horse_id,date) VALUES ('00000000-0000-4000-8000-00000000a0a0','00000000-0000-4000-8000-0000000004d1',current_date+6)$q$, true);
+SELECT pg_temp.chk('T37 admin-provider Z: legacy own appt without grant, date/notes edit -> allowed',
+  $q$UPDATE appointments SET date=current_date-19, notes='x' WHERE id='00000000-0000-4000-8000-0000000007f1'$q$, true);
+SELECT pg_temp.chk('T38 admin-provider Z: re-point own appt to foreign horse HK -> rejected',
+  $q$UPDATE appointments SET horse_id='00000000-0000-4000-8000-0000000004cc' WHERE id='00000000-0000-4000-8000-0000000007f1'$q$, false, 'Kunde/Pferd gehört nicht');
+SELECT pg_temp.chk('T39 admin-provider Z: own appt horse/client mismatch -> rejected',
+  $q$INSERT INTO appointments(provider_id,horse_id,client_id,date) VALUES ('00000000-0000-4000-8000-0000000000fa','00000000-0000-4000-8000-0000000004c1','00000000-0000-4000-8000-0000000000cc',current_date+6)$q$, false, 'Pferd gehört nicht zu diesem Kunden');
 RESET ROLE;
 
 -- ── Backend ohne Endnutzer (service_role: hufi-agent, Seeds, RPCs) ────────────

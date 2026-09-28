@@ -134,3 +134,49 @@ enthält noch die ungescopten update/cancel/send_notification/create_horse-Zweig
   `net._http_response`, täglich 03:47 UTC für `cron.job_run_details`. Kein FULL, keine Sperre für pg_net/pg_cron, keine
   Geschäftsdaten. Probelauf auf Supabase-Postgres 17.6.1.054: Job `succeeded`, idempotent. Rollback: `cron.unschedule` beider Jobs.
 - Weitere große Tabellen (beobachten, nicht Teil dieser Maßnahme): `system_health_checks` 110 MB, `notifications` 29 MB.
+
+## 6. PROD-Umsetzung 28.09.2026 (Owner-Freigabe) — alle drei LIVE
+
+Projekt: PROD `vnschgjxkzzwzefqlrji` (Supabase-MCP, `get_project` = HufManager/eu-central-1). Jede Migration einzeln per
+Transaktion inkl. Ledger-Eintrag; Ledger-md5 = Datei. Keine Änderung an Bestandsdaten (Grants 71 und Termine 301,
+md5 vor = nach), die 54 historischen Termine wurden auch in Tests nicht angefasst.
+
+### net-Retention `20260927180000` — LIVE
+- Jobs 25 `vacuum-net-http-response` (`23 */6 * * *`) und 26 `vacuum-cron-job-run-details` (`47 3 * * *`), aktiv, User postgres.
+  Ledger-md5 `4dad4fa1…` = Datei. Rollback: `docs/backups/mig15_20260927180000_rollback.sql`.
+- Erstlauf: Job 25 einmalig auf 08:16 UTC vorgezogen → `succeeded` (0,8 s), danach Plan zurückgestellt.
+  `last_vacuum`/`last_analyze` gesetzt, Statistik jetzt korrekt (518 live / 1 tot statt 150 / 0).
+- `net._http_response` 10 MB (Heap 9 MB) — normales VACUUM schrumpft nicht, gibt Platz zur Wiederverwendung frei → Wachstum
+  sollte stoppen. Kontrolle in 24–48 h. Job 26 erster Lauf 29.09. 03:47 UTC.
+
+### Ghost-Grant-Fix `20260928090000_fix_foreign_ghost_grant_v1` — LIVE
+- Befund präzisiert: Direkte REST-Schreibzugriffe von Providern auf `access_grants` scheitern heute schon, aber nur zufällig
+  (Policies lesen `auth.users`, `authenticated` hat dort kein SELECT → `42501 permission denied for table users`; auf PROD
+  verifiziert). Die permissive ALL-Policy „Provider sees own grants“ ohne WITH CHECK hebelt die engeren Policies aus —
+  einziger fachlicher Schutz war der Trigger, und der prüfte Ghost-Kunden gar nicht und das Umhängen von `client_id` nie.
+- Fix im Trigger `enforce_access_grant_security`: handelt der Aufrufer als Betrieb (`auth.uid() = provider_id`), gilt INSERT
+  oder UPDATE mit neuer `client_id`/`provider_id` als neue Beziehung. Ghost: nur der anlegende Betrieb
+  (`created_by_provider_id`). Echter Kunde: kein aktiver Grant ohne Zustimmung, jetzt auch beim Umhängen.
+  Service-Role/Edge (Invite-RPC), Kunden-Selbstverbindung und Beenden bleiben unverändert.
+- Tests (Wegwerf-Postgres 17, Replik `scripts/access-grant-ghost-replica-schema.sql`, `scripts/access-grant-ghost-tests.sql`):
+  ohne Rechte-Barriere 20/20, Negativkontrolle ohne Fix 13/20 (alle 7 Lücken-Tests FAIL); mit PROD-Rechten Fix = Altstand
+  (keine Regression). Apply + Rollback geprobt.
+- PROD (Transaktion mit ROLLBACK): 9/9 — fremder Ghost aktiv/pending blockiert, eigenen Grant auf fremden Ghost bzw.
+  fremden echten Nutzer umbiegen blockiert, REST-Rolle weiterhin 42501; eigene Grants beenden/ändern ok, Serverpfad ok.
+- Funktion: SECURITY DEFINER, `search_path=public`, EXECUTE nur postgres/service_role.
+  Rollback: `docs/backups/mig16_20260928090000_rollback.sql` (stellt auch alte Rechte her).
+
+### Termin-Guard Admin-Nachbesserung `20260928100000_restrict_appointment_guard_admin_exception_v1` — LIVE
+- Einzige Änderung: Admin-Ausnahme nur noch, wenn der Admin für einen ANDEREN Betrieb handelt (`auth.uid() <> provider_id`).
+  Das Hauptkonto (Master-Admin) unterliegt im eigenen Betrieb jetzt der Grant-Prüfung.
+- Regression: `scripts/appointment-guard-tests.sql` (+6 Admin-Tests T34–T39) 45/45; ohne Nachbesserung genau T34/T38 FAIL;
+  ohne Guard 22/45. Apply + Rollback geprobt (Rollback-md5 = alte Fassung `f5395766…`).
+- PROD (ROLLBACK): 7/7 — Master-Admin eigener Betrieb: Pferd ohne Grant blockiert, mit Grant ok; Master-Admin für anderen
+  Betrieb (Support) ok; Provider eigenes Pferd ok, fremdes blockiert; Fremder im Namen eines Betriebs blockiert; Serverpfad blockiert.
+- Prosrc-md5 neu `c6f92a0e…`. Rollback: `docs/backups/mig17_20260928100000_rollback.sql`.
+
+### Security- + Production-Smoke 28.09. — PASS
+- `scripts/ops/prod_security_smoke.py` (QA A/B/TRIAL, nicht-mutierend): **38/38** — Leistungen/Grants/Termine/Rechnungen nur
+  eigene, fremde Pferde/Ghosts unsichtbar, Ghost-Grant/Umbiegen/fremde Termine blockiert, Edge 401/410-Pfade, Invite-Tabelle
+  gesperrt, Slim-Zugang, REST 200, `app.hufmanager.de` 200.
+- Cron 24 h: 0 Fehler / 2.153 Läufe. DB 211 MB. `hufi-agent` v41 aktiv; Assistent weiterhin 503 (Anthropic-Guthaben/Ollama).

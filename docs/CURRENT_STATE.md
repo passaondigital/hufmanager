@@ -507,3 +507,10 @@ Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`. Kein PROD-Write, kei
 - Designbefund: Hauptkonto ist Master-Admin → Admin-Ausnahme des Guards greift im Betriebsalltag (v2-Vorschlag).
 - 108 Termine getrennter Kunden: 0 aktive Zukunftstermine (38 zukünftige schon am 28.07. abgesagt), 54 alte offene.
 - Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md` Abschnitt 4.
+
+### 28.09. — Live-Lücken geschlossen (Owner-Freigabe)
+- net-Retention `20260927180000` live (Jobs 25/26, Erstlauf ok), Ghost-Grant-Fix `20260928090000` live (PROD 9/9),
+  Termin-Guard-Admin-Nachbesserung `20260928100000` live (PROD 7/7, Regression 45/45). Ledger `20260928100000`.
+- Security-/Production-Smoke 38/38. Bestandsdaten unverändert (Grants 71, Termine 301, md5 vor = nach).
+- Unverändert offen: Assistent live funktionslos (Anthropic-Guthaben), Confirm Email AUS, Auth-Routing-Fixes (Edge-Redirects hufiapp.de).
+- Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md` Abschnitt 6.

@@ -2,6 +2,7 @@
 
 **Stand:** 25.09.2026 · Frontend `25d88773` · letzte Migration `20260925080000` · Production `vnschgjxkzzwzefqlrji`
 
+> 28.09.: net-Retention, Ghost-Grant-Fix und Termin-Guard-Admin-Nachbesserung LIVE (Ledger 20260928100000); Security-/Production-Smoke 38/38. Offen: Assistent (Anthropic-Guthaben), Confirm Email, Auth-Routing-Redirects, Billing-Zahlungs-E2E.
 > 27.09.: Termin-DB-Guard LIVE (Ledger 20260927120000, PROD 9/9+7/7); hufi-agent-BOLA behoben, v41 LIVE (PROD 19/19). KI-Assistent live funktionslos (Anthropic-Guthaben). Details `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`.
 > 25.09. abends: Auth-Routing-Audit — hufiapp.de live nutzt ANDERES Supabase-Projekt; ConnectForm-Redirect-Fix `1d1d33fe` (nicht deployt); Termin-DB-Guard offen. Gesamtbericht `docs/HUFMANAGER_SLIM_GESAMTBERICHT_2026-09-25.md`.
 > 25.09.: Trial-Begrenzung live; P0 Cross-User-Cache behoben + PROD-verifiziert; offen: E-Mail-Bestätigung (Dashboard), P1 Termin-Schreibguard, Mobile-Realgerät, CopeCart-Testkauf, UX-Konsolidierung. Details `docs/CURRENT_STATE.md` (25.09.).
