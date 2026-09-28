@@ -560,3 +560,14 @@ Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`. Kein PROD-Write, kei
   Mission Control zeigt Legacy-Plan/Service-Preis; `support@hufiapp.de` in Provider-Mails; **neu:** Provider-Einladungsmail
   (`info@hufmanager.de`) kommt trotz Resend-OK nicht in Gmail an.
 - Details: `docs/billing/ADMIN_PROVIDER_SLIM_TRIAL_2026-09-28.md` (Abschnitt PROD-Verifikation).
+
+### 28.09. abends — Override-Entitlements / Manual Access: Audit + Fix VORBEREITET (nicht PROD)
+- PROD read-only: Override-Provider = 1 lifetime, 2 manual_cash_1y, 1 copecart_pro, 1 copecart_starter; beta/employee/duo/team/Legacy-CopeCart = 0.
+  8 weitere `lifetime_grant`-Profile sind keine Provider (kein Slim nötig).
+- Befunde: Gate prüft bei ACTIVE kein Enddatum → Barzahlungs-Kunden (Ende 2027-01/02) laufen nie ab; Backfill markierte Manual-Grants
+  als VERIFIED_PAID; copecart_pro-VERIFIED_PAID beruht nur auf Subscription-ID + Testzahlung; 28 Standard-Provider dauerhaft ACTIVE
+  nur wegen Legacy-`subscription_status='active'` (AMBIGUOUS_ACTIVE_ONLY). Kein Profilstring gibt heute direkt Zugang.
+- Fix lokal: Migration `20260929090000` (Manual-Access-Writer + Admin-Wrapper + Ablauf im Gate für `billing_provider='manual'`),
+  Tests `scripts/hufmanager-manual-access-tests.sql` 50/50, Trial-Regression 19/19, vitest 347/347. Lokal angewendet, PROD unberührt.
+- Wartet auf Owner-Entscheidungen (Matrix, Beta-Modell, Einzelfälle) und PROD-Freigabe. Bericht:
+  `docs/billing/OVERRIDE_ENTITLEMENTS_AUDIT_2026-09-28.md`.

@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 // (supabase/migrations/20260911204100_add_hufmanager_slim_access_context_api_v1.sql).
 export type HufmanagerSlimAccessReasonCode =
   | "ACTIVE_PAID"
+  // Owner-Grant (Lifetime/Barzahlung/Beta), ab 20260929090000 — nie bezahlt
+  | "ACTIVE_MANUAL"
   | "ACTIVE_TRIAL"
   | "CANCELLED_PERIOD_END_ACCESS"
   | "PAST_DUE_ACCESS_PRESERVED"
