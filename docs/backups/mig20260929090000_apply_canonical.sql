@@ -1,4 +1,8 @@
--- HufManager Slim — kanonischer Manual-Access-Writer (Owner-Grants) v1
+-- APPLY 20260929090000_add_hufmanager_manual_access_writer_v1 auf PROD vnschgjxkzzwzefqlrji — erzeugt aus den Repo-Bytes (md5 32b429cabedfc8d631e69f4cdc1ac079).
+-- Eine Transaktion: md5-Guard → Ausführung genau dieses Textes (ohne äußeres BEGIN/COMMIT) → Ledger-Eintrag.
+BEGIN;
+CREATE TEMP TABLE _mig (t text) ON COMMIT DROP;
+INSERT INTO _mig (t) VALUES ($MIGTEXT$-- HufManager Slim — kanonischer Manual-Access-Writer (Owner-Grants) v1
 --
 -- Business-Matrix + PROD-Deploy vom Owner freigegeben (28.09.2026). Bericht: docs/billing/OVERRIDE_ENTITLEMENTS_AUDIT_2026-09-28.md
 --
@@ -396,4 +400,21 @@ BEGIN
 END;
 $function$;
 
+COMMIT;
+$MIGTEXT$);
+DO $apply$
+DECLARE s text;
+BEGIN
+  SELECT t INTO s FROM _mig;
+  IF md5(s) <> '32b429cabedfc8d631e69f4cdc1ac079' THEN
+    RAISE EXCEPTION 'ABORT: Migrationstext-md5 % weicht vom Repo-Artefakt ab', md5(s);
+  END IF;
+  IF EXISTS (SELECT 1 FROM supabase_migrations.schema_migrations WHERE version = '20260929090000') THEN
+    RAISE EXCEPTION 'ABORT: Ledger enthält 20260929090000 bereits';
+  END IF;
+  EXECUTE replace(replace(s, E'\nBEGIN;\n', E'\n'), E'\nCOMMIT;\n', E'\n');
+END
+$apply$;
+INSERT INTO supabase_migrations.schema_migrations (version, name, statements, created_by)
+SELECT '20260929090000', 'add_hufmanager_manual_access_writer_v1', ARRAY[t]::text[], 'passaondigital@gmail.com' FROM _mig;
 COMMIT;

@@ -33,7 +33,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { FeatureStatuses, migrateBooleanToStatus } from "@/types/featureFlags";
 import { ProviderFeatureEditor } from "@/components/admin/ProviderFeatureEditor";
 import { AdminProviderTab, ProviderData, PLAN_OVERRIDE_OPTIONS } from "@/components/admin/AdminProviderTab";
-import { MANUAL_GRANT_BY_PLAN, PROVIDER_PLAN_OPTIONS, isSelectableProviderPlan, planRequiresEndDate, validateProviderPlanGrant } from "@/lib/providerPlanGrants";
+import { MANUAL_GRANT_BY_PLAN, PROVIDER_PLAN_OPTIONS, formatLastValidDay, isSelectableProviderPlan, lastValidDayFromExclusiveEnd, planRequiresEndDate, validateProviderPlanGrant } from "@/lib/providerPlanGrants";
 
 const MissionControlKPIsV2 = lazy(() => import("@/components/admin/MissionControlKPIsV2"));
 const AdminBlogManager = lazy(() => import("@/components/admin/AdminBlogManager"));
@@ -262,7 +262,7 @@ export default function MissionControl() {
   const openEditDialog = (provider: ProviderData) => {
     setSelectedProvider(provider);
     setEditPlanOverride(provider.plan_override || "standard");
-    setEditAccessValidUntil(provider.access_valid_until ? format(new Date(provider.access_valid_until), "yyyy-MM-dd") : "");
+    setEditAccessValidUntil(lastValidDayFromExclusiveEnd(provider.access_valid_until));
     setEditFeatureFlags({ ...DEFAULT_FEATURE_FLAGS, ...(provider.feature_flags || {}) });
     const migrated = migrateBooleanToStatus(provider.feature_flags, provider.feature_statuses || null);
     setEditFeatureStatuses({ ...DEFAULT_FEATURE_STATUSES, ...migrated });
@@ -281,7 +281,7 @@ export default function MissionControl() {
       // Zugang ist kanonisch product_entitlements: Plan-/Enddatum-Änderungen laufen über den
       // auditierbaren Admin-Wrapper (hm_admin_set_hufmanager_manual_access_v1), nie über Profilfelder.
       const oldPlan = selectedProvider.plan_override || "standard";
-      const oldEnd = selectedProvider.access_valid_until ? format(new Date(selectedProvider.access_valid_until), "yyyy-MM-dd") : "";
+      const oldEnd = lastValidDayFromExclusiveEnd(selectedProvider.access_valid_until);
       const planChanged = editPlanOverride !== oldPlan;
       const endChanged = editAccessValidUntil !== oldEnd;
       let nextAccessValidUntil: string | null = selectedProvider.access_valid_until;
@@ -292,19 +292,22 @@ export default function MissionControl() {
           if ("error" in check) { toast.error(check.error); return; }
           const { data: result, error: grantError } = await supabase.rpc("hm_admin_set_hufmanager_manual_access_v1" as never, {
             p_user_id: selectedProvider.id, p_grant_type: grantType,
-            p_valid_until: check.validUntil, p_reason: `Mission Control: ${editPlanOverride}`,
+            p_last_valid_day: check.lastValidDay, p_reason: `Mission Control: ${editPlanOverride}`,
           } as never);
           if (grantError) throw grantError;
           if (result === "skipped_paid_entitlement") {
             toast.error("Bezahlter Zugang vorhanden – manueller Zugang wird nicht gesetzt");
             return;
           }
-          nextAccessValidUntil = check.validUntil;
+          // Anzeigefeld = kanonische exklusive Grenze aus dem Entitlement (Lifetime: kein Ende)
+          const { data: granted } = await supabase.from("product_entitlements").select("current_period_end")
+            .eq("user_id", selectedProvider.id).eq("product", "HUFMANAGER").eq("plan", "HUFMANAGER_SLIM").maybeSingle();
+          nextAccessValidUntil = granted?.current_period_end ?? null;
         } else if (editPlanOverride === "standard" && MANUAL_GRANT_BY_PLAN[oldPlan]) {
           if (!window.confirm("Manuellen Zugang (Lifetime/Barzahlung/Beta) entziehen? Der Provider verliert den Zugang, bis er bezahlt.")) return;
           const { error: revokeError } = await supabase.rpc("hm_admin_set_hufmanager_manual_access_v1" as never, {
             p_user_id: selectedProvider.id, p_grant_type: "REVOKE_MANUAL_ACCESS",
-            p_valid_until: null, p_reason: "Mission Control: zurück auf Standard",
+            p_last_valid_day: null, p_reason: "Mission Control: zurück auf Standard",
           } as never);
           if (revokeError) throw revokeError;
           nextAccessValidUntil = null;
@@ -389,7 +392,7 @@ export default function MissionControl() {
     if (p.plan_override === "lifetime_grant") return <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black"><Crown className="w-3 h-3 mr-1" />Lifetime</Badge>;
     if (p.access_valid_until) {
       const v = new Date(p.access_valid_until); const expired = v < new Date();
-      return <Badge variant={expired ? "destructive" : "default"}><Clock className="w-3 h-3 mr-1" />{expired ? "Abgelaufen" : format(v, "dd.MM.yy")}</Badge>;
+      return <Badge variant={expired ? "destructive" : "default"}><Clock className="w-3 h-3 mr-1" />{expired ? "Abgelaufen" : formatLastValidDay(p.access_valid_until)}</Badge>;
     }
     if (p.subscription_status === "active") return <Badge variant="default"><CheckCircle className="w-3 h-3 mr-1" />Aktiv</Badge>;
     return <Badge variant="outline">{p.subscription_status || "Kein Abo"}</Badge>;
@@ -695,7 +698,7 @@ export default function MissionControl() {
                 </div>
                 {planRequiresEndDate(editPlanOverride) && (
                   <div className="space-y-2">
-                    <Label>Zugang bis (Enddatum) *</Label>
+                    <Label>Gültig bis (letzter Nutzungstag) *</Label>
                     <Input type="date" value={editAccessValidUntil} onChange={(e) => setEditAccessValidUntil(e.target.value)} />
                   </div>
                 )}

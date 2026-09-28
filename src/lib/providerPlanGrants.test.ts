@@ -7,6 +7,8 @@ import {
   isSelectableProviderPlan,
   planRequiresEndDate,
   validateProviderPlanGrant,
+  lastValidDayFromExclusiveEnd,
+  formatLastValidDay,
 } from "./providerPlanGrants";
 
 const now = new Date("2026-09-28T12:00:00Z");
@@ -39,7 +41,7 @@ describe("Provider-Planauswahl (Owner-Matrix 28.09.2026)", () => {
   it("Standard und Lifetime ohne Enddatum", () => {
     expect(planRequiresEndDate("standard")).toBe(false);
     expect(planRequiresEndDate("lifetime_grant")).toBe(false);
-    expect(validateProviderPlanGrant("lifetime_grant", "2030-01-01", now)).toEqual({ ok: true, validUntil: null });
+    expect(validateProviderPlanGrant("lifetime_grant", "2030-01-01", now)).toEqual({ ok: true, lastValidDay: null });
   });
 
   it("T5/T8 Barzahlung und Beta ohne Enddatum → BLOCK", () => {
@@ -47,9 +49,37 @@ describe("Provider-Planauswahl (Owner-Matrix 28.09.2026)", () => {
     expect(validateProviderPlanGrant("beta_tester", "", now).ok).toBe(false);
   });
 
-  it("Enddatum in der Vergangenheit → BLOCK, Zukunft → exakt übernommen", () => {
-    expect(validateProviderPlanGrant("manual_cash_1y", "2026-09-01", now).ok).toBe(false);
-    expect(validateProviderPlanGrant("beta_tester", "2027-01-15", now)).toEqual({ ok: true, validUntil: "2027-01-15T00:00:00.000Z" });
+  it("letzter Tag: Vergangenheit/> 5 Jahre → BLOCK, heute und Zukunft → exakt als Kalendertag übernommen", () => {
+    expect(validateProviderPlanGrant("manual_cash_1y", "2026-09-27", now).ok).toBe(false);
+    expect(validateProviderPlanGrant("manual_cash_1y", "2031-09-29", now).ok).toBe(false);
+    expect(validateProviderPlanGrant("manual_cash_1y", "2026-09-28", now)).toEqual({ ok: true, lastValidDay: "2026-09-28" });
+    expect(validateProviderPlanGrant("beta_tester", "2027-01-15", now)).toEqual({ ok: true, lastValidDay: "2027-01-15" });
+  });
+
+  it("„heute“ ist der Berliner Kalendertag (kurz nach Mitternacht lokal, noch Vortag in UTC)", () => {
+    const earlyBerlin = new Date("2026-09-28T22:30:00Z"); // 29.09. 00:30 Berlin
+    expect(validateProviderPlanGrant("manual_cash_1y", "2026-09-28", earlyBerlin).ok).toBe(false);
+    expect(validateProviderPlanGrant("manual_cash_1y", "2026-09-29", earlyBerlin).ok).toBe(true);
+  });
+});
+
+describe("Anzeige letzter gültiger Tag aus exklusiver Grenze (DB: Folgetag 00:00 Europe/Berlin)", () => {
+  it("Winter: Grenze 2027-01-15T23:00Z → 15.01.27", () => {
+    expect(lastValidDayFromExclusiveEnd("2027-01-15T23:00:00Z")).toBe("2027-01-15");
+    expect(formatLastValidDay("2027-01-15T23:00:00+00:00")).toBe("15.01.27");
+  });
+  it("Sommer: Grenze 2027-07-15T22:00Z → 15.07.27", () => {
+    expect(lastValidDayFromExclusiveEnd("2027-07-15T22:00:00Z")).toBe("2027-07-15");
+  });
+  it("DST-Wechseltage", () => {
+    expect(lastValidDayFromExclusiveEnd("2027-03-27T23:00:00Z")).toBe("2027-03-27");
+    expect(lastValidDayFromExclusiveEnd("2027-03-28T22:00:00Z")).toBe("2027-03-28");
+    expect(lastValidDayFromExclusiveEnd("2027-10-30T22:00:00Z")).toBe("2027-10-30");
+    expect(lastValidDayFromExclusiveEnd("2027-10-31T23:00:00Z")).toBe("2027-10-31");
+  });
+  it("leer bei fehlendem/ungültigem Wert", () => {
+    expect(lastValidDayFromExclusiveEnd(null)).toBe("");
+    expect(formatLastValidDay("kaputt")).toBe("");
   });
 });
 
@@ -69,8 +99,10 @@ describe("admin-create-user: Owner-Grants über den kanonischen Writer", () => {
     expect(reject).toBeLessThan(create);
   });
 
-  it("verlangt Enddatum für Barzahlung/Beta vor der Anlage", () => {
-    const check = edge.indexOf("Enddatum in der Zukunft ist für Barzahlung/Beta erforderlich");
+  it("verlangt letzten gültigen Tag für Barzahlung/Beta vor der Anlage und übergibt nur den Kalendertag", () => {
+    expect(edge).toContain("p_last_valid_day: grantLastValidDay");
+    expect(edge).not.toMatch(/p_valid_until/);
+    const check = edge.indexOf("Letzter gültiger Tag (heute bis max. 5 Jahre) ist für Barzahlung/Beta erforderlich");
     expect(check).toBeGreaterThan(0);
     expect(check).toBeLessThan(edge.indexOf("auth.admin.createUser("));
   });

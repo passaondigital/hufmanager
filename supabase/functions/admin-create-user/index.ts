@@ -160,16 +160,20 @@ serve(async (req: Request) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    let grantValidUntil: string | null = null;
+    // Enddatum = LETZTER gültiger Nutzungstag (YYYY-MM-DD, inklusiv). Die technische Grenze
+    // (Folgetag 00:00 Europe/Berlin, DST-sicher) berechnet ausschließlich die DB.
+    let grantLastValidDay: string | null = null;
     if (manualGrantType === "MANUAL_FIXED_TERM" || manualGrantType === "BETA_ACCESS") {
-      const end = accessValidUntil ? new Date(accessValidUntil) : null;
-      if (!end || Number.isNaN(end.getTime()) || end.getTime() <= Date.now()) {
+      const todayBerlin = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(new Date());
+      const maxDay = `${Number(todayBerlin.slice(0, 4)) + 5}${todayBerlin.slice(4)}`;
+      const day = typeof accessValidUntil === "string" ? accessValidUntil.slice(0, 10) : "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || day < todayBerlin || day > maxDay) {
         return new Response(
-          JSON.stringify({ error: "Enddatum in der Zukunft ist für Barzahlung/Beta erforderlich" }),
+          JSON.stringify({ error: "Letzter gültiger Tag (heute bis max. 5 Jahre) ist für Barzahlung/Beta erforderlich" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      grantValidUntil = end.toISOString();
+      grantLastValidDay = day;
     }
 
     console.log(`Admin ${callerUser.email} creating provider: ${email} with plan: ${planOverride || 'standard'}, usePassword: ${!!password}`);
@@ -266,10 +270,6 @@ serve(async (req: Request) => {
       profileUpdate.plan_override = planOverride;
       profileUpdate.subscription_plan = "pro"; // Give pro features for manual plans
     }
-    // Legacy-Anzeigefeld spiegelt nur noch das Grant-Ende (Lifetime: kein Ende).
-    if (grantValidUntil) {
-      profileUpdate.access_valid_until = grantValidUntil;
-    }
     if (zipCode) {
       profileUpdate.zip_code = zipCode;
     }
@@ -301,7 +301,7 @@ serve(async (req: Request) => {
         {
           p_user_id: userId,
           p_grant_type: manualGrantType,
-          p_valid_until: grantValidUntil,
+          p_last_valid_day: grantLastValidDay,
           p_reason: `admin-create-user: ${planOverride}`,
           p_actor_id: callerUser.id,
         },
@@ -311,6 +311,18 @@ serve(async (req: Request) => {
         console.error("Manual access grant failed after admin provider creation:", userId, grantError.message);
       } else {
         manualAccess = String(grantResult);
+        // Legacy-Anzeigefeld spiegelt die kanonische exklusive Grenze (Lifetime: kein Ende).
+        const { data: granted } = await supabaseAdmin
+          .from("product_entitlements")
+          .select("current_period_end")
+          .eq("user_id", userId)
+          .eq("product", "HUFMANAGER")
+          .eq("plan", "HUFMANAGER_SLIM")
+          .maybeSingle();
+        await supabaseAdmin
+          .from("profiles")
+          .update({ access_valid_until: granted?.current_period_end ?? null })
+          .eq("id", userId);
       }
     }
 

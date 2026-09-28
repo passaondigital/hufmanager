@@ -28,25 +28,50 @@ export function planRequiresEndDate(plan: string): boolean {
   return grant === "MANUAL_FIXED_TERM" || grant === "BETA_ACCESS";
 }
 
-// Enddatum als ISO-Zeitpunkt, genau so, wie admin-create-user es an den Writer gibt
-// (new Date("YYYY-MM-DD") = 00:00 UTC). null = kein Enddatum (Standard/Lifetime).
+// Enddatum = LETZTER gültiger Nutzungstag (inklusiv, Owner-Regel 28.09.2026). Übergeben wird nur der
+// Kalendertag "YYYY-MM-DD"; die technische Grenze (Folgetag 00:00 Europe/Berlin, DST-sicher) berechnet die DB
+// (hm_manual_access_exclusive_end_v1) und speichert sie als current_period_end / access_valid_until.
+export const ACCESS_TIME_ZONE = "Europe/Berlin";
+
+function berlinDay(d: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: ACCESS_TIME_ZONE }).format(d);
+}
+
 export function validateProviderPlanGrant(
   plan: string,
-  endDate: string,
+  lastValidDay: string,
   now: Date = new Date(),
-): { ok: true; validUntil: string | null } | { ok: false; error: string } {
+): { ok: true; lastValidDay: string | null } | { ok: false; error: string } {
   if (!isSelectableProviderPlan(plan)) {
     return { ok: false, error: "Dieser Plan ist nicht mehr auswählbar" };
   }
   if (!planRequiresEndDate(plan)) {
-    return { ok: true, validUntil: null };
+    return { ok: true, lastValidDay: null };
   }
-  const end = endDate ? new Date(endDate) : null;
-  if (!end || Number.isNaN(end.getTime())) {
-    return { ok: false, error: "Enddatum ist für diesen Zugang erforderlich" };
+  const day = (lastValidDay || "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    return { ok: false, error: "Letzter gültiger Tag ist für diesen Zugang erforderlich" };
   }
-  if (end.getTime() <= now.getTime()) {
-    return { ok: false, error: "Enddatum muss in der Zukunft liegen" };
+  const today = berlinDay(now);
+  if (day < today) {
+    return { ok: false, error: "Letzter gültiger Tag darf nicht in der Vergangenheit liegen" };
   }
-  return { ok: true, validUntil: end.toISOString() };
+  const maxDay = `${Number(today.slice(0, 4)) + 5}${today.slice(4)}`;
+  if (day > maxDay) {
+    return { ok: false, error: "Letzter gültiger Tag höchstens 5 Jahre in der Zukunft" };
+  }
+  return { ok: true, lastValidDay: day };
+}
+
+// Anzeige: exklusive Grenze (z. B. 16.01.2027 00:00 Berlin) → letzter gültiger Tag "2027-01-15".
+export function lastValidDayFromExclusiveEnd(exclusiveEnd: string | null | undefined): string {
+  if (!exclusiveEnd) return "";
+  const t = new Date(exclusiveEnd).getTime();
+  if (Number.isNaN(t)) return "";
+  return berlinDay(new Date(t - 1));
+}
+
+export function formatLastValidDay(exclusiveEnd: string | null | undefined): string {
+  const day = lastValidDayFromExclusiveEnd(exclusiveEnd);
+  return day ? `${day.slice(8, 10)}.${day.slice(5, 7)}.${day.slice(2, 4)}` : "";
 }

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PROVIDER_PLAN_OPTIONS, planRequiresEndDate, validateProviderPlanGrant } from "@/lib/providerPlanGrants";
+import { PROVIDER_PLAN_OPTIONS, formatLastValidDay, planRequiresEndDate, validateProviderPlanGrant } from "@/lib/providerPlanGrants";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
@@ -18,7 +18,6 @@ import {
   Loader2, Wand2, GraduationCap, ClipboardList, BarChart3, Users,
   Shield, Ban, CheckCircle, Clock, Crown, Euro,
 } from "lucide-react";
-import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import BulkActionsBar from "@/components/admin/BulkActionsBar";
@@ -177,7 +176,7 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
     if (provider.access_valid_until) {
       const v = new Date(provider.access_valid_until);
       const expired = v < new Date();
-      return <Badge variant={expired ? "destructive" : "default"} className="text-[10px] px-1.5 py-0"><Clock className="w-3 h-3 mr-0.5" />{expired ? "Abgelaufen" : format(v, "dd.MM.yy")}</Badge>;
+      return <Badge variant={expired ? "destructive" : "default"} className="text-[10px] px-1.5 py-0"><Clock className="w-3 h-3 mr-0.5" />{expired ? "Abgelaufen" : formatLastValidDay(provider.access_valid_until)}</Badge>;
     }
     if (provider.subscription_status === "active") return <Badge variant="default" className="text-[10px] px-1.5 py-0"><CheckCircle className="w-3 h-3 mr-0.5" />Aktiv</Badge>;
     return <Badge variant="outline" className="text-[10px] px-1.5 py-0">{provider.subscription_status || "Kein Abo"}</Badge>;
@@ -362,7 +361,7 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
                   </div>
                   {planRequiresEndDate(newUserPlanOverride) && (
                     <div className="space-y-2">
-                      <Label>Zugang bis (Enddatum) *</Label>
+                      <Label>Gültig bis (letzter Nutzungstag) *</Label>
                       <Input type="date" value={newUserAccessValidUntil} onChange={(e) => setNewUserAccessValidUntil(e.target.value)} />
                     </div>
                   )}

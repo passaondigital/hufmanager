@@ -22,7 +22,7 @@ CREATE FUNCTION pg_temp.ev_n(p_id uuid, p_name text) RETURNS int LANGUAGE sql AS
 CREATE FUNCTION pg_temp.ent_md5(p_id uuid) RETURNS text LANGUAGE sql AS $$
   SELECT md5(coalesce(string_agg(to_jsonb(e)::text, '|' ORDER BY e.id), '')) FROM public.product_entitlements e WHERE user_id = p_id $$;
 CREATE FUNCTION pg_temp.acc(p_id uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT public._hm_has_hufmanager_access_v1(p_id) $$;
-CREATE FUNCTION pg_temp.w(p_id uuid, p_type text, p_until timestamptz, p_actor uuid) RETURNS text LANGUAGE sql AS $$
+CREATE FUNCTION pg_temp.w(p_id uuid, p_type text, p_until date, p_actor uuid) RETURNS text LANGUAGE sql AS $$
   SELECT public.hm_set_hufmanager_manual_access_v1(p_id, p_type, p_until, 'QA Testgrund', p_actor) $$;
 CREATE FUNCTION pg_temp.err(p_sql text) RETURNS text LANGUAGE plpgsql AS $$
 BEGIN EXECUTE p_sql; RETURN 'NO_ERROR'; EXCEPTION WHEN OTHERS THEN RETURN SQLERRM; END $$;
@@ -87,9 +87,9 @@ INSERT INTO r SELECT 'T03b kein neues Event, genau 1 Entitlement',
 
 -- T4 Cash → Enddatum exakt übernommen
 INSERT INTO r SELECT 'T04a Fixed-Term-Grant mit festem Enddatum',
-  pg_temp.w('00000000-0000-4000-9000-0000000000b2','MANUAL_FIXED_TERM','2027-01-15 00:00:00+00','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
-INSERT INTO r SELECT 'T04b Enddatum exakt 2027-01-15T00:00Z, NONE, kein Trial, Zugang',
-  (e).current_period_end = '2027-01-15 00:00:00+00' AND (e).billing_status = 'NONE' AND (e).metadata->>'manual_grant_type' = 'MANUAL_FIXED_TERM'
+  pg_temp.w('00000000-0000-4000-9000-0000000000b2','MANUAL_FIXED_TERM','2027-01-15','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
+INSERT INTO r SELECT 'T04b letzter Tag 15.01.2027 → Grenze 16.01.2027 00:00 Berlin (= 15.01. 23:00Z), NONE, kein Trial, Zugang',
+  (e).current_period_end = '2027-01-15 23:00:00+00' AND (e).billing_status = 'NONE' AND (e).metadata->>'manual_grant_type' = 'MANUAL_FIXED_TERM'
   AND pg_temp.acc('00000000-0000-4000-9000-0000000000b2') AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000b2','trial_started') = 0,
   (e).current_period_end::text FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b2') e) x;
 
@@ -99,7 +99,7 @@ INSERT INTO r SELECT 'T05 Fixed-Term ohne Enddatum → valid_until_invalid, nich
   AND pg_temp.ent_n('00000000-0000-4000-9000-0000000000b3') = 0, '';
 
 -- T6 Cash abgelaufen → kein Zugang (alle drei Gates); Grenze exakt
-SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b3','MANUAL_FIXED_TERM', now() + interval '30 days','00000000-0000-4000-9000-0000000000a1');
+SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b3','MANUAL_FIXED_TERM', (now() + interval '30 days')::date,'00000000-0000-4000-9000-0000000000a1');
 UPDATE public.product_entitlements SET current_period_end = now() + interval '1 second' WHERE user_id = '00000000-0000-4000-9000-0000000000b3';
 INSERT INTO r SELECT 'T06a 1 s vor Ende: Zugang true', pg_temp.acc('00000000-0000-4000-9000-0000000000b3'), '';
 UPDATE public.product_entitlements SET current_period_end = now() WHERE user_id = '00000000-0000-4000-9000-0000000000b3';
@@ -112,9 +112,9 @@ INSERT INTO r SELECT 'T06d abgelaufen: Kontext has_access=false, LOCKED', NOT ha
 RESET ROLE;
 
 -- T7 Beta mit Enddatum → Zugang bis Datum
-INSERT INTO r SELECT 'T07a Beta mit Enddatum', pg_temp.w('00000000-0000-4000-9000-0000000000b4','BETA_ACCESS',now() + interval '90 days','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
+INSERT INTO r SELECT 'T07a Beta mit Enddatum', pg_temp.w('00000000-0000-4000-9000-0000000000b4','BETA_ACCESS',(now() + interval '90 days')::date,'00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
 INSERT INTO r SELECT 'T07b Beta: Ende gesetzt, NONE, Zugang, kein Trial',
-  (e).current_period_end = now() + interval '90 days' AND (e).billing_status = 'NONE' AND (e).metadata->>'manual_grant_type' = 'BETA_ACCESS'
+  (e).current_period_end = public.hm_manual_access_exclusive_end_v1((now() + interval '90 days')::date) AND (e).billing_status = 'NONE' AND (e).metadata->>'manual_grant_type' = 'BETA_ACCESS'
   AND pg_temp.acc('00000000-0000-4000-9000-0000000000b4') AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000b4','trial_started') = 0, ''
   FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b4') e) x;
 UPDATE public.product_entitlements SET current_period_end = now() - interval '1 minute' WHERE user_id = '00000000-0000-4000-9000-0000000000b4';
@@ -162,9 +162,9 @@ INSERT INTO r SELECT 'T12 echte Zahlung → ACTIVE/VERIFIED_PAID über Projektor
 -- T13 Manual Grant auf Paid-User → Paid nicht verschlechtert
 SELECT pg_temp.ent_md5('00000000-0000-4000-9000-0000000000b6') AS paid_before \gset
 INSERT INTO r SELECT 'T13a Lifetime/Fixed/Beta auf Paid → skipped_paid_entitlement',
-  pg_temp.w('00000000-0000-4000-9000-0000000000b6','MANUAL_FIXED_TERM',now() + interval '10 days','00000000-0000-4000-9000-0000000000a1') = 'skipped_paid_entitlement'
+  pg_temp.w('00000000-0000-4000-9000-0000000000b6','MANUAL_FIXED_TERM',(now() + interval '10 days')::date,'00000000-0000-4000-9000-0000000000a1') = 'skipped_paid_entitlement'
   AND pg_temp.w('00000000-0000-4000-9000-0000000000b6','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1') = 'skipped_paid_entitlement'
-  AND pg_temp.w('00000000-0000-4000-9000-0000000000b6','BETA_ACCESS',now() + interval '10 days','00000000-0000-4000-9000-0000000000a1') = 'skipped_paid_entitlement', '';
+  AND pg_temp.w('00000000-0000-4000-9000-0000000000b6','BETA_ACCESS',(now() + interval '10 days')::date,'00000000-0000-4000-9000-0000000000a1') = 'skipped_paid_entitlement', '';
 INSERT INTO r SELECT 'T13b Revoke auf Paid → skipped_not_manual', pg_temp.w('00000000-0000-4000-9000-0000000000b6','REVOKE_MANUAL_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1') = 'skipped_not_manual', '';
 INSERT INTO r SELECT 'T13c Paid-Entitlement byte-identisch', pg_temp.ent_md5('00000000-0000-4000-9000-0000000000b6') = :'paid_before', '';
 
@@ -218,9 +218,9 @@ INSERT INTO r SELECT 'T18 ungültige Grant-Arten → invalid_grant_type',
 
 -- T19 Fixed-Term-Enddatum-Manipulation → BLOCK
 INSERT INTO r SELECT 'T19a Ende in Vergangenheit / > 5 Jahre / bei Lifetime → abgelehnt',
-  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','MANUAL_FIXED_TERM',now()-interval '1 day','00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid'
-  AND pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','MANUAL_FIXED_TERM',now()+interval '6 years','00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid'
-  AND pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','MANUAL_LIFETIME',now()+interval '1 day','00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_not_allowed', '';
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','MANUAL_FIXED_TERM',(now()-interval '1 day')::date - 1,'00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid'
+  AND pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','MANUAL_FIXED_TERM',(now()+interval '6 years')::date,'00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid'
+  AND pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','MANUAL_LIFETIME',(now()+interval '1 day')::date,'00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_not_allowed', '';
 SELECT pg_temp.ent_md5('00000000-0000-4000-9000-0000000000b2') AS cash_before \gset
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9000-0000000000b2","role":"authenticated"}', true);
@@ -246,11 +246,35 @@ VALUES ('00000000-0000-4000-9000-0000000000b7', 'HUFMANAGER', 'HUFMANAGER_SLIM',
 INSERT INTO r SELECT 'M1 Legacy-Manual ohne Aktion unverändert (Zugang)', pg_temp.acc('00000000-0000-4000-9000-0000000000b7')
   AND (pg_temp.ent('00000000-0000-4000-9000-0000000000b7')).source = 'LEGACY_BACKFILL_PROVEN_MANUAL_GRANT', '';
 INSERT INTO r SELECT 'M2 explizite Migration auf gespeichertes Enddatum',
-  pg_temp.w('00000000-0000-4000-9000-0000000000b7','MANUAL_FIXED_TERM','2027-02-27 00:00:00+00','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
+  pg_temp.w('00000000-0000-4000-9000-0000000000b7','MANUAL_FIXED_TERM','2027-02-27','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
 INSERT INTO r SELECT 'M3 danach kanonisch: manual/NONE statt VERIFIED_PAID, Ende exakt, Legacy-Metadaten erhalten',
-  (e2).billing_status = 'NONE' AND (e2).billing_provider = 'manual' AND (e2).current_period_end = '2027-02-27 00:00:00+00'
+  (e2).billing_status = 'NONE' AND (e2).billing_provider = 'manual' AND (e2).current_period_end = '2027-02-27 23:00:00+00'
   AND (e2).metadata ? 'legacy_plan_override' AND pg_temp.acc('00000000-0000-4000-9000-0000000000b7'), ''
   FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b7') e2) x;
+
+-- D Enddatum inklusiv (letzter Tag) → Grenze Folgetag 00:00 Europe/Berlin, DST-sicher
+INSERT INTO r SELECT 'D1 Winter: 15.01.2027 → 2027-01-15 23:00Z', public.hm_manual_access_exclusive_end_v1('2027-01-15') = '2027-01-15 23:00:00+00', '';
+INSERT INTO r SELECT 'D2 Sommer: 15.07.2027 → 2027-07-15 22:00Z', public.hm_manual_access_exclusive_end_v1('2027-07-15') = '2027-07-15 22:00:00+00', '';
+INSERT INTO r SELECT 'D3 DST-Beginn: letzter Tag 27.03.2027 (Wechsel 28.03.) → 2027-03-27 23:00Z', public.hm_manual_access_exclusive_end_v1('2027-03-27') = '2027-03-27 23:00:00+00', '';
+INSERT INTO r SELECT 'D4 DST-Beginn: letzter Tag 28.03.2027 (23-h-Tag) → 2027-03-28 22:00Z', public.hm_manual_access_exclusive_end_v1('2027-03-28') = '2027-03-28 22:00:00+00', '';
+INSERT INTO r SELECT 'D5 DST-Ende: letzter Tag 30.10.2027 → 2027-10-30 22:00Z', public.hm_manual_access_exclusive_end_v1('2027-10-30') = '2027-10-30 22:00:00+00', '';
+INSERT INTO r SELECT 'D6 DST-Ende: letzter Tag 31.10.2027 (25-h-Tag) → 2027-10-31 23:00Z', public.hm_manual_access_exclusive_end_v1('2027-10-31') = '2027-10-31 23:00:00+00', '';
+INSERT INTO r SELECT 'D7 Grenze lokal = Folgetag 00:00 Europe/Berlin',
+  bool_and((public.hm_manual_access_exclusive_end_v1(d) AT TIME ZONE 'Europe/Berlin') = (d + 1)::timestamp), ''
+  FROM (SELECT generate_series('2027-01-01'::date, '2027-12-31'::date, '1 day')::date d) x;
+INSERT INTO r SELECT 'D8 letzter Tag = heute (lokal) erlaubt',
+  pg_temp.w('00000000-0000-4000-9000-0000000000b3','MANUAL_FIXED_TERM',(now() AT TIME ZONE 'Europe/Berlin')::date,'00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
+INSERT INTO r SELECT 'D9 letzter Tag heute: Grenze = nächste lokale Mitternacht, Zugang true',
+  (e).current_period_end = (((now() AT TIME ZONE 'Europe/Berlin')::date + 1)::timestamp AT TIME ZONE 'Europe/Berlin')
+  AND pg_temp.acc('00000000-0000-4000-9000-0000000000b3'), '' FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b3') e) x;
+UPDATE public.product_entitlements SET current_period_end = now() + interval '1 millisecond' WHERE user_id = '00000000-0000-4000-9000-0000000000b3';
+INSERT INTO r SELECT 'D10 exakt vor Ablauf (Grenze − 1 ms) → Zugang true', pg_temp.acc('00000000-0000-4000-9000-0000000000b3'), '';
+UPDATE public.product_entitlements SET current_period_end = now() WHERE user_id = '00000000-0000-4000-9000-0000000000b3';
+INSERT INTO r SELECT 'D11 exakt ab Folgetag 00:00 lokal (Grenze erreicht) → Zugang false', NOT pg_temp.acc('00000000-0000-4000-9000-0000000000b3'), '';
+INSERT INTO r SELECT 'D12 letzter Tag gestern → abgelehnt',
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b4','MANUAL_FIXED_TERM',(now() AT TIME ZONE 'Europe/Berlin')::date - 1,'00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid', '';
+INSERT INTO r SELECT 'D13 Trial-Zeile unberührt: weiter exakt 14 Tage', (e).trial_ends_at - (e).trial_started_at = interval '14 days' AND (e).current_period_end IS NULL, ''
+  FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-000000000051') e) x;
 
 -- Weitere Security
 INSERT INTO r SELECT 'S1 unbekanntes / gelöschtes Ziel abgelehnt',
@@ -260,7 +284,7 @@ INSERT INTO r SELECT 'S2 Grund mit E-Mail / leer abgelehnt',
   AND pg_temp.err($$SELECT public.hm_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b5','MANUAL_LIFETIME',NULL,' ','00000000-0000-4000-9000-0000000000a1')$$) = 'reason_required', '';
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9000-0000000000a2","role":"authenticated"}', true);
-INSERT INTO r SELECT 'S3 Admin via Wrapper erlaubt', public.hm_admin_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b5','MANUAL_FIXED_TERM',now() + interval '60 days','Barzahlung Quittung 2026-09') = 'manual_access_granted', '';
+INSERT INTO r SELECT 'S3 Admin via Wrapper erlaubt', public.hm_admin_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b5','MANUAL_FIXED_TERM',(now() + interval '60 days')::date,'Barzahlung Quittung 2026-09') = 'manual_access_granted', '';
 RESET ROLE;
 INSERT INTO r SELECT 'S4 Akteur im Audit = auth.uid()', metadata->>'actor_id' = '00000000-0000-4000-9000-0000000000a2', ''
   FROM public.hm_lifecycle_events WHERE subject_id = '00000000-0000-4000-9000-0000000000b5' AND event_name = 'manual_access_granted';
