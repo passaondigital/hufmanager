@@ -65,7 +65,7 @@ Trial-Producer `hm_start_hufmanager_slim_trial_v1`, einmaliger Backfill. Enum `h
 ## 6. Vorbereiteter Fix (lokal) — `supabase/migrations/20260929090000_add_hufmanager_manual_access_writer_v1.sql`
 - Enum + `manual_access_granted`, `manual_access_revoked`.
 - Kern-Writer `hm_set_hufmanager_manual_access_v1(user, grant_type, valid_until, reason, actor)` — SECURITY DEFINER, nur
-  `service_role`. Grant-Arten fest: `MANUAL_LIFETIME`, `MANUAL_FIXED_TERM` (Ende Pflicht, ≤ 5 Jahre), `BETA_ACCESS` (Ende optional),
+  `service_role`. Grant-Arten fest: `MANUAL_LIFETIME`, `MANUAL_FIXED_TERM` (Ende Pflicht, ≤ 5 Jahre), `BETA_ACCESS` (seit Owner-Entscheidung: Ende Pflicht),
   `REVOKE_MANUAL_ACCESS`. Produkt/Plan konstant. Validiert: Akteur ist Admin, kein Self-Grant, Ziel existiert, ist Provider,
   nicht gelöscht, Grund 3–200 Zeichen ohne E-Mail.
 - Schreibt Audit-Event (`source=admin`, metadata: producer, grant_type, valid_from/until, reason, actor_id, previous_status/source)
@@ -120,3 +120,36 @@ Revoke nur auf manuelle Zeilen, Paid unantastbar (T11). Keine Findings im Entwur
 Neben-Findings (bestehend, nicht Teil des Fix): `prevent_billing_self_update` schützt `access_valid_until`,
 `copecart_subscription_id`, `is_manually_managed` **nicht** vor Self-Update (heute ohne Zugangswirkung, da nicht kanonisch → P2);
 Backfill hat Manual-Grants als `VERIFIED_PAID` markiert (P1-Datenqualität).
+
+---
+
+## 12. Owner-Entscheidungen (28.09.2026) und Umsetzung (lokal, NICHT PROD)
+Freigegeben: Standard = 14-Tage-Trial · Lifetime = MANUAL_LIFETIME ohne Ende · Barzahlung = MANUAL_FIXED_TERM mit explizitem Ende ·
+Beta = **Variante B** (BETA_ACCESS, Enddatum Pflicht) · Employee = kein Provider-Plan · Legacy-CopeCart ausgeblendet ·
+kein Manual-Writer setzt VERIFIED_PAID · 28 Standard-Altprofile **GRANDFATHER TEMPORARILY** (keine Mutation).
+
+Umgesetzt (Architektur + Rollback: `docs/billing/MANUAL_ACCESS_WRITER_ARCHITECTURE.md`):
+- Writer + Admin-Wrapper final (Beta-Enddatum jetzt Pflicht).
+- `admin-create-user`: nur standard/lifetime_grant/manual_cash_1y/beta_tester; andere Pläne 400 **vor** Anlage; Enddatum-Pflicht
+  für Barzahlung/Beta; Grant über Writer mit Akteur; kein 2099-Default mehr; Antwort `manualAccess`.
+- Mission Control: neue Planliste (4 Einträge, Standard-Label „HufManager Slim – 14 Tage testen, danach 19,95 €/Monat“),
+  Enddatum-Feld nur bei Barzahlung/Beta und Pflicht; Bearbeiten-Dialog vergibt/entzieht über den Admin-Wrapper,
+  Legacy-Werte nur als nicht wählbare Anzeige. **Nicht angefasst:** God-Mode `AdminUserDB` (eigene Legacy-Planliste,
+  schreibt nur Profilfelder ohne Zugangswirkung) → Folgepunkt P2.
+- P2-Härtung `20260929100000`: `access_valid_until`, `copecart_subscription_id`, `is_manually_managed`, `signup_app`,
+  `vault_*`, `suspended_at/_reason` für Nicht-Admins mit Nutzer-JWT unveränderbar (auch über „connected profiles“).
+  Keine legitimen Nutzer-Schreiber gefunden (nur Admin-UI + Service-Role).
+
+## 13. Bestand vor PROD — Evidenz (read-only 28.09.) und Klassen
+| Klasse | Count | Technische Begründung |
+|---|---|---|
+| SAFE_MANUAL_LIFETIME | **0** | Der eine Lifetime-Provider hat keinen Grant-Beleg: kein `admin_activity_log`-Eintrag, `is_manually_managed=false`, kein Enddatum, keine Zahlung — nur der Planstring. |
+| SAFE_MANUAL_FIXED_TERM | **2** | Beide `manual_cash_1y`: Admin-Log `provider_created` mit `manual_cash_1y` am Anlagetag, `is_manually_managed=true`, `access_valid_until` = Anlagedatum + exakt 365 Tage (2027-01-15 / 2027-02-27), keine späteren Änderungen im Log. Migration = exakt diese Daten, nicht verlängert. Hinweis: das Datum hat damals die UI aus dem 1-Jahres-Plan gesetzt (nicht von Hand eingetippt). |
+| MANUAL_REVIEW | **2** | Lifetime-Provider (s. o., Zugang bleibt unverändert bis Owner-Bestätigung); `copecart_pro`: keine echte Zahlung (0 Live-Rohevents per Mail/Subscription, 0 provider_subscriptions, 0 manual_payments; einziges CopeCart-Lifecycle-Event = Testzahlung `is_test=true`), VERIFIED_PAID stammt aus dem Backfill per `copecart_subscription_id`-String → Zugang bleibt, nicht automatisch entziehen. |
+| GRANDFATHER_UNCHANGED | **28** | Standard-Provider `ACTIVE/UNKNOWN_BILLING_STATE/LEGACY_BACKFILL_AMBIGUOUS_ACTIVE_ONLY`; keine Mutation (T20). Zusätzlich 3 `LEGACY_BACKFILL_PROVEN_TRIAL` (ACTIVE/NONE, Alt-Trial grandfathered) — ebenfalls unverändert, gehören in dieselbe spätere Klassifizierung. |
+| UNKNOWN | **1** | `copecart_starter`: keine Zahlung, kein Entitlement, kein Zugang, seit 01/2026 inaktiv → nicht migrieren, kein Entitlement. |
+| DO_NOT_MIGRATE | **8** | `lifetime_grant` bei Nicht-Providern (5 Kunden, davon 3 gelöscht; 1 Partner; 1 Mitarbeiter; 1 Profil ohne Auth-User) → kein HufManager-Provider. |
+
+## 14. Tests (lokal, Funktionen md5 = PROD)
+Manual-Access T1–T20 + Migration M1–M3 + Security S1–S5: **59/59** · Härtung **7/7** (Negativkontrolle vorher 4/7) ·
+Trial-Regression **19/19** · vitest **358/358** (inkl. Planliste/Edge-Guard) · `deno check` admin-create-user sauber.

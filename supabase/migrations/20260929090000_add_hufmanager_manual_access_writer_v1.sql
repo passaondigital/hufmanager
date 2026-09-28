@@ -1,14 +1,15 @@
 -- HufManager Slim — kanonischer Manual-Access-Writer (Owner-Grants) v1
 --
--- STATUS: VORBEREITET, NICHT AUF PROD. Wartet auf Owner-Entscheidung (Business-Matrix)
--- und ausdrückliche PROD-Freigabe. Bericht: docs/billing/OVERRIDE_ENTITLEMENTS_AUDIT_2026-09-28.md
+-- STATUS: VORBEREITET, NICHT AUF PROD. Business-Matrix vom Owner freigegeben (28.09.2026);
+-- wartet auf ausdrückliche PROD-Freigabe. Bericht: docs/billing/OVERRIDE_ENTITLEMENTS_AUDIT_2026-09-28.md
 --
 -- Zweck: Lifetime / Barzahlung (befristet) / Beta bewusst und auditierbar vergeben bzw. entziehen.
 --   Admin-Aktion → hm_lifecycle_events (Audit, source=admin) → dieser Writer → product_entitlements
 --   → _hm_has_hufmanager_access_v1 / has_hufmanager_access_v1 / get_hufmanager_access_context_v1.
 --
 -- Regeln:
---   * Grant-Arten fest verdrahtet: MANUAL_LIFETIME, MANUAL_FIXED_TERM, BETA_ACCESS, REVOKE_MANUAL_ACCESS.
+--   * Grant-Arten fest verdrahtet: MANUAL_LIFETIME (ohne Ende), MANUAL_FIXED_TERM + BETA_ACCESS (Ende Pflicht,
+--     > jetzt, ≤ 5 Jahre), REVOKE_MANUAL_ACCESS.
 --     Produkt/Plan sind Konstanten (HUFMANAGER / HUFMANAGER_SLIM), keine Strings vom Aufrufer.
 --   * billing_status bleibt NONE, billing_provider = 'manual' — ein Manual Grant ist NIE VERIFIED_PAID.
 --   * Bezahlte Entitlements (CopeCart / PROVEN_PAID) werden weder überschrieben noch entzogen.
@@ -94,12 +95,9 @@ BEGIN
       IF p_valid_until IS NOT NULL THEN
         RAISE EXCEPTION 'valid_until_not_allowed' USING ERRCODE = '22023';
       END IF;
-    WHEN 'MANUAL_FIXED_TERM' THEN
+    WHEN 'MANUAL_FIXED_TERM', 'BETA_ACCESS' THEN
+      -- Owner-Entscheidung 28.09.: Barzahlung UND Beta nur mit explizitem Enddatum (Beta = Variante B).
       IF p_valid_until IS NULL OR p_valid_until <= v_now OR p_valid_until > v_now + interval '5 years' THEN
-        RAISE EXCEPTION 'valid_until_invalid' USING ERRCODE = '22023';
-      END IF;
-    WHEN 'BETA_ACCESS' THEN
-      IF p_valid_until IS NOT NULL AND (p_valid_until <= v_now OR p_valid_until > v_now + interval '5 years') THEN
         RAISE EXCEPTION 'valid_until_invalid' USING ERRCODE = '22023';
       END IF;
   END CASE;

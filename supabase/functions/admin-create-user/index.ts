@@ -36,6 +36,14 @@ function getPlanDisplayName(planOverride: string | null | undefined): string {
   return planNames[planOverride] || planOverride;
 }
 
+// Einzige zulässige Override-Pläne bei Neuanlage → Grant-Art des kanonischen Writers
+// (hm_set_hufmanager_manual_access_v1). Ein Owner-Grant ist nie ein Zahlungsstatus.
+const MANUAL_GRANT_BY_PLAN: Record<string, "MANUAL_LIFETIME" | "MANUAL_FIXED_TERM" | "BETA_ACCESS"> = {
+  lifetime_grant: "MANUAL_LIFETIME",
+  manual_cash_1y: "MANUAL_FIXED_TERM",
+  beta_tester: "BETA_ACCESS",
+};
+
 interface InitialService {
   name: string;
   price: number;
@@ -142,6 +150,28 @@ serve(async (req: Request) => {
       );
     }
 
+    // Owner-Matrix 28.09.2026: Neuanlage nur Standard (14-Tage-Slim-Trial) oder Owner-Grant über den
+    // kanonischen Manual-Access-Writer. Legacy-CopeCart-Pläne (Planstring ist kein Zahlungsbeweis) und
+    // „employee“ (Mitarbeiter laufen über die Mitarbeiter-Einladung) sind nicht mehr zulässig.
+    const manualGrantType = planOverride ? MANUAL_GRANT_BY_PLAN[planOverride] : undefined;
+    if (planOverride && !manualGrantType) {
+      return new Response(
+        JSON.stringify({ error: `Plan "${planOverride}" ist für neue Provider nicht mehr zulässig` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    let grantValidUntil: string | null = null;
+    if (manualGrantType === "MANUAL_FIXED_TERM" || manualGrantType === "BETA_ACCESS") {
+      const end = accessValidUntil ? new Date(accessValidUntil) : null;
+      if (!end || Number.isNaN(end.getTime()) || end.getTime() <= Date.now()) {
+        return new Response(
+          JSON.stringify({ error: "Enddatum in der Zukunft ist für Barzahlung/Beta erforderlich" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      grantValidUntil = end.toISOString();
+    }
+
     console.log(`Admin ${callerUser.email} creating provider: ${email} with plan: ${planOverride || 'standard'}, usePassword: ${!!password}`);
 
     let newUser;
@@ -236,8 +266,9 @@ serve(async (req: Request) => {
       profileUpdate.plan_override = planOverride;
       profileUpdate.subscription_plan = "pro"; // Give pro features for manual plans
     }
-    if (accessValidUntil) {
-      profileUpdate.access_valid_until = new Date(accessValidUntil).toISOString();
+    // Legacy-Anzeigefeld spiegelt nur noch das Grant-Ende (Lifetime: kein Ende).
+    if (grantValidUntil) {
+      profileUpdate.access_valid_until = grantValidUntil;
     }
     if (zipCode) {
       profileUpdate.zip_code = zipCode;
@@ -259,6 +290,28 @@ serve(async (req: Request) => {
 
     if (updateError) {
       console.error("Error updating profile:", updateError);
+    }
+
+    // Owner-Grant (Lifetime/Barzahlung/Beta): Audit-Event + Entitlement über den kanonischen Writer.
+    // Fehler brechen die Anlage nicht ab, werden aber sichtbar gemeldet (fail-closed: kein Zugang).
+    let manualAccess: string = "not_applicable";
+    if (manualGrantType) {
+      const { data: grantResult, error: grantError } = await supabaseAdmin.rpc(
+        "hm_set_hufmanager_manual_access_v1",
+        {
+          p_user_id: userId,
+          p_grant_type: manualGrantType,
+          p_valid_until: grantValidUntil,
+          p_reason: `admin-create-user: ${planOverride}`,
+          p_actor_id: callerUser.id,
+        },
+      );
+      if (grantError) {
+        manualAccess = "failed";
+        console.error("Manual access grant failed after admin provider creation:", userId, grantError.message);
+      } else {
+        manualAccess = String(grantResult);
+      }
     }
 
     // Create business_settings if business name is provided
@@ -498,6 +551,7 @@ serve(async (req: Request) => {
         },
         invitationSent: sendCustomInvitation,
         slimTrial,
+        manualAccess,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

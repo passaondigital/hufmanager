@@ -571,3 +571,14 @@ Details: `docs/HUFMANAGER_SECURITY_FOLLOWUP_2026-09-27.md`. Kein PROD-Write, kei
   Tests `scripts/hufmanager-manual-access-tests.sql` 50/50, Trial-Regression 19/19, vitest 347/347. Lokal angewendet, PROD unberührt.
 - Wartet auf Owner-Entscheidungen (Matrix, Beta-Modell, Einzelfälle) und PROD-Freigabe. Bericht:
   `docs/billing/OVERRIDE_ENTITLEMENTS_AUDIT_2026-09-28.md`.
+
+### 28.09. nachts — Owner-Matrix Override-Entitlements umgesetzt (LOKAL, NICHT PROD)
+- Owner-Regeln: Standard=Trial · Lifetime=MANUAL_LIFETIME · Barzahlung=MANUAL_FIXED_TERM (Ende Pflicht) · Beta=Variante B
+  (Ende Pflicht) · Employee kein Provider-Plan · Legacy-CopeCart ausgeblendet · 28 Standard-Altprofile GRANDFATHER TEMPORARILY.
+- Lokal gebaut: Writer/Wrapper final, `admin-create-user` angebunden (Plan-Whitelist vor Anlage, Enddatum-Pflicht, Grant mit Akteur),
+  Mission Control Anlage + Bearbeiten bereinigt, P2-Härtung Profil-Billing-Felder (`20260929100000`). God-Mode `AdminUserDB`
+  noch mit Legacy-Planliste (nur Profilfelder, ohne Zugangswirkung) → P2.
+- Tests: Manual-Access 59/59, Härtung 7/7 (Negativkontrolle 4/7), Trial 19/19, vitest 358/358. PROD unverändert.
+- Bestand: SAFE_MANUAL_FIXED_TERM 2 · MANUAL_REVIEW 2 (Lifetime ohne Beleg; copecart_pro nur Testzahlung) · GRANDFATHER 28 (+3 Alt-Trial)
+  · UNKNOWN 1 · DO_NOT_MIGRATE 8. Details `docs/billing/OVERRIDE_ENTITLEMENTS_AUDIT_2026-09-28.md` §12–14,
+  Architektur/Rollback `docs/billing/MANUAL_ACCESS_WRITER_ARCHITECTURE.md`.

@@ -1,4 +1,4 @@
--- HufManager Slim — Manual-Access-Writer (20260929090000) Tests T1–T12 + Security S1–S10.
+-- HufManager Slim — Manual-Access-Writer (20260929090000): Owner-Tests T1–T20 + Security S1–S9.
 -- Aufruf (NUR lokaler Stack, Migration vorher angewendet):
 --   docker exec -i supabase_db_vnschgjxkzzwzefqlrji psql -U postgres -v ON_ERROR_STOP=1 < scripts/hufmanager-manual-access-tests.sql
 -- Läuft in einer Transaktion und endet mit ROLLBACK. Zeitablauf wird durch Zurücksetzen von
@@ -44,167 +44,228 @@ SELECT pg_temp.mk_user('00000000-0000-4000-9000-0000000000b7', 'ma-legacy@exampl
 SELECT pg_temp.mk_user('00000000-0000-4000-9000-0000000000e1', 'ma-emp@example.invalid', '{"full_name":"QA Emp","role":"employee"}');
 DELETE FROM public.user_roles WHERE user_id = '00000000-0000-4000-9000-0000000000e1' AND role <> 'employee';
 INSERT INTO public.user_roles (user_id, role) VALUES ('00000000-0000-4000-9000-0000000000e1', 'employee') ON CONFLICT DO NOTHING;
+-- Grandfather-Fixture (Backfill-Klasse AMBIGUOUS_ACTIVE_ONLY, wie 28 Alt-Provider auf PROD)
+SELECT pg_temp.mk_user('00000000-0000-4000-9000-0000000000f1', 'ma-gf@example.invalid', '{"full_name":"QA GF","role":"provider"}');
+INSERT INTO public.product_entitlements (user_id, product, plan, status, billing_status, trial_status, source, migration_version, metadata)
+VALUES ('00000000-0000-4000-9000-0000000000f1', 'HUFMANAGER', 'HUFMANAGER_SLIM', 'ACTIVE', 'UNKNOWN_BILLING_STATE', 'NONE',
+        'LEGACY_BACKFILL_AMBIGUOUS_ACTIVE_ONLY', 'hufmanager-slim-legacy-backfill-v1', '{"legacy_compatibility_review_required":true}');
+SELECT pg_temp.ent_md5('00000000-0000-4000-9000-0000000000f1') AS gf_before \gset
 
--- T1 Standard → 14-Tage-Trial (unverändert), Writer nicht beteiligt
-INSERT INTO r SELECT 'T1 Standard: TRIAL_ACTIVE 14 Tage, Zugang',
+-- T1 Standard → exakt 14 Tage Trial, Writer nicht beteiligt
+INSERT INTO r SELECT 'T01 Standard: TRIAL_ACTIVE exakt 14 Tage, Zugang',
   (e).status = 'TRIAL_ACTIVE' AND (e).trial_ends_at - (e).trial_started_at = interval '14 days'
   AND pg_temp.acc('00000000-0000-4000-9000-000000000051') AND pg_temp.ev_n('00000000-0000-4000-9000-000000000051','manual_access_granted') = 0,
   (e).status::text FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-000000000051') e) x;
+INSERT INTO r SELECT 'T00 Override-Anlage ohne Grant: kein Trial, kein Entitlement',
+  pg_temp.ent_n('00000000-0000-4000-9000-0000000000b1') = 0 AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000b1','trial_started') = 0, '';
 
--- Override-Anlage (Admin, ohne signup_app) → heute KEIN Entitlement
-INSERT INTO r SELECT 'T0 Override-Anlage ohne Writer: kein Entitlement, kein Zugang',
-  pg_temp.ent_n('00000000-0000-4000-9000-0000000000b1') = 0 AND NOT pg_temp.acc('00000000-0000-4000-9000-0000000000b1'), '';
-
--- T2 Lifetime
-INSERT INTO r SELECT 'T2a Lifetime-Grant', pg_temp.w('00000000-0000-4000-9000-0000000000b1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
-INSERT INTO r SELECT 'T2b Lifetime: ACTIVE/NONE/manual, kein Ende, kein Trial, Zugang',
+-- T2 Lifetime → permanenter MANUAL_LIFETIME
+INSERT INTO r SELECT 'T02a Lifetime-Grant', pg_temp.w('00000000-0000-4000-9000-0000000000b1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
+INSERT INTO r SELECT 'T02b Lifetime: ACTIVE/NONE/manual, kein Ende, kein Trial, Zugang',
   (e).status = 'ACTIVE' AND (e).billing_status = 'NONE' AND (e).billing_provider = 'manual' AND (e).current_period_end IS NULL
-  AND (e).trial_status = 'NONE' AND (e).source = 'MANUAL_GRANT'
+  AND (e).trial_status = 'NONE' AND (e).source = 'MANUAL_GRANT' AND (e).metadata->>'manual_grant_type' = 'MANUAL_LIFETIME'
   AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000b1','trial_started') = 0
   AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000b1','manual_access_granted') = 1
   AND pg_temp.acc('00000000-0000-4000-9000-0000000000b1'),
   (e).status::text || '/' || (e).billing_status::text FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b1') e) x;
-INSERT INTO r SELECT 'T2c Audit-Event: actor, grant_type, reason, kein PII',
+INSERT INTO r SELECT 'T02c Audit-Event: Akteur, Grant-Art, Grund, Produkt/Plan, keine E-Mail',
   metadata->>'actor_id' = '00000000-0000-4000-9000-0000000000a1' AND metadata->>'grant_type' = 'MANUAL_LIFETIME'
   AND metadata->>'reason' = 'QA Testgrund' AND source = 'admin' AND product = 'HUFMANAGER' AND plan = 'HUFMANAGER_SLIM'
   AND metadata::text NOT LIKE '%@%', ''
   FROM public.hm_lifecycle_events WHERE subject_id = '00000000-0000-4000-9000-0000000000b1' AND event_name = 'manual_access_granted';
-
--- T3 Manual Cash 1Y → Zugang exakt bis Enddatum
-INSERT INTO r SELECT 'T3a Fixed-Term-Grant', pg_temp.w('00000000-0000-4000-9000-0000000000b2','MANUAL_FIXED_TERM', now() + interval '1 year','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
-INSERT INTO r SELECT 'T3b Fixed-Term: Ende gesetzt, Zugang, kein Trial',
-  (e).current_period_end = now() + interval '1 year' AND (e).billing_status = 'NONE' AND pg_temp.acc('00000000-0000-4000-9000-0000000000b2')
-  AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000b2','trial_started') = 0, ''
-  FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b2') e) x;
-UPDATE public.product_entitlements SET current_period_end = now() + interval '1 second' WHERE user_id = '00000000-0000-4000-9000-0000000000b2';
-INSERT INTO r SELECT 'T3c 1 s vor Ende: Zugang true', pg_temp.acc('00000000-0000-4000-9000-0000000000b2'), '';
-UPDATE public.product_entitlements SET current_period_end = now() WHERE user_id = '00000000-0000-4000-9000-0000000000b2';
-INSERT INTO r SELECT 'T3d exakt am Ende: Zugang false', NOT pg_temp.acc('00000000-0000-4000-9000-0000000000b2'), '';
-
--- T4 abgelaufenes Manual Cash → kein Zugang (auch in RLS-Gate und Kontext)
-SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b3','MANUAL_FIXED_TERM', now() + interval '30 days','00000000-0000-4000-9000-0000000000a1');
-UPDATE public.product_entitlements SET current_period_end = now() - interval '1 day' WHERE user_id = '00000000-0000-4000-9000-0000000000b3';
-INSERT INTO r SELECT 'T4a abgelaufen: _hm_has… false', NOT pg_temp.acc('00000000-0000-4000-9000-0000000000b3'), '';
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9000-0000000000b3","role":"authenticated"}', true);
-INSERT INTO r SELECT 'T4b abgelaufen: has_hufmanager_access_v1() false', NOT public.has_hufmanager_access_v1(), '';
-INSERT INTO r SELECT 'T4c abgelaufen: Kontext has_access=false, reason LOCKED', NOT has_access AND reason_code = 'LOCKED', reason_code FROM public.get_hufmanager_access_context_v1();
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9000-0000000000b1","role":"authenticated"}', true);
-INSERT INTO r SELECT 'T2d Lifetime: Kontext ACTIVE_MANUAL', has_access AND reason_code = 'ACTIVE_MANUAL', reason_code FROM public.get_hufmanager_access_context_v1();
+INSERT INTO r SELECT 'T02d Lifetime: Kontext ACTIVE_MANUAL', has_access AND reason_code = 'ACTIVE_MANUAL', reason_code FROM public.get_hufmanager_access_context_v1();
 RESET ROLE;
 
--- T5 Employee → kein eigenes Provider-Abo
-INSERT INTO r SELECT 'T5a Writer lehnt Mitarbeiter ab',
-  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000e1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'target_not_provider', '';
-INSERT INTO r SELECT 'T5b Mitarbeiter: kein Entitlement, kein Trial', pg_temp.ent_n('00000000-0000-4000-9000-0000000000e1') = 0
-  AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000e1','trial_started') = 0, '';
-
--- T6 Beta (Modell offen): mit und ohne Enddatum technisch möglich, nie VERIFIED_PAID
-INSERT INTO r SELECT 'T6a Beta ohne Ende', pg_temp.w('00000000-0000-4000-9000-0000000000b4','BETA_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted'
-  AND (pg_temp.ent('00000000-0000-4000-9000-0000000000b4')).billing_status = 'NONE', '';
-INSERT INTO r SELECT 'T6b Beta mit Ende', pg_temp.w('00000000-0000-4000-9000-0000000000b4','BETA_ACCESS',now() + interval '90 days','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted'
-  AND (pg_temp.ent('00000000-0000-4000-9000-0000000000b4')).current_period_end IS NOT NULL AND pg_temp.ent_n('00000000-0000-4000-9000-0000000000b4') = 1, '';
-
--- T7 CopeCart-Override ohne Payment Evidence → nie VERIFIED_PAID, kein Zugang aus Legacy-Strings
-UPDATE public.profiles SET plan_override = 'copecart_pro', subscription_plan = 'pro', subscription_status = 'active', access_valid_until = '2099-12-31'
- WHERE id = '00000000-0000-4000-9000-0000000000b5';
-INSERT INTO r SELECT 'T7a Legacy-Strings geben keinen Zugang', NOT pg_temp.acc('00000000-0000-4000-9000-0000000000b5') AND pg_temp.ent_n('00000000-0000-4000-9000-0000000000b5') = 0, '';
-INSERT INTO r SELECT 'T7b Writer erzeugt nie VERIFIED_PAID',
-  NOT EXISTS (SELECT 1 FROM public.product_entitlements WHERE source = 'MANUAL_GRANT' AND billing_status <> 'NONE'), '';
-INSERT INTO r SELECT 'T7c unbekannte Grant-Art (z. B. Planstring) abgelehnt',
-  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','copecart_pro',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'invalid_grant_type', '';
-
--- T8 echte CopeCart-Zahlung → bestehender Pfad bleibt zuständig
-INSERT INTO public.hufi_data_events (source, source_event_id, event_type, product_id, is_test, occurred_at, received_at, payload_sha256, payload)
-VALUES ('copecart', 'qa-ma-pay-1', 'payment.succeeded', '3a97bd25', false, now(), now(), md5('qa-ma-pay-1'), '{}');
-INSERT INTO public.hm_lifecycle_events (event_name, subject_id, occurred_at, source, source_event_id, verification_status, domain_event_key, provider_subscription_id)
-VALUES ('payment_succeeded', '00000000-0000-4000-9000-0000000000b6', now(), 'copecart', 'qa-ma-pay-1', 'OBSERVED_EVENT', 'qa-ma-pay-1', 'qa-sub-1');
-INSERT INTO r SELECT 'T8a Zahlung → ACTIVE/VERIFIED_PAID über Projektor',
-  (e).status = 'ACTIVE' AND (e).billing_status = 'VERIFIED_PAID' AND pg_temp.acc('00000000-0000-4000-9000-0000000000b6'),
-  (e).status::text || '/' || (e).billing_status::text || '/' || coalesce((e).billing_provider,'-') FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b6') e) x;
-
--- T11 Paid-Nutzer wird nie verschlechtert
-SELECT pg_temp.ent_md5('00000000-0000-4000-9000-0000000000b6') AS paid_before \gset
-INSERT INTO r SELECT 'T11a Grant auf Paid → skipped', pg_temp.w('00000000-0000-4000-9000-0000000000b6','MANUAL_FIXED_TERM',now() + interval '10 days','00000000-0000-4000-9000-0000000000a1') = 'skipped_paid_entitlement', '';
-INSERT INTO r SELECT 'T11b Revoke auf Paid → skipped', pg_temp.w('00000000-0000-4000-9000-0000000000b6','REVOKE_MANUAL_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1') = 'skipped_not_manual', '';
-INSERT INTO r SELECT 'T11c Paid-Entitlement byte-identisch', pg_temp.ent_md5('00000000-0000-4000-9000-0000000000b6') = :'paid_before', '';
-
--- T9 Grant wiederholen → idempotent
+-- T3 Lifetime wiederholt → idempotent
 SELECT count(*) AS ev_before FROM public.hm_lifecycle_events WHERE subject_id = '00000000-0000-4000-9000-0000000000b1' \gset
-INSERT INTO r SELECT 'T9a gleicher Lifetime-Grant → unchanged', pg_temp.w('00000000-0000-4000-9000-0000000000b1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a2') = 'unchanged', '';
-INSERT INTO r SELECT 'T9b kein neues Event, genau 1 Entitlement',
+INSERT INTO r SELECT 'T03a gleicher Lifetime-Grant (anderer Admin) → unchanged', pg_temp.w('00000000-0000-4000-9000-0000000000b1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a2') = 'unchanged', '';
+INSERT INTO r SELECT 'T03b kein neues Event, genau 1 Entitlement',
   (SELECT count(*) FROM public.hm_lifecycle_events WHERE subject_id = '00000000-0000-4000-9000-0000000000b1') = :ev_before
   AND pg_temp.ent_n('00000000-0000-4000-9000-0000000000b1') = 1, '';
 
--- T10 Revoke → Zugang endet, Historie bleibt; Re-Grant möglich
-INSERT INTO r SELECT 'T10a Revoke', pg_temp.w('00000000-0000-4000-9000-0000000000b1','REVOKE_MANUAL_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1') = 'manual_access_revoked', '';
-INSERT INTO r SELECT 'T10b nach Revoke: LOCKED, kein Zugang, Events erhalten',
+-- T4 Cash → Enddatum exakt übernommen
+INSERT INTO r SELECT 'T04a Fixed-Term-Grant mit festem Enddatum',
+  pg_temp.w('00000000-0000-4000-9000-0000000000b2','MANUAL_FIXED_TERM','2027-01-15 00:00:00+00','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
+INSERT INTO r SELECT 'T04b Enddatum exakt 2027-01-15T00:00Z, NONE, kein Trial, Zugang',
+  (e).current_period_end = '2027-01-15 00:00:00+00' AND (e).billing_status = 'NONE' AND (e).metadata->>'manual_grant_type' = 'MANUAL_FIXED_TERM'
+  AND pg_temp.acc('00000000-0000-4000-9000-0000000000b2') AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000b2','trial_started') = 0,
+  (e).current_period_end::text FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b2') e) x;
+
+-- T5 Cash ohne Enddatum → BLOCK
+INSERT INTO r SELECT 'T05 Fixed-Term ohne Enddatum → valid_until_invalid, nichts geschrieben',
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b3','MANUAL_FIXED_TERM',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid'
+  AND pg_temp.ent_n('00000000-0000-4000-9000-0000000000b3') = 0, '';
+
+-- T6 Cash abgelaufen → kein Zugang (alle drei Gates); Grenze exakt
+SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b3','MANUAL_FIXED_TERM', now() + interval '30 days','00000000-0000-4000-9000-0000000000a1');
+UPDATE public.product_entitlements SET current_period_end = now() + interval '1 second' WHERE user_id = '00000000-0000-4000-9000-0000000000b3';
+INSERT INTO r SELECT 'T06a 1 s vor Ende: Zugang true', pg_temp.acc('00000000-0000-4000-9000-0000000000b3'), '';
+UPDATE public.product_entitlements SET current_period_end = now() WHERE user_id = '00000000-0000-4000-9000-0000000000b3';
+INSERT INTO r SELECT 'T06b exakt am Ende: Zugang false', NOT pg_temp.acc('00000000-0000-4000-9000-0000000000b3'), '';
+UPDATE public.product_entitlements SET current_period_end = now() - interval '1 day' WHERE user_id = '00000000-0000-4000-9000-0000000000b3';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9000-0000000000b3","role":"authenticated"}', true);
+INSERT INTO r SELECT 'T06c abgelaufen: RLS-Gate has_hufmanager_access_v1() false', NOT public.has_hufmanager_access_v1(), '';
+INSERT INTO r SELECT 'T06d abgelaufen: Kontext has_access=false, LOCKED', NOT has_access AND reason_code = 'LOCKED', reason_code FROM public.get_hufmanager_access_context_v1();
+RESET ROLE;
+
+-- T7 Beta mit Enddatum → Zugang bis Datum
+INSERT INTO r SELECT 'T07a Beta mit Enddatum', pg_temp.w('00000000-0000-4000-9000-0000000000b4','BETA_ACCESS',now() + interval '90 days','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
+INSERT INTO r SELECT 'T07b Beta: Ende gesetzt, NONE, Zugang, kein Trial',
+  (e).current_period_end = now() + interval '90 days' AND (e).billing_status = 'NONE' AND (e).metadata->>'manual_grant_type' = 'BETA_ACCESS'
+  AND pg_temp.acc('00000000-0000-4000-9000-0000000000b4') AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000b4','trial_started') = 0, ''
+  FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b4') e) x;
+UPDATE public.product_entitlements SET current_period_end = now() - interval '1 minute' WHERE user_id = '00000000-0000-4000-9000-0000000000b4';
+INSERT INTO r SELECT 'T07c Beta nach Enddatum: kein Zugang', NOT pg_temp.acc('00000000-0000-4000-9000-0000000000b4'), '';
+
+-- T8 Beta ohne Enddatum → BLOCK
+INSERT INTO r SELECT 'T08 Beta ohne Enddatum → valid_until_invalid',
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','BETA_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid'
+  AND pg_temp.ent_n('00000000-0000-4000-9000-0000000000b5') = 0, '';
+
+-- T9 Employee → kein eigenes Provider-Entitlement
+INSERT INTO r SELECT 'T09a Writer lehnt Mitarbeiter ab',
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000e1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'target_not_provider', '';
+INSERT INTO r SELECT 'T09b Mitarbeiter: kein Entitlement, kein Trial', pg_temp.ent_n('00000000-0000-4000-9000-0000000000e1') = 0
+  AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000e1','trial_started') = 0, '';
+
+-- T10 Legacy-CopeCart-UI → vitest (src/lib/providerPlanGrants.test.ts); DB-Seite: Planstring ist keine Grant-Art
+INSERT INTO r SELECT 'T10 Planstring als Grant-Art → invalid_grant_type',
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','copecart_pro',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'invalid_grant_type', '';
+
+-- T11 CopeCart-String ohne echte Zahlung → niemals VERIFIED_PAID
+UPDATE public.profiles SET plan_override = 'copecart_pro', subscription_plan = 'pro', subscription_status = 'active',
+       access_valid_until = '2099-12-31', copecart_subscription_id = 'qa-string-only'
+ WHERE id = '00000000-0000-4000-9000-0000000000b5';
+INSERT INTO r SELECT 'T11a CopeCart-Strings: kein Entitlement, kein Zugang', NOT pg_temp.acc('00000000-0000-4000-9000-0000000000b5') AND pg_temp.ent_n('00000000-0000-4000-9000-0000000000b5') = 0, '';
+INSERT INTO r SELECT 'T11b Manual-Writer erzeugt nie VERIFIED_PAID',
+  NOT EXISTS (SELECT 1 FROM public.product_entitlements WHERE source = 'MANUAL_GRANT' AND billing_status <> 'NONE'), '';
+-- Testzahlung (is_test) zählt nicht
+INSERT INTO public.hufi_data_events (source, source_event_id, event_type, product_id, is_test, occurred_at, received_at, payload_sha256, payload)
+VALUES ('copecart', 'qa-ma-testpay-1', 'payment.made', '3a97bd25', true, now(), now(), md5('qa-ma-testpay-1'), '{}');
+INSERT INTO public.hm_lifecycle_events (event_name, subject_id, occurred_at, source, source_event_id, verification_status, domain_event_key, provider_subscription_id)
+VALUES ('payment_succeeded', '00000000-0000-4000-9000-0000000000b5', now(), 'copecart', 'qa-ma-testpay-1', 'OBSERVED_EVENT', 'qa-ma-testpay-1', 'qa-sub-t');
+INSERT INTO r SELECT 'T11c Testzahlung → kein Entitlement, kein Zugang',
+  pg_temp.ent_n('00000000-0000-4000-9000-0000000000b5') = 0 AND NOT pg_temp.acc('00000000-0000-4000-9000-0000000000b5'), '';
+
+-- T12 echte CopeCart-Zahlung → Billing-Lifecycle bleibt zuständig
+INSERT INTO public.hufi_data_events (source, source_event_id, event_type, product_id, is_test, occurred_at, received_at, payload_sha256, payload)
+VALUES ('copecart', 'qa-ma-pay-1', 'payment.made', '3a97bd25', false, now(), now(), md5('qa-ma-pay-1'), '{}');
+INSERT INTO public.hm_lifecycle_events (event_name, subject_id, occurred_at, source, source_event_id, verification_status, domain_event_key, provider_subscription_id)
+VALUES ('payment_succeeded', '00000000-0000-4000-9000-0000000000b6', now(), 'copecart', 'qa-ma-pay-1', 'OBSERVED_EVENT', 'qa-ma-pay-1', 'qa-sub-1');
+INSERT INTO r SELECT 'T12 echte Zahlung → ACTIVE/VERIFIED_PAID über Projektor',
+  (e).status = 'ACTIVE' AND (e).billing_status = 'VERIFIED_PAID' AND (e).source IS DISTINCT FROM 'MANUAL_GRANT' AND pg_temp.acc('00000000-0000-4000-9000-0000000000b6'),
+  (e).status::text || '/' || (e).billing_status::text || '/' || coalesce((e).billing_provider,'-') FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b6') e) x;
+
+-- T13 Manual Grant auf Paid-User → Paid nicht verschlechtert
+SELECT pg_temp.ent_md5('00000000-0000-4000-9000-0000000000b6') AS paid_before \gset
+INSERT INTO r SELECT 'T13a Lifetime/Fixed/Beta auf Paid → skipped_paid_entitlement',
+  pg_temp.w('00000000-0000-4000-9000-0000000000b6','MANUAL_FIXED_TERM',now() + interval '10 days','00000000-0000-4000-9000-0000000000a1') = 'skipped_paid_entitlement'
+  AND pg_temp.w('00000000-0000-4000-9000-0000000000b6','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1') = 'skipped_paid_entitlement'
+  AND pg_temp.w('00000000-0000-4000-9000-0000000000b6','BETA_ACCESS',now() + interval '10 days','00000000-0000-4000-9000-0000000000a1') = 'skipped_paid_entitlement', '';
+INSERT INTO r SELECT 'T13b Revoke auf Paid → skipped_not_manual', pg_temp.w('00000000-0000-4000-9000-0000000000b6','REVOKE_MANUAL_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1') = 'skipped_not_manual', '';
+INSERT INTO r SELECT 'T13c Paid-Entitlement byte-identisch', pg_temp.ent_md5('00000000-0000-4000-9000-0000000000b6') = :'paid_before', '';
+
+-- T14 Revoke Manual → Zugang endet, Audit bleibt; wiederholbar, Re-Grant möglich
+INSERT INTO r SELECT 'T14a Revoke Lifetime', pg_temp.w('00000000-0000-4000-9000-0000000000b1','REVOKE_MANUAL_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1') = 'manual_access_revoked', '';
+INSERT INTO r SELECT 'T14b nach Revoke: LOCKED, kein Zugang, Grant+Revoke-Events erhalten',
   (e).status = 'LOCKED' AND NOT pg_temp.acc('00000000-0000-4000-9000-0000000000b1')
   AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000b1','manual_access_granted') = 1
   AND pg_temp.ev_n('00000000-0000-4000-9000-0000000000b1','manual_access_revoked') = 1, (e).status::text
   FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b1') e) x;
-INSERT INTO r SELECT 'T10c Revoke wiederholt → unchanged', pg_temp.w('00000000-0000-4000-9000-0000000000b1','REVOKE_MANUAL_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1') = 'unchanged', '';
-INSERT INTO r SELECT 'T10d Re-Grant nach Revoke', pg_temp.w('00000000-0000-4000-9000-0000000000b1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
-INSERT INTO r SELECT 'T10d2 nach Re-Grant: Zugang, genau 1 Entitlement',
-  pg_temp.acc('00000000-0000-4000-9000-0000000000b1') AND pg_temp.ent_n('00000000-0000-4000-9000-0000000000b1') = 1, '';
-INSERT INTO r SELECT 'T10e Revoke auf Trial-Nutzer → skipped', pg_temp.w('00000000-0000-4000-9000-000000000051','REVOKE_MANUAL_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1') = 'skipped_not_manual'
-  AND pg_temp.acc('00000000-0000-4000-9000-000000000051'), '';
+INSERT INTO r SELECT 'T14c Revoke wiederholt → unchanged', pg_temp.w('00000000-0000-4000-9000-0000000000b1','REVOKE_MANUAL_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1') = 'unchanged', '';
+INSERT INTO r SELECT 'T14d Re-Grant nach Revoke', pg_temp.w('00000000-0000-4000-9000-0000000000b1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
+INSERT INTO r SELECT 'T14e nach Re-Grant: Zugang, genau 1 Entitlement', pg_temp.acc('00000000-0000-4000-9000-0000000000b1') AND pg_temp.ent_n('00000000-0000-4000-9000-0000000000b1') = 1, '';
 
--- T12 bestehender Legacy-Manual-Grant (Backfill) → nur per expliziter Admin-Aktion migriert
+-- T15 Revoke darf Trial nicht treffen
+SELECT pg_temp.ent_md5('00000000-0000-4000-9000-000000000051') AS trial_before \gset
+INSERT INTO r SELECT 'T15a Revoke auf Trial-Nutzer → skipped_not_manual', pg_temp.w('00000000-0000-4000-9000-000000000051','REVOKE_MANUAL_ACCESS',NULL,'00000000-0000-4000-9000-0000000000a1') = 'skipped_not_manual', '';
+INSERT INTO r SELECT 'T15b Trial byte-identisch, Zugang', pg_temp.ent_md5('00000000-0000-4000-9000-000000000051') = :'trial_before' AND pg_temp.acc('00000000-0000-4000-9000-000000000051'), '';
+
+-- T16 Self-Grant → BLOCK (Kern und Wrapper)
+INSERT INTO r SELECT 'T16a Self-Grant Kern → self_grant_forbidden',
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000a1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'self_grant_forbidden', '';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9000-0000000000a2","role":"authenticated"}', true);
+INSERT INTO r SELECT 'T16b Self-Grant Admin-Wrapper → self_grant_forbidden',
+  pg_temp.err($$SELECT public.hm_admin_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000a2','MANUAL_LIFETIME',NULL,'selbst')$$) = 'self_grant_forbidden', '';
+RESET ROLE;
+
+-- T17 Nicht-Admin → BLOCK
+INSERT INTO r SELECT 'T17a Provider als Akteur (Kern) → actor_not_admin',
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000b2')$$) = 'actor_not_admin', '';
+INSERT INTO r SELECT 'T17b Mitarbeiter gibt sich selbst Lifetime → actor_not_admin',
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000e1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000e1')$$) = 'actor_not_admin', '';
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9000-0000000000b2","role":"authenticated"}', true);
+INSERT INTO r SELECT 'T17c Provider via Admin-Wrapper → actor_not_admin',
+  pg_temp.err($$SELECT public.hm_admin_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b5','MANUAL_LIFETIME',NULL,'Selbstbedienung')$$) = 'actor_not_admin', '';
+INSERT INTO r SELECT 'T17d authenticated → Kern-Writer permission denied',
+  pg_temp.err($$SELECT public.hm_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b2','MANUAL_LIFETIME',NULL,'Selbst','00000000-0000-4000-9000-0000000000a1')$$) LIKE 'permission denied%', '';
+RESET ROLE;
+SET LOCAL ROLE anon;
+INSERT INTO r SELECT 'T17e anon → Wrapper permission denied',
+  pg_temp.err($$SELECT public.hm_admin_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b4','MANUAL_LIFETIME',NULL,'anon')$$) LIKE 'permission denied%', '';
+RESET ROLE;
+
+-- T18 ungültige Grant-Art → BLOCK
+INSERT INTO r SELECT 'T18 ungültige Grant-Arten → invalid_grant_type',
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','VERIFIED_PAID',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'invalid_grant_type'
+  AND pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','employee',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'invalid_grant_type'
+  AND pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5',NULL,NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'invalid_grant_type', '';
+
+-- T19 Fixed-Term-Enddatum-Manipulation → BLOCK
+INSERT INTO r SELECT 'T19a Ende in Vergangenheit / > 5 Jahre / bei Lifetime → abgelehnt',
+  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','MANUAL_FIXED_TERM',now()-interval '1 day','00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid'
+  AND pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','MANUAL_FIXED_TERM',now()+interval '6 years','00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid'
+  AND pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b5','MANUAL_LIFETIME',now()+interval '1 day','00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_not_allowed', '';
+SELECT pg_temp.ent_md5('00000000-0000-4000-9000-0000000000b2') AS cash_before \gset
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9000-0000000000b2","role":"authenticated"}', true);
+INSERT INTO r SELECT 'T19b Nutzer verlängert eigenes Ende direkt → permission denied',
+  pg_temp.err($$UPDATE public.product_entitlements SET current_period_end = '2099-12-31' WHERE user_id = '00000000-0000-4000-9000-0000000000b2'$$) LIKE 'permission denied%', '';
+INSERT INTO r SELECT 'T19c Nutzer fügt Entitlement/Lifecycle direkt ein → permission denied',
+  pg_temp.err($$INSERT INTO public.product_entitlements (user_id, product, plan, status, billing_status, trial_status, source, migration_version) VALUES ('00000000-0000-4000-9000-0000000000b2','HUFMANAGER','HUFMANAGER_SLIM','ACTIVE','NONE','NONE','X','x')$$) LIKE 'permission denied%'
+  AND pg_temp.err($$INSERT INTO public.hm_lifecycle_events (event_name, subject_id, occurred_at, source, source_event_id, verification_status, domain_event_key) VALUES ('manual_access_granted','00000000-0000-4000-9000-0000000000b2',now(),'admin','x','OBSERVED_EVENT','x')$$) LIKE 'permission denied%', '';
+RESET ROLE;
+INSERT INTO r SELECT 'T19d Cash-Entitlement unverändert', pg_temp.ent_md5('00000000-0000-4000-9000-0000000000b2') = :'cash_before', '';
+
+-- T20 Grandfather-Provider (AMBIGUOUS_ACTIVE_ONLY) → unverändert, Zugang erhalten
+INSERT INTO r SELECT 'T20a Grandfather byte-identisch nach allen Writer-Läufen', pg_temp.ent_md5('00000000-0000-4000-9000-0000000000f1') = :'gf_before', '';
+INSERT INTO r SELECT 'T20b Grandfather Zugang weiter true (neue Gate-Bedingung greift nur bei manual)', pg_temp.acc('00000000-0000-4000-9000-0000000000f1'), '';
+INSERT INTO r SELECT 'T20c neue Standard-Provider bekommen Trial, nie Grandfather-Klasse',
+  NOT EXISTS (SELECT 1 FROM public.product_entitlements WHERE user_id::text LIKE '00000000-0000-4000-9000-%' AND source LIKE 'LEGACY_BACKFILL%'
+              AND user_id NOT IN ('00000000-0000-4000-9000-0000000000f1')), '';
+
+-- Bestandsmigration Legacy-Manual (Backfill) nur per expliziter Admin-Aktion
 INSERT INTO public.product_entitlements (user_id, product, plan, status, billing_status, trial_status, source, migration_version, metadata)
 VALUES ('00000000-0000-4000-9000-0000000000b7', 'HUFMANAGER', 'HUFMANAGER_SLIM', 'ACTIVE', 'VERIFIED_PAID', 'NONE',
         'LEGACY_BACKFILL_PROVEN_MANUAL_GRANT', 'hufmanager-slim-legacy-backfill-v1', '{"legacy_plan_override":"manual_cash_1y"}');
-INSERT INTO r SELECT 'T12a Legacy unverändert ohne Aktion (Zugang true)', pg_temp.acc('00000000-0000-4000-9000-0000000000b7')
+INSERT INTO r SELECT 'M1 Legacy-Manual ohne Aktion unverändert (Zugang)', pg_temp.acc('00000000-0000-4000-9000-0000000000b7')
   AND (pg_temp.ent('00000000-0000-4000-9000-0000000000b7')).source = 'LEGACY_BACKFILL_PROVEN_MANUAL_GRANT', '';
-INSERT INTO r SELECT 'T12b explizite Migration per Admin-Aktion',
-  pg_temp.w('00000000-0000-4000-9000-0000000000b7','MANUAL_FIXED_TERM', now() + interval '120 days','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
-INSERT INTO r SELECT 'T12c danach kanonisch: manual, NONE, Ende, Legacy-Metadaten erhalten, Zugang',
-  (e2).billing_status = 'NONE' AND (e2).billing_provider = 'manual' AND (e2).current_period_end IS NOT NULL
+INSERT INTO r SELECT 'M2 explizite Migration auf gespeichertes Enddatum',
+  pg_temp.w('00000000-0000-4000-9000-0000000000b7','MANUAL_FIXED_TERM','2027-02-27 00:00:00+00','00000000-0000-4000-9000-0000000000a1') = 'manual_access_granted', '';
+INSERT INTO r SELECT 'M3 danach kanonisch: manual/NONE statt VERIFIED_PAID, Ende exakt, Legacy-Metadaten erhalten',
+  (e2).billing_status = 'NONE' AND (e2).billing_provider = 'manual' AND (e2).current_period_end = '2027-02-27 00:00:00+00'
   AND (e2).metadata ? 'legacy_plan_override' AND pg_temp.acc('00000000-0000-4000-9000-0000000000b7'), ''
   FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000000b7') e2) x;
 
--- Security
-INSERT INTO r SELECT 'S1 Self-Grant verboten',
-  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000a1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'self_grant_forbidden', '';
-INSERT INTO r SELECT 'S2 Nicht-Admin-Akteur (auch via service_role) abgelehnt',
-  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b4','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000b2')$$) = 'actor_not_admin', '';
-INSERT INTO r SELECT 'S3 Mitarbeiter kann sich kein Lifetime geben',
-  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000e1','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000e1')$$) = 'actor_not_admin', '';
-INSERT INTO r SELECT 'S4 unbekanntes Ziel abgelehnt',
+-- Weitere Security
+INSERT INTO r SELECT 'S1 unbekanntes / gelöschtes Ziel abgelehnt',
   pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-00000000ffff','MANUAL_LIFETIME',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'target_not_found', '';
-INSERT INTO r SELECT 'S5 Ende bei Lifetime / fehlendes Ende bei Fixed-Term / Vergangenheit abgelehnt',
-  pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b4','MANUAL_LIFETIME',now()+interval '1 day','00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_not_allowed'
-  AND pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b4','MANUAL_FIXED_TERM',NULL,'00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid'
-  AND pg_temp.err($$SELECT pg_temp.w('00000000-0000-4000-9000-0000000000b4','MANUAL_FIXED_TERM',now()-interval '1 day','00000000-0000-4000-9000-0000000000a1')$$) = 'valid_until_invalid', '';
-INSERT INTO r SELECT 'S6 Grund mit E-Mail / leer abgelehnt',
-  pg_temp.err($$SELECT public.hm_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b4','MANUAL_LIFETIME',NULL,'Kunde x@y.de','00000000-0000-4000-9000-0000000000a1')$$) = 'reason_contains_email'
-  AND pg_temp.err($$SELECT public.hm_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b4','MANUAL_LIFETIME',NULL,' ','00000000-0000-4000-9000-0000000000a1')$$) = 'reason_required', '';
-
+INSERT INTO r SELECT 'S2 Grund mit E-Mail / leer abgelehnt',
+  pg_temp.err($$SELECT public.hm_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b5','MANUAL_LIFETIME',NULL,'Kunde x@y.de','00000000-0000-4000-9000-0000000000a1')$$) = 'reason_contains_email'
+  AND pg_temp.err($$SELECT public.hm_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b5','MANUAL_LIFETIME',NULL,' ','00000000-0000-4000-9000-0000000000a1')$$) = 'reason_required', '';
 SET LOCAL ROLE authenticated;
--- S7: Provider (nicht Admin) ruft Admin-Wrapper → abgelehnt; Kern-Writer direkt → keine Rechte
-SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9000-0000000000b2","role":"authenticated"}', true);
-INSERT INTO r SELECT 'S7a Provider via Admin-Wrapper → actor_not_admin',
-  pg_temp.err($$SELECT public.hm_admin_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b4','MANUAL_LIFETIME',NULL,'Selbstbedienung')$$) = 'actor_not_admin', '';
-INSERT INTO r SELECT 'S7b authenticated → Kern-Writer permission denied',
-  pg_temp.err($$SELECT public.hm_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b2','MANUAL_LIFETIME',NULL,'Selbst','00000000-0000-4000-9000-0000000000a1')$$) LIKE 'permission denied%', '';
-INSERT INTO r SELECT 'S7c authenticated → direkter Entitlement-Insert verboten',
-  pg_temp.err($$INSERT INTO public.product_entitlements (user_id, product, plan, status, billing_status, trial_status, source, migration_version) VALUES ('00000000-0000-4000-9000-0000000000b2','HUFMANAGER','HUFMANAGER_SLIM','ACTIVE','NONE','NONE','X','x')$$) LIKE 'permission denied%', '';
-INSERT INTO r SELECT 'S7d authenticated → direkter Lifecycle-Insert verboten',
-  pg_temp.err($$INSERT INTO public.hm_lifecycle_events (event_name, subject_id, occurred_at, source, source_event_id, verification_status, domain_event_key) VALUES ('manual_access_granted','00000000-0000-4000-9000-0000000000b2',now(),'admin','x','OBSERVED_EVENT','x')$$) LIKE 'permission denied%', '';
--- S8: Admin via Wrapper → erlaubt, Akteur = auth.uid()
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-9000-0000000000a2","role":"authenticated"}', true);
-INSERT INTO r SELECT 'S8a Admin-Wrapper erlaubt', public.hm_admin_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b5','MANUAL_FIXED_TERM',now() + interval '60 days','Barzahlung Quittung 2026-09') = 'manual_access_granted', '';
-INSERT INTO r SELECT 'S8b Admin-Wrapper Self-Grant verboten',
-  pg_temp.err($$SELECT public.hm_admin_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000a2','MANUAL_LIFETIME',NULL,'selbst')$$) = 'self_grant_forbidden', '';
+INSERT INTO r SELECT 'S3 Admin via Wrapper erlaubt', public.hm_admin_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b5','MANUAL_FIXED_TERM',now() + interval '60 days','Barzahlung Quittung 2026-09') = 'manual_access_granted', '';
 RESET ROLE;
-INSERT INTO r SELECT 'S8c Akteur im Audit = auth.uid()', metadata->>'actor_id' = '00000000-0000-4000-9000-0000000000a2', ''
+INSERT INTO r SELECT 'S4 Akteur im Audit = auth.uid()', metadata->>'actor_id' = '00000000-0000-4000-9000-0000000000a2', ''
   FROM public.hm_lifecycle_events WHERE subject_id = '00000000-0000-4000-9000-0000000000b5' AND event_name = 'manual_access_granted';
-SET LOCAL ROLE anon;
-INSERT INTO r SELECT 'S9 anon → Wrapper permission denied',
-  pg_temp.err($$SELECT public.hm_admin_set_hufmanager_manual_access_v1('00000000-0000-4000-9000-0000000000b4','MANUAL_LIFETIME',NULL,'anon')$$) LIKE 'permission denied%', '';
-RESET ROLE;
-INSERT INTO r SELECT 'S10 Projektor/Reconciler ignorieren neue Events (keine offenen Issues)',
-  NOT EXISTS (SELECT 1 FROM public.hm_lifecycle_reconciliation_issues i WHERE i.subject_id::text LIKE '00000000-0000-4000-9000-%' AND i.issue_type LIKE 'ENTITLEMENT_PROJECTION%UNEXPECTED%'), '';
+INSERT INTO r SELECT 'S5 Projektor/Reconciler: keine Fehler-Issues durch neue Events',
+  NOT EXISTS (SELECT 1 FROM public.hm_lifecycle_reconciliation_issues i WHERE i.subject_id::text LIKE '00000000-0000-4000-9000-%' AND i.issue_type LIKE '%UNEXPECTED%'), '';
 
 SELECT t, CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END AS result, info FROM r ORDER BY t;
 SELECT count(*) FILTER (WHERE ok) || '/' || count(*) AS summary FROM r;

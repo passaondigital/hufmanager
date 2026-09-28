@@ -33,6 +33,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { FeatureStatuses, migrateBooleanToStatus } from "@/types/featureFlags";
 import { ProviderFeatureEditor } from "@/components/admin/ProviderFeatureEditor";
 import { AdminProviderTab, ProviderData, PLAN_OVERRIDE_OPTIONS } from "@/components/admin/AdminProviderTab";
+import { MANUAL_GRANT_BY_PLAN, PROVIDER_PLAN_OPTIONS, isSelectableProviderPlan, planRequiresEndDate, validateProviderPlanGrant } from "@/lib/providerPlanGrants";
 
 const MissionControlKPIsV2 = lazy(() => import("@/components/admin/MissionControlKPIsV2"));
 const AdminBlogManager = lazy(() => import("@/components/admin/AdminBlogManager"));
@@ -277,9 +278,42 @@ export default function MissionControl() {
     if (!selectedProvider) return;
     setSaving(true);
     try {
+      // Zugang ist kanonisch product_entitlements: Plan-/Enddatum-Änderungen laufen über den
+      // auditierbaren Admin-Wrapper (hm_admin_set_hufmanager_manual_access_v1), nie über Profilfelder.
+      const oldPlan = selectedProvider.plan_override || "standard";
+      const oldEnd = selectedProvider.access_valid_until ? format(new Date(selectedProvider.access_valid_until), "yyyy-MM-dd") : "";
+      const planChanged = editPlanOverride !== oldPlan;
+      const endChanged = editAccessValidUntil !== oldEnd;
+      let nextAccessValidUntil: string | null = selectedProvider.access_valid_until;
+      if (planChanged || (MANUAL_GRANT_BY_PLAN[editPlanOverride] && endChanged)) {
+        const grantType = MANUAL_GRANT_BY_PLAN[editPlanOverride];
+        if (grantType) {
+          const check = validateProviderPlanGrant(editPlanOverride, editAccessValidUntil);
+          if ("error" in check) { toast.error(check.error); return; }
+          const { data: result, error: grantError } = await supabase.rpc("hm_admin_set_hufmanager_manual_access_v1" as never, {
+            p_user_id: selectedProvider.id, p_grant_type: grantType,
+            p_valid_until: check.validUntil, p_reason: `Mission Control: ${editPlanOverride}`,
+          } as never);
+          if (grantError) throw grantError;
+          if (result === "skipped_paid_entitlement") {
+            toast.error("Bezahlter Zugang vorhanden – manueller Zugang wird nicht gesetzt");
+            return;
+          }
+          nextAccessValidUntil = check.validUntil;
+        } else if (editPlanOverride === "standard" && MANUAL_GRANT_BY_PLAN[oldPlan]) {
+          if (!window.confirm("Manuellen Zugang (Lifetime/Barzahlung/Beta) entziehen? Der Provider verliert den Zugang, bis er bezahlt.")) return;
+          const { error: revokeError } = await supabase.rpc("hm_admin_set_hufmanager_manual_access_v1" as never, {
+            p_user_id: selectedProvider.id, p_grant_type: "REVOKE_MANUAL_ACCESS",
+            p_valid_until: null, p_reason: "Mission Control: zurück auf Standard",
+          } as never);
+          if (revokeError) throw revokeError;
+          nextAccessValidUntil = null;
+        }
+      }
+
       const { error: profileError } = await supabase.from("profiles").update({
         plan_override: editPlanOverride === "standard" ? null : editPlanOverride,
-        access_valid_until: editAccessValidUntil ? new Date(editAccessValidUntil).toISOString() : null,
+        access_valid_until: nextAccessValidUntil,
         feature_flags: editFeatureFlags, feature_statuses: editFeatureStatuses as unknown as Record<string, string>,
         zip_code: editZipCode || null, city: editCity || null, phone: editPhone || null,
       }).eq("id", selectedProvider.id);
@@ -649,13 +683,22 @@ export default function MissionControl() {
                   <Label>Plan Override</Label>
                   <Select value={editPlanOverride} onValueChange={setEditPlanOverride}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{PLAN_OVERRIDE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {PROVIDER_PLAN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                      {!isSelectableProviderPlan(editPlanOverride) && (
+                        <SelectItem value={editPlanOverride} disabled>
+                          [Legacy] {PLAN_OVERRIDE_OPTIONS.find(o => o.value === editPlanOverride)?.label || editPlanOverride} – nicht mehr wählbar
+                        </SelectItem>
+                      )}
+                    </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Zugang gültig bis</Label>
-                  <Input type="date" value={editAccessValidUntil} onChange={(e) => setEditAccessValidUntil(e.target.value)} />
-                </div>
+                {planRequiresEndDate(editPlanOverride) && (
+                  <div className="space-y-2">
+                    <Label>Zugang bis (Enddatum) *</Label>
+                    <Input type="date" value={editAccessValidUntil} onChange={(e) => setEditAccessValidUntil(e.target.value)} />
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="features" className="space-y-4 mt-4 flex-1 overflow-y-auto pr-2">

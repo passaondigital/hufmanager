@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PROVIDER_PLAN_OPTIONS, planRequiresEndDate, validateProviderPlanGrant } from "@/lib/providerPlanGrants";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
@@ -206,14 +207,13 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
     }
     setCreating(true);
     try {
-      let accessDate = newUserAccessValidUntil;
-      if (!accessDate) {
-        if (newUserPlanOverride === "lifetime_grant" || newUserPlanOverride === "employee") accessDate = "2099-12-31";
-        else if (newUserPlanOverride === "manual_cash_1y") {
-          const d = new Date(); d.setFullYear(d.getFullYear() + 1);
-          accessDate = d.toISOString().split("T")[0];
-        }
+      // Kein erfundenes Datum: Barzahlung/Beta brauchen ein explizites Enddatum, Standard/Lifetime keins.
+      const grantCheck = validateProviderPlanGrant(newUserPlanOverride, newUserAccessValidUntil);
+      if ("error" in grantCheck) {
+        toast.error(grantCheck.error);
+        return;
       }
+      const accessDate = planRequiresEndDate(newUserPlanOverride) ? newUserAccessValidUntil : null;
       const enabledServices = newUserServices.filter(s => s.enabled).map(s => ({ name: s.name, price: s.price }));
       const { data, error } = await supabase.functions.invoke("admin-create-user", {
         body: {
@@ -230,6 +230,9 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
       if (error) throw error;
       if (data.error) throw new Error(data.error);
       await logActivity({ actionType: "provider_created", targetType: "provider", targetId: data.user?.id, targetName: `${newUserFirstName} ${newUserLastName} (${newUserEmail})`, details: { planOverride: newUserPlanOverride, email: newUserEmail } });
+      if (data.manualAccess === "failed") {
+        toast.error("Provider angelegt, aber der Zugang (Grant) konnte nicht gesetzt werden – bitte prüfen");
+      }
       toast.success(`Provider ${newUserEmail} erstellt. PID: ${data.user?.readable_id || 'wird generiert'}`);
       setCreateDialogOpen(false);
       setNewUserEmail(""); setNewUserPassword(""); setNewUserFirstName(""); setNewUserLastName("");
@@ -354,13 +357,15 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
                     <Label>Plan / Zahlungsart</Label>
                     <Select value={newUserPlanOverride} onValueChange={setNewUserPlanOverride}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>{PLAN_OVERRIDE_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                      <SelectContent>{PROVIDER_PLAN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Zugang gültig bis</Label>
-                    <Input type="date" value={newUserAccessValidUntil} onChange={(e) => setNewUserAccessValidUntil(e.target.value)} />
-                  </div>
+                  {planRequiresEndDate(newUserPlanOverride) && (
+                    <div className="space-y-2">
+                      <Label>Zugang bis (Enddatum) *</Label>
+                      <Input type="date" value={newUserAccessValidUntil} onChange={(e) => setNewUserAccessValidUntil(e.target.value)} />
+                    </div>
+                  )}
                 </div>
                 <Separator />
                 <div className="space-y-4">
