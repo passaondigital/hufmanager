@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   MANUAL_GRANT_BY_PLAN,
+  edgeFunctionErrorMessage,
   PROVIDER_PLAN_OPTIONS,
   isSelectableProviderPlan,
   planRequiresEndDate,
@@ -116,5 +117,22 @@ describe("admin-create-user: Owner-Grants über den kanonischen Writer", () => {
 
   it("setzt kein erfundenes Enddatum (kein 2099-Default mehr)", () => {
     expect(edge).not.toContain("2099");
+  });
+});
+
+describe("edgeFunctionErrorMessage", () => {
+  it("zeigt den Fehlertext der Edge Function statt der generischen non-2xx-Meldung", async () => {
+    const err = Object.assign(new Error("Edge Function returned a non-2xx status code"), {
+      context: new Response(JSON.stringify({ error: 'Plan "copecart_starter" ist für neue Provider nicht mehr zulässig' }), { status: 400 }),
+    });
+    expect(await edgeFunctionErrorMessage(err, "Fehler")).toBe('Plan "copecart_starter" ist für neue Provider nicht mehr zulässig (HTTP 400)');
+  });
+  it("fällt auf error.message zurück, wenn der Body kein JSON ist", async () => {
+    const err = Object.assign(new Error("Edge Function returned a non-2xx status code"), { context: new Response("boom", { status: 500 }) });
+    expect(await edgeFunctionErrorMessage(err, "Fehler")).toBe("Edge Function returned a non-2xx status code");
+  });
+  it("Netzwerkfehler ohne Response → message bzw. Fallback", async () => {
+    expect(await edgeFunctionErrorMessage(new Error("Failed to send a request to the Edge Function"), "Fehler")).toBe("Failed to send a request to the Edge Function");
+    expect(await edgeFunctionErrorMessage({}, "Fehler beim Erstellen")).toBe("Fehler beim Erstellen");
   });
 });

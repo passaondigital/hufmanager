@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PROVIDER_PLAN_OPTIONS, formatLastValidDay, planRequiresEndDate, validateProviderPlanGrant } from "@/lib/providerPlanGrants";
+import { PROVIDER_PLAN_OPTIONS, edgeFunctionErrorMessage, formatLastValidDay, planRequiresEndDate, validateProviderPlanGrant } from "@/lib/providerPlanGrants";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
@@ -227,7 +227,7 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
         },
       });
       if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if (!data?.success) throw new Error(data?.error || "Keine Bestätigung vom Server – Provider wurde nicht angelegt");
       await logActivity({ actionType: "provider_created", targetType: "provider", targetId: data.user?.id, targetName: `${newUserFirstName} ${newUserLastName} (${newUserEmail})`, details: { planOverride: newUserPlanOverride, email: newUserEmail } });
       if (data.manualAccess === "failed") {
         toast.error("Provider angelegt, aber der Zugang (Grant) konnte nicht gesetzt werden – bitte prüfen");
@@ -245,8 +245,8 @@ export function AdminProviderTab({ providers, onRefresh, onEditProvider, onQuick
         { name: "Rehebeschlag", price: 120, enabled: false },
       ]);
       onRefresh();
-    } catch (error: any) {
-      toast.error(error.message || "Fehler beim Erstellen");
+    } catch (error: unknown) {
+      toast.error(await edgeFunctionErrorMessage(error, "Fehler beim Erstellen"));
     } finally {
       setCreating(false);
     }

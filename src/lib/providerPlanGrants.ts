@@ -75,3 +75,22 @@ export function formatLastValidDay(exclusiveEnd: string | null | undefined): str
   const day = lastValidDayFromExclusiveEnd(exclusiveEnd);
   return day ? `${day.slice(8, 10)}.${day.slice(5, 7)}.${day.slice(2, 4)}` : "";
 }
+
+// supabase.functions.invoke liefert bei 4xx/5xx nur "Edge Function returned a non-2xx status code".
+// Die eigentliche Fehlermeldung der Function steht im Response-Body ({ error }) → sichtbar machen.
+export async function edgeFunctionErrorMessage(error: unknown, fallback: string): Promise<string> {
+  const ctx = (error as { context?: unknown })?.context;
+  if (ctx && typeof (ctx as Response).clone === "function") {
+    try {
+      const body = await (ctx as Response).clone().json();
+      if (body && typeof body.error === "string" && body.error) {
+        const status = (ctx as Response).status;
+        return status ? `${body.error} (HTTP ${status})` : body.error;
+      }
+    } catch {
+      // kein JSON-Body → Standardmeldung unten
+    }
+  }
+  const msg = (error as { message?: unknown })?.message;
+  return typeof msg === "string" && msg ? msg : fallback;
+}
