@@ -19,8 +19,11 @@ const config: Config = {
       },
       colors: {
         border: "hsl(30 10% 90%)",
-        background: "#FFFFFF",
-        foreground: "#1A1510",
+        // Neutrale Tokens folgen den Theme-Variablen aus src/index.css (:root / .dark), damit Text und
+        // Flächen im Dunkel-Modus lesbar sind (Release-Sprint 28.09.2026: text-foreground war fest #1A1510
+        // → fast schwarz auf dunklen Karten). Hell-Modus bleibt praktisch identisch. Markenfarben unten fest.
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         primary: {
           DEFAULT: "#F5970A",
           foreground: "#FFFFFF",
@@ -30,12 +33,12 @@ const config: Config = {
           foreground: "#453215",
         },
         card: {
-          DEFAULT: "#FFFFFF",
-          foreground: "#1A1510",
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
         muted: {
-          DEFAULT: "#F9F8F6",
-          foreground: "#70685C",
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
           DEFAULT: "#FEF3E2",
