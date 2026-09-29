@@ -10,6 +10,12 @@
 > 23 lokal auf dem Server liegende, ungepushte Commits vom 21.09. nicht (Ledger-Reconciliation
 > + Production-Apply der Release-Migrationen #1–#9). Diese Commits sind jetzt gepusht.
 
+## 29.09.2026 — Release-Closeout (Nachtrag)
+
+**29.09. Closeout:** PROD unverändert (Frontend `ceacdcb4`, admin-create-user v136, Ledger `20260929120000`). Neu gefunden + im Repo gefixt (NICHT deployt, Freigabe ausstehend): P1 Mitarbeiter bekommt zusätzlich Rolle `provider` (Login hängt), P1 CopeCart-Käuferzuordnung bei E-Mail-Dubletten (Zahlung 500), P1 Kündigung beendet Zugang nie (Migration `20260929130000`), P2 kein Offline-Hinweis in der Slim-Shell, P2 Provider-Mail-Zustellbarkeit. Performance-Baseline PASS, Security 38/38 + 11/11, vitest 392/392. Details + Owner-Paket: `docs/release/HUFMANAGER_CLOSEOUT_2026-09-29.md`.
+
+PROD-Datenänderungen heute nur an QA-Konten: `+qa-emp-0929` angelegt (account_class=qa, Fehlrolle `provider` entfernt), Mitarbeiter-Eintrag bei QA Provider A.
+
 ## 1. Source of Truth
 
 | Punkt | Wert (verifiziert 24.09.2026) |

@@ -2,6 +2,7 @@
 
 **Stand:** 28.09.2026 spät (Final-Release-Sprint) · Frontend `ceacdcb4` · letzte Migration `20260929120000` · Production `vnschgjxkzzwzefqlrji` · Bericht `docs/release/HUFMANAGER_FINAL_RELEASE_REPORT_2026-09-28.md`
 
+> **29.09. Closeout:** PROD unverändert (Frontend `ceacdcb4`, admin-create-user v136, Ledger `20260929120000`). Neu gefunden + im Repo gefixt (NICHT deployt, Freigabe ausstehend): P1 Mitarbeiter bekommt zusätzlich Rolle `provider` (Login hängt), P1 CopeCart-Käuferzuordnung bei E-Mail-Dubletten (Zahlung 500), P1 Kündigung beendet Zugang nie (Migration `20260929130000`), P2 kein Offline-Hinweis in der Slim-Shell, P2 Provider-Mail-Zustellbarkeit. Performance-Baseline PASS, Security 38/38 + 11/11, vitest 392/392. Details + Owner-Paket: `docs/release/HUFMANAGER_CLOSEOUT_2026-09-29.md`.
 > 28.09. ~20:45: Manual-Access-Writer + Profil-Härtung LIVE (Ledger 20260929100000), admin-create-user v135, Frontend c8bbd096. 2 Barzahlungs-Bestände kanonisch (letzter Tag 15.01./27.02.2027, Grenze Folgetag 00:00 Berlin). Pre-Tests 72/72+7/7+19/19+vitest 363/363. Offen: Admin-E2E Mission Control (Standard/Lifetime/Cash/Beta/Legacy-400/Non-Admin/Härtung per JWT).
 > 28.09. nachts: Owner-Matrix umgesetzt (LOKAL): admin-create-user + Mission Control an Manual-Writer angebunden, Beta mit Pflicht-Enddatum, Legacy-CopeCart/Employee aus Neuanlage entfernt, P2-Härtung Profil-Billing-Felder (20260929100000). Tests 59/59 + 7/7 + 19/19 + vitest 358/358. NICHT PROD — wartet auf Freigabe. Architektur/Rollback docs/billing/MANUAL_ACCESS_WRITER_ARCHITECTURE.md.
 > 28.09. spätabends: Override-/Manual-Access-Audit fertig, Writer-Fix LOKAL (Migration 20260929090000, 50/50), NICHT PROD. Offen P1: befristete Grants laufen nie ab (Gate ohne Enddatum), Manual-Grants als VERIFIED_PAID, copecart_pro-Paid ohne Live-Zahlung, 28 AMBIGUOUS_ACTIVE_ONLY. Owner-Entscheidungen nötig. Bericht docs/billing/OVERRIDE_ENTITLEMENTS_AUDIT_2026-09-28.md.
@@ -21,10 +22,13 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 | TYPECHECK | PARTIAL | 131 TS-Diagnosen = Baseline, 0 in geänderten Dateien |
 | UNIT_TESTS | TESTED | vitest 392/392 (28.09. spät) |
 | DB_TESTS | TESTED | Manual-Access 72/72, Härtung 7/7, account_class 14/14, Trial 19/19, Release-Fixes 6/6 (lokal, frisch) |
-| AUTH | PARTIAL | Login/Logout/Reload/Multi-Tab PASS; Tab-Lock-Fix live; **Confirm Email AUS**, Site-URL/Template nur per Dashboard (Owner) |
+| AUTH | PARTIAL | 29.09.: Confirm Email weiter AUS (live geprüft); Code für Aktivierung bereit; Dashboard-Schritte im Closeout §6 B (Owner) |
 | FIRST_LOGIN | PARTIAL | Wizard-Hänger behoben (2668a344, Browser-verifiziert); Trial live; Mobile nicht getestet. Vorher: | Trial live: frische Registrierung → TRIAL_ACTIVE 14 T.; UI-Durchlauf (Onboarding-Wizard, Mobile) nicht getestet |
 | TENANT_ISOLATION | TESTED | PROD 38/38 + Kernlauf-Fremdzugriff 6/6; `services`-Leak behoben (0 fremde Leistungen) |
 | CLIENT_INVITE | TESTED | Prod: Invite A/B, Grant/Kontakt/Invite korrekt, kein Fallback; Resend 8/8; kein Passwort im Browser |
+| EMPLOYEE | PARTIAL | 29.09. frisch: Einladung/Mail/Annahme/Login/Negativ 15/15 PASS nach Rollenkorrektur; Standardpfad braucht Deploy `accept-employee-invitation` |
+| OFFLINE_CACHE | PARTIAL | 29.09.: keine Fremddaten nach Kontowechsel (auch offline); Offline-Hinweis erst mit Frontend-Fix (lokal 10/10) |
+| PERFORMANCE | TESTED | 29.09. Baseline: p50 70 ms, p95 410 ms, 5xx 0,013 %, Cron 0 Fehler |
 | PARTNER_INVITE | UNKNOWN | nicht geprüft |
 | INTAKE_IMPORT | UNKNOWN | nicht geprüft |
 | CUSTOMER_HORSE | TESTED | PROD-Kernlauf 19/19 + UI Desktop/Mobil |
@@ -33,8 +37,8 @@ Status nur: TESTED / PARTIAL / BLOCKED / UNKNOWN. Quelle der Wahrheit: `docs/CUR
 | DOCUMENTATION | UNKNOWN | kein E2E |
 | MATERIAL | PARTIAL | Cross-Tenant-Inventory (N4.7); Flow ungetestet |
 | INVOICE_PDF | TESTED | Rechnung atomar + PDF (Pflichtfelder, §19) PROD; Kleinunternehmer-Fix; Hinweis bei fehlenden Anbieterdaten |
-| BILLING | PARTIAL | Trial/Manual/account_class live und getestet; echter CopeCart-Kauf-E2E offen (Owner) |
-| COPECART_ROUTING | PARTIAL | IPN → copecart-webhook (ack-only v165) + hufi-data-core; Verifikation nach Rotation offen |
+| BILLING | PARTIAL | 29.09.: Kette gelesen = Repo; P1 Käuferzuordnung + Kündigungsende gefixt in Migration `20260929130000` (nicht PROD); Echtkauf offen (Owner, Closeout §6 C) |
+| COPECART_ROUTING | TESTED | 29.09.: echte IPN (`recurring.upcoming`, 04:19 UTC) über hufi-data-core angenommen; copecart-webhook v165 ack-only |
 | LIFECYCLE | PARTIAL | Writer + Guard + Trial live, 0 offene Issues; Step 2 nicht angewendet |
 | MOBILE | PARTIAL | Mobil-Emulation voll PASS; echtes Android nur Standard-Anlage |
 | DRAFT_RESUME | UNKNOWN | nicht geprüft |

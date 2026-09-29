@@ -542,14 +542,34 @@ serve(async (req: Request) => {
 
           // Send invitation email via Resend
           console.log("Sending provider invitation email via Resend to:", email);
+          // Zustellbarkeit: gleicher Absender wie die Auth-Mails (team@, landet im
+          // Posteingang), sachlicher Betreff ohne Emoji, Text-Teil und Reply-To.
+          const emailText = [
+            `Hallo ${fullName},`,
+            "",
+            `dein HufManager-Zugang wurde eingerichtet${businessName ? ` für ${businessName}` : ""}.`,
+            "",
+            "Mit diesem Link meldest du dich an und legst dein Passwort fest (24 Stunden gültig):",
+            magicLinkUrl,
+            "",
+            "Bei Fragen erreichst du uns unter support@hufmanager.de.",
+            "",
+            "HufManager",
+          ].join("\n");
           const emailResponse = await resend.emails.send({
-            from: "HufManager <info@hufmanager.de>",
+            from: "HufManager <team@hufmanager.de>",
             to: [email],
-            subject: `🐴 Willkommen bei HufManager – Dein Account ist bereit!`,
+            reply_to: "support@hufmanager.de",
+            subject: "Dein HufManager-Zugang ist eingerichtet",
             html: emailHtml,
+            text: emailText,
           });
 
-          console.log("Provider invitation email sent successfully:", emailResponse);
+          if ((emailResponse as { error?: unknown }).error) {
+            console.error("Provider invitation email rejected by Resend:", (emailResponse as { error?: unknown }).error);
+          } else {
+            console.log("Provider invitation email accepted by Resend:", (emailResponse as { data?: { id?: string } }).data?.id);
+          }
 
           // Update invitation timestamp
           await supabaseAdmin

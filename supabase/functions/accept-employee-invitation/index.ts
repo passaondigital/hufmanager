@@ -64,6 +64,9 @@ serve(async (req) => {
       email: employee.email,
       password,
       email_confirm: true,
+      // handle_new_user vertraut privilegierten Rollen nur aus app_metadata; ohne diesen Eintrag
+      // bekäme der Mitarbeiter zusätzlich die Default-Rolle 'provider' (Login hängt, KPI zählt ihn).
+      app_metadata: { role: "employee" },
       user_metadata: {
         full_name: employee.full_name,
         role: "employee",

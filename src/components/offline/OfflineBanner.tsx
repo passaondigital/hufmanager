@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
  * Persistent offline banner shown below the header when offline
  * or when there are pending sync items.
  */
-export function OfflineBanner() {
+export function OfflineBanner({ showOnDesktop = false }: { showOnDesktop?: boolean } = {}) {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingCount, setPendingCount] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -69,7 +69,8 @@ export function OfflineBanner() {
   return (
     <div
       className={cn(
-        "lg:hidden flex items-center gap-2 px-4 py-2.5 text-sm font-medium",
+        !showOnDesktop && "lg:hidden",
+        "flex items-center gap-2 px-4 py-2.5 text-sm font-medium",
         !isOnline
           ? "bg-destructive/10 text-destructive border-b border-destructive/20"
           : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-b border-amber-500/20"

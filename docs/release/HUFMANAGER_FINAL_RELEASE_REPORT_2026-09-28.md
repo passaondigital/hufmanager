@@ -83,3 +83,6 @@ Business-KPIs, Umsatz, Grandfather-Auswertung zählen nur `real`. `account_class
 ## 8. Einschätzung
 Release-Vollständigkeit ≈ **88 %**. Code-seitig keine bekannten P0/P1 mehr offen; die verbleibenden P1 brauchen
 Dashboard-/DNS-Zugriff bzw. eine echte Zahlung. SALE_READY erst nach P1 1–2.
+
+## Nachtrag 29.09.2026
+Siehe `docs/release/HUFMANAGER_CLOSEOUT_2026-09-29.md`: 3 neue P1 (Mitarbeiter-Rolle, CopeCart-Käuferzuordnung, Kündigungsende) im Repo gefixt, Deploy/Migration wartet auf Owner-Freigabe; Performance-Baseline PASS; Owner-Aktionen Auth-Dashboard, Echtkauf, Android-Test.
