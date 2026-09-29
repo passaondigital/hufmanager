@@ -118,8 +118,7 @@ BEGIN
   ELSE
     -- payment.trial, payment.recurring.upcoming, payment.refunded,
     -- payment.charged_back, and anything else: zero lifecycle outcomes by
-    -- design -- see this migration's own header for why each is
-    -- deliberately unmapped, not an oversight.
+    -- design.
     v_result.lifecycle_mapping_unresolved := true;
   END IF;
 

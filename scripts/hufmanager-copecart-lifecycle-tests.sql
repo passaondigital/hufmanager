@@ -18,8 +18,12 @@ CREATE FUNCTION pg_temp.ent(p_id uuid) RETURNS public.product_entitlements LANGU
   SELECT * FROM public.product_entitlements WHERE user_id = p_id AND product = 'HUFMANAGER' AND plan = 'HUFMANAGER_SLIM' $$;
 CREATE FUNCTION pg_temp.ent_n(p_id uuid) RETURNS int LANGUAGE sql AS $$
   SELECT count(*)::int FROM public.product_entitlements WHERE user_id = p_id $$;
+-- Zählt nur Lifecycle-Events aus echten (Nicht-Test-)Zahlungen; Testzahlungen werden als Event gespeichert,
+-- gewähren aber nie Zugang (Entitlement-Projektion Rule 2).
 CREATE FUNCTION pg_temp.ev_n(p_id uuid, p_name text) RETURNS int LANGUAGE sql AS $$
-  SELECT count(*)::int FROM public.hm_lifecycle_events WHERE subject_id = p_id AND event_name::text = p_name $$;
+  SELECT count(*)::int FROM public.hm_lifecycle_events l WHERE l.subject_id = p_id AND l.event_name::text = p_name
+     AND NOT EXISTS (SELECT 1 FROM public.hufi_data_events d
+                      WHERE d.source = l.source::text AND d.source_event_id = l.source_event_id AND d.is_test) $$;
 CREATE FUNCTION pg_temp.acc(p_id uuid) RETURNS boolean LANGUAGE sql AS $$ SELECT public._hm_has_hufmanager_access_v1(p_id) $$;
 -- Ein CopeCart-Webhook so, wie hufi-data-core ihn an die RPC übergibt.
 CREATE FUNCTION pg_temp.ing(p_type text, p_txn text, p_email text, p_product text, p_test boolean,
@@ -41,6 +45,15 @@ INSERT INTO public.profiles (id, email, full_name, created_at)
 VALUES ('00000000-0000-4000-9000-0000000cc0f0', 'cc-buyer@example.invalid', 'Geisterkunde', now() - interval '1 year');
 SELECT pg_temp.mk_user('00000000-0000-4000-9000-0000000cc002', 'cc-other@example.invalid', '{"full_name":"QA CC Other","role":"provider","signup_app":"hufmanager"}');
 SELECT pg_temp.mk_user('00000000-0000-4000-9000-0000000cc003', 'cc-new@example.invalid', '{"full_name":"QA CC New","role":"provider"}');
+
+-- Realistische Reihenfolge: der Trial begann vor den Käufen (Trigger setzt ihn auf now() = Transaktionsbeginn,
+-- die Webhooks unten liegen Stunden davor → sonst verwirft die Projektion sie korrekt als out-of-order).
+UPDATE public.hm_lifecycle_events SET occurred_at = now() - interval '1 day'
+ WHERE event_name = 'trial_started' AND subject_id::text LIKE '00000000-0000-4000-9000-0000000cc%';
+UPDATE public.product_entitlements
+   SET trial_started_at = trial_started_at - interval '1 day', trial_ends_at = trial_ends_at - interval '1 day',
+       last_applied_event_occurred_at = now() - interval '1 day'
+ WHERE user_id::text LIKE '00000000-0000-4000-9000-0000000cc%';
 
 INSERT INTO r SELECT 'C00 Vorbedingung: Trial aktiv, 1 Entitlement, Geisterprofil ohne Entitlement',
   (e).status = 'TRIAL_ACTIVE' AND pg_temp.ent_n('00000000-0000-4000-9000-0000000cc001') = 1
@@ -126,8 +139,10 @@ INSERT INTO r SELECT 'C10b Nach Periodenende: Kontext LOCKED', NOT has_access AN
 RESET ROLE;
 
 -- C11 Neue echte Zahlung nach Ende → wieder Zugang, 1 Zeile
+-- Schreiben und Prüfen getrennt: das STABLE-Gate sähe im selben Statement noch den alten Snapshot.
+CREATE TEMP TABLE w AS SELECT pg_temp.ing('payment.made','t-real-3','cc-buyer@example.invalid','3a97bd25',false, now()) AS rc;
 INSERT INTO r SELECT 'C11 Reaktivierung durch neue Zahlung: VERIFIED_PAID, Zugang, 1 Zeile',
-  pg_temp.ing('payment.made','t-real-3','cc-buyer@example.invalid','3a97bd25',false, now()) = 'APPLIED_NEW_EVENT'
+  (SELECT rc FROM w) = 'APPLIED_NEW_EVENT'
   AND (pg_temp.ent('00000000-0000-4000-9000-0000000cc001')).billing_status = 'VERIFIED_PAID'
   AND pg_temp.acc('00000000-0000-4000-9000-0000000cc001')
   AND pg_temp.ent_n('00000000-0000-4000-9000-0000000cc001') = 1, '';
@@ -140,9 +155,12 @@ INSERT INTO r SELECT 'C12 Kauf ohne Trial: 1 ACTIVE/VERIFIED_PAID-Zeile',
   AND (pg_temp.ent('00000000-0000-4000-9000-0000000cc003')).billing_status = 'VERIFIED_PAID', '';
 
 -- C13 Unbekannter Käufer → kein Entitlement, Reconciliation-Issue
+TRUNCATE w;
+INSERT INTO w SELECT pg_temp.ing('payment.made','t-unknown','nobody-xyz@example.invalid','3a97bd25',false, now());
 INSERT INTO r SELECT 'C13 Unbekannte E-Mail: blockiert + Issue, kein Entitlement',
-  pg_temp.ing('payment.made','t-unknown','nobody-xyz@example.invalid','3a97bd25',false, now()) = 'APPLIED_NEW_EVENT'
-  AND EXISTS (SELECT 1 FROM public.hm_lifecycle_reconciliation_issues i WHERE i.source_event_id = 'payment.made:t-unknown'
+  (SELECT rc FROM w) = 'APPLIED_NEW_EVENT'
+  AND EXISTS (SELECT 1 FROM public.hm_lifecycle_reconciliation_issues i JOIN public.hufi_data_events e ON e.id = i.origin_event_id
+              WHERE e.source_event_id = 'payment.made:t-unknown'
               AND i.issue_type = 'LIFECYCLE_PROJECTION_BLOCKED_UNRESOLVED_SUBJECT'), '';
 
 -- C14 Kündigung ohne Datum → blockiert, Zugang unverändert
@@ -161,9 +179,29 @@ INSERT INTO public.product_entitlements (user_id, product, plan, status, billing
 VALUES ('00000000-0000-4000-9000-0000000cc004', 'HUFMANAGER', 'HUFMANAGER_SLIM', 'ACTIVE', 'UNKNOWN_BILLING_STATE', 'NONE', 'LEGACY_BACKFILL_AMBIGUOUS_ACTIVE_ONLY');
 INSERT INTO r SELECT 'C16 Legacy ACTIVE ohne Ende: Zugang unverändert', pg_temp.acc('00000000-0000-4000-9000-0000000cc004'), '';
 
+-- C17 Bestandskunde wie PROD 29.09. (Legacy-ACTIVE, billing NONE, keine externe ID): upcoming ändert nichts,
+--     echte Folgezahlung → genau 1 Zeile ACTIVE/VERIFIED_PAID/copecart, kein Trial, kein Downgrade.
+SELECT pg_temp.mk_user('00000000-0000-4000-9000-0000000cc005', 'CC-Legacy-Paid@example.invalid', '{"full_name":"QA Legacy Paid","role":"provider"}');
+INSERT INTO public.product_entitlements (user_id, product, plan, status, billing_status, trial_status, source)
+VALUES ('00000000-0000-4000-9000-0000000cc005', 'HUFMANAGER', 'HUFMANAGER_SLIM', 'ACTIVE', 'NONE', 'NONE', 'LEGACY_BACKFILL_PROVEN_TRIAL');
+TRUNCATE w;
+INSERT INTO w SELECT pg_temp.ing('payment.recurring.upcoming','t-leg-up','cc-legacy-paid@example.invalid','3a97bd25',false, now());
+INSERT INTO r SELECT 'C17a Bestandskunde upcoming: unverändert ACTIVE/NONE, Zugang, 1 Zeile, kein Lifecycle',
+  (SELECT rc FROM w) = 'APPLIED_NEW_EVENT' AND (e).status = 'ACTIVE' AND (e).billing_status = 'NONE' AND (e).trial_status = 'NONE'
+  AND pg_temp.ent_n('00000000-0000-4000-9000-0000000cc005') = 1 AND pg_temp.acc('00000000-0000-4000-9000-0000000cc005')
+  AND (SELECT count(*) FROM public.hm_lifecycle_events WHERE subject_id = '00000000-0000-4000-9000-0000000cc005') = 0,
+  (e).status::text || '/' || (e).billing_status::text FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000cc005') e) x;
+TRUNCATE w;
+INSERT INTO w SELECT pg_temp.ing('payment.made','t-leg-pay','cc-legacy-paid@example.invalid','3a97bd25',false, now());
+INSERT INTO r SELECT 'C17b Bestandskunde Folgezahlung: 1 Zeile ACTIVE/VERIFIED_PAID/copecart, Zugang',
+  (SELECT rc FROM w) = 'APPLIED_NEW_EVENT' AND (e).status = 'ACTIVE' AND (e).billing_status = 'VERIFIED_PAID'
+  AND (e).billing_provider = 'copecart' AND (e).trial_status = 'NONE'
+  AND pg_temp.ent_n('00000000-0000-4000-9000-0000000cc005') = 1 AND pg_temp.acc('00000000-0000-4000-9000-0000000cc005'),
+  (e).status::text || '/' || (e).billing_status::text FROM (SELECT pg_temp.ent('00000000-0000-4000-9000-0000000cc005') e) x;
+
 INSERT INTO r SELECT 'C99 keine UNEXPECTED-Issues',
   NOT EXISTS (SELECT 1 FROM public.hm_lifecycle_reconciliation_issues i WHERE i.issue_type LIKE '%UNEXPECTED%'
-              AND i.source_event_id LIKE 'payment.%:t-%'), '';
+              AND EXISTS (SELECT 1 FROM public.hufi_data_events e WHERE e.id = i.origin_event_id AND e.source_event_id LIKE 'payment.%:t-%')), '';
 
 SELECT t, CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END AS result, info FROM r ORDER BY t;
 SELECT count(*) FILTER (WHERE ok) || '/' || count(*) AS summary FROM r;
