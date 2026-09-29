@@ -64,8 +64,7 @@ serve(async (req) => {
       email: employee.email,
       password,
       email_confirm: true,
-      // handle_new_user vertraut privilegierten Rollen nur aus app_metadata; ohne diesen Eintrag
-      // bekäme der Mitarbeiter zusätzlich die Default-Rolle 'provider' (Login hängt, KPI zählt ihn).
+      // Rolle im JWT/app_metadata; die Default-Rolle aus handle_new_user wird unten bereinigt.
       app_metadata: { role: "employee" },
       user_metadata: {
         full_name: employee.full_name,
@@ -106,6 +105,28 @@ serve(async (req) => {
       // Cleanup: delete the auth user since we couldn't link it
       await supabaseAdmin.auth.admin.deleteUser(userId);
       return new Response(JSON.stringify({ error: "Profil konnte nicht aktualisiert werden" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // GoTrue schreibt app_metadata erst NACH dem Auth-INSERT, handle_new_user sieht die Rolle daher
+    // nicht und vergibt die Default-Rolle 'provider'. Für dieses soeben erzeugte Konto wieder entfernen,
+    // sonst hängt der Mitarbeiter-Login und das Konto zählt als Provider.
+    const { error: providerRoleError } = await supabaseAdmin
+      .from("user_roles")
+      .delete()
+      .eq("user_id", userId)
+      .eq("role", "provider");
+
+    if (providerRoleError) {
+      console.error("[accept-employee-invitation] Provider role cleanup error:", providerRoleError.message);
+      await supabaseAdmin
+        .from("employee_profiles")
+        .update({ user_id: null, invitation_accepted_at: null, invitation_token: token, status: "inactive" })
+        .eq("id", employee.id);
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      return new Response(JSON.stringify({ error: "Konto konnte nicht eingerichtet werden" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

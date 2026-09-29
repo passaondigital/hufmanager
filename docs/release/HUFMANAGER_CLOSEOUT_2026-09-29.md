@@ -95,3 +95,33 @@ PROD `vnschgjxkzzwzefqlrji` · Branch `release/hufmanager-lifecycle-2026-09-11` 
 10. Handy auf Dunkelmodus → Kunden, Termin, Rechnung ansehen: nichts schwarz-auf-schwarz, keine verdeckten Buttons, Bottom-Nav frei, Zurück-Taste funktioniert, Modals schließen
 11. Flugmodus an → in der App navigieren → roter Hinweis „Du arbeitest offline“ (erst nach Frontend-Deploy) → Flugmodus aus → neu laden
 Ergebnis an Claude: pro Schritt OK/Fehler + Screenshot bei Fehler.
+
+## 7. A-Deploy 29.09.2026 (~14:00–14:40, PROD vnschgjxkzzwzefqlrji)
+| Schritt | Stand | Rollback |
+|---|---|---|
+| DB | Migration 20260929130000 per `docs/backups/mig20260929130000_apply_canonical.sql` (md5- + Vorzustands-Guards), Ledger-Head 20260929130000 | `docs/backups/mig20260929130000_rollback_PROD.sql` (jetzt byte-genau = PROD-Vorstand, lokal verifiziert) |
+| Edge | `accept-employee-invitation` v88, `admin-create-user` v137 | v86 / v136 = Repo-Stände vor cdcb8180 |
+| Frontend | Release 700dbc32 | `./deploy.sh hufmanager --rollback` → ceacdcb4 |
+
+**Nachbesserung Employee (während Deploy gefunden):** `app_metadata.role` allein wirkt nicht – GoTrue schreibt
+app_metadata bei `admin.createUser` erst nach dem Auth-INSERT, `handle_new_user` vergibt daher weiter `provider`.
+v88 entfernt die Default-Rolle `provider` des soeben erzeugten Kontos vor dem Setzen von `employee`
+(Abbruch + Konto-Löschung bei Fehler). Guard-Test `src/lib/employeeInviteRoleGuard.test.ts`.
+QA-Konto `+qa-emp-0929b` (mit v87 angelegt) manuell bereinigt (nur employee, account_class qa);
+`+qa-emp-0929c` (v88) ohne Eingriff korrekt: nur employee, 0 Entitlements, Login → /employee.
+
+**Tests:** CopeCart-SQL lokal 26/26 (24 + C17a/b Bestandskunde), alter PROD-Funktionsstand scheitert an C03
+(Geisterprofil) = Bug belegt; PROD-Funktionen md5-identisch mit getestetem Stand (bis auf
+`hufi_data_ingest_and_project_v1`, lokal abweichend, nicht Teil der Migration). Direkter PROD-Lauf der Suite
+(Rollback-Transaktion) vom Auto-Mode blockiert. Contract 34/34, Vitest 394/394, PROD-Smokes 38/38 · 11/11 · 19/19,
+Offline/Kontowechsel 10/10, Employee-E2E 9/9, Employee-Security 11/11.
+**Echter CopeCart-Kunde:** vor/nach identisch (1 Zeile ACTIVE, Zugang, Tabellen-md5 `be41168c…` unverändert),
+nächste Zahlung wird ihm eindeutig zugeordnet (Resolver → eigenes Konto).
+**Integrität:** real 28 · qa 11 · test_fixture 8 · demo 2, 0 Orphans, Trials nur 14 Tage, 0 Cron-Fehler/24 h, DB 206 MB.
+**Performance** (12:05–12:40 UTC): p50 38 ms, p95 367 ms, 5xx 0.
+
+**KPI-Funnel Dry-Run (real, nur lesend):** registriert 28 → E-Mail bestätigt 26 → aktiviert (bestätigt +
+Kunde/Pferd/Termin/Rechnung/Leistung) 15 → Trial aktiv 1 → bezahlt (VERIFIED_PAID) 1.
+Mission Control zählt heute `account_class = real` ohne Bestätigungs-/Aktivierungsfilter. Kein Captcha/Turnstile im
+Code; 4 Signup-Wege (useAuth, ConnectForm, Botschafter ×2); 0 Signups in 24 h; Supabase-Auth-Rate-Limits nicht
+auslesbar (kein Management-Token).
