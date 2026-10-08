@@ -1,3 +1,15 @@
+# HufManager OS – aktueller Produkteinstieg
+
+**Stand: 08.10.2026** · Zielmarkt Deutschland, Österreich und Schweiz · Produktbeschluss: **[Kanonische HufManager-OS-Strategie](docs/product/HUFMANAGER_OS_PRODUCT_CANON_2026-10-08.md)**.
+
+Ein Produkt für Hufprofis, vom Berufsanfänger bis zum Team. Standard **19,95 €/Monat** (manuell), Premium **49,90 €/Monat** (manuell + Hufi Voice/Automatisierung, in Entwicklung), Team Premium **199 €/Monat** (inklusive Team, noch zu definierende Seats/KI-Guthaben). Pferdebesitzer nutzen den vorgesehenen Bereich kostenlos; Fachpartner-Modell ist offen. Pferd-zentrierte Vernetzung, Funnel/CRM/ERP, Provider-Landingpages, Material/Lager und perspektivisch Händler-APIs/MCP gehören zum Gesamtbild.
+
+**Achtung:** Dies ist das beschlossene Zielmodell, nicht der bestätigte LIVE-Funktionsstand. Sicherheits-, Auth-, Billing-, Backup-, Mobile- und Deployment-Gates bleiben maßgeblich. Vor Entwicklung unbedingt `AGENTS.md`, `CLAUDE.md`, `/home/pascaladmin/CODEXTODO.md` und die aktuelle Recovery-Doku beachten. Keine produktiven Änderungen ohne Freigabe.
+
+---
+
+## Archivierter ursprünglicher Lovable-README-Text
+
 # Welcome to your Lovable project
 
 ## Project info
