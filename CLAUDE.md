@@ -1,3 +1,5 @@
+> **Aktueller Produktbeschluss (08.10.2026):** [HufManager OS – kanonische Produktstrategie](docs/product/HUFMANAGER_OS_PRODUCT_CANON_2026-10-08.md). Das historische „HufiApp“ in älteren Kopfzeilen/Abschnitten ist kein Auftrag, zwei Endkundenprodukte weiterzuentwickeln. Produktziel: eine DACH-Plattform mit drei Hufprofi-Tarifen (19,95/49,90/199 €), kostenlosem Besitzerzugang und noch offenem Fachpartner-Modell. Hufi Voice ist Premium-Schicht. Bitte zwischen Produktziel und Runtime-Evidenz unterscheiden; die untenstehenden Regeln zu Supabase PROD, CODEXTODO, Deploy und Sicherheit gelten weiterhin und werden NICHT gelockert. Keine separate Webroot-Migration ohne Freigabe.
+
 # HufiApp — Projektkontext
 
 ## Stack
