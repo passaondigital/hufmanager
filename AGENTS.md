@@ -1,3 +1,7 @@
+<!-- HUFMANAGER_OS_PRODUCT_CANON_2026_10_08 -->
+> **Produktstrategie, Stand 08.10.2026:** Vor jeder Arbeit an HufManager-Produkt, Tarif, Landingpage, Rollen, UX, Voice, CRM, Website oder Lager den [kanonischen HufManager-OS-Produktbeschluss](docs/product/HUFMANAGER_OS_PRODUCT_CANON_2026-10-08.md) lesen. EIN Produkt für DACH: Standard 19,95 €, Premium Voice 49,90 €, Team Premium 199 €; Pferdebesitzer kostenlos; Fachpartner-Preismodell offen; keine neue eigenständige HufiApp. Die Datei enthält Ziele, nicht automatisch live verifizierte Funktionen. **Arbeitsreihenfolge, Security und Freigaben aus diesem AGENTS.md, CLAUDE.md und CODEXTODO.md bleiben unverändert verbindlich.** Bestehende separate Webroots nicht aufgrund einer Produktentscheidung löschen oder überschreiben.
+<!-- /HUFMANAGER_OS_PRODUCT_CANON_2026_10_08 -->
+
 # HufiApp — Hinweise für Codex und andere Agenten
 
 Für vollständigen Projektkontext (Stack, Umgebungen, Deploy-Regeln, bekannte Fallen) siehe `CLAUDE.md` im selben Verzeichnis — die Regeln dort gelten unabhängig vom verwendeten Agenten.
