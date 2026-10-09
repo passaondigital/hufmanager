@@ -1,3 +1,5 @@
+> **Produktstand 09.10.2026:** Kundenprodukt **HufManagerOS v1.0** statt getrenntem HufManager Slim/HufiApp. HufiOS/HufiBoss bleiben interne unabhängige Systeme. Produktnamen, Laufzeitversionen und Freigaben strikt trennen. [Kanonische Produktstrategie](product/HUFMANAGER_OS_PRODUCT_CANON_2026-10-08.md).
+
 # HufiBoss — kanonisches HufManager-Wissen
 
 **Status:** SOURCE OF TRUTH für HufiBoss/HufiOS zum ausgelieferten HufManager  

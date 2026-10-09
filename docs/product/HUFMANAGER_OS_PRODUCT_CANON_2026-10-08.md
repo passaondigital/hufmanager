@@ -1,3 +1,20 @@
+# HufManagerOS v1.0 — verbindliche Produkt- und Dokumentationsfassung (09.10.2026)
+
+> **Vorrangiger Beschluss:** Exakter Name **HufManagerOS v1.0**; ein Kundenprodukt, drei geplante Tarife (Standard 19,95 €, Premium 49,90 €, Team Premium 199 €). „HufManager OS“, „HufManager Slim“ und „HufiApp“ sind alte Namen oder technische Altbezeichnungen. Die v1.0-Angabe ist Produkt-/Dokumentationsversion, **kein** technischer Release-Nachweis. Der verbindlich nachgewiesene OVH-Live-Commit vom 09.10.2026 lautet 53ed0add; ein Entwicklungsstand, der diesen überschreibt, ist nicht automatisch PROD. Alte one.com-Entwicklungsstände nie nach OVH-PROD spiegeln. Bestehende Sicherheitsgates, Tenant-Isolation, Storage-Zugriffe, Billing/Restore-Freigaben haben Vorrang. HufiBoss/HufiOS intern getrennt halten.
+
+> **Dokumentstand:** Diese Ergänzung ersetzt gegenteilige ältere Produktnamen und Ziele, nicht historische Test- oder Releasebelege. Der nachstehende Produktbeschluss vom 08.10. bleibt Grundlage.
+
+## Umsetzungsfokus HufManagerOS v1.0 – Beschluss 09.10.2026
+
+Die Präsentationsschicht und der vollständige Arbeitsablauf sind ausdrücklich Teil der Priorität, nicht nur die technische Infrastruktur. Bestehende Funktionen werden vor Neuimplementierung inventarisiert und als IDEA / PLANNED / FOUNDATION / BUILT / TESTED / STAGING / PRODUCTION / PARTIAL / BLOCKED / UNKNOWN mit Evidenz markiert.
+
+- **Layout und HufiPreview:** Orange `#E97824`, Weiß `#FFFFFF`, Schwarz `#000000` und neutrale Abstufungen. Frühere `#FF6A00`-Designentwürfe sind historisch. Lesbare Sans-Serif-Typografie; ruhiges Heute-Dashboard statt leerer Karten; einheitliche Shell und global fehlerfreie Dialoge/Dropdowns/Overlays, Light/Dark und Mobile.
+- **Navigation:** Heute, Termine, Tour, Kunden, Pferde, Rechnungen, Finanzen, Mehr. Sichtbare Schnellaktionen Termin/Kunde/Pferd/Rechnung/Notiz, Profil/Abmelden, verständliche Einstellungen. Keine Legacy-Layout-Sprünge. Einfach genug für einen Anfänger ohne Anleitung.
+- **Entwürfe und mobile Nutzung:** Nutzerisoliertes Wiederaufnehmen von Formularen nach Navigation/Reload/App-Wechsel; Android- und Tablet-Tests, Touch-/Tastatur-/Overlay-Regressionen.
+- **Echter Golden Flow:** Lead/Anfrage → richtiger Provider → Kunde → Pferd → Angebot/Preis → Termin/Route → Bearbeitung/Pferdeakte/Material → Rechnung/PDF/Zahlungsstatus → Folgeintervall. Ein Besuch mit mehreren Pferden zählt bei gleichem Standort als ein Tourstopp.
+- **Tour statt bloßer Karte:** Vorhandene Map-, Routing-, Optimierungs-, GPS-/ETA-, Unterwegs-/Verspätungs- und Kundenstatus-Bausteine zuerst prüfen; Differenz zwischen Code und E2E/PROD klar bezeichnen. Zeitfenster, Fahrzeiten, mobile Offline-Fälle, Kundendatenschutz und Benachrichtigungsfreigaben testen.
+- **Freigaben:** Sicherheits- und Mandanten-/Storage-Gates gehen jeder Release-Freigabe vor. Änderungen in isolierten Worktrees/Branches mit QA; kein ungeprüftes PROD-Deployment. Premium/Team/Partner/Voice bleiben auf dem jeweils nachweisbaren Umsetzungsstand.
+
 # HufManager OS – Kanonische Produktstrategie (08.10.2026)
 
 Stand 08.10.2026 | Fassung 1.0 | Beschlüsse Product Owner | Zielmarkt DACH

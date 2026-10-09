@@ -1,3 +1,6 @@
+> **AKTUELLER HINWEIS – 09.10.2026: HufManagerOS v1.0**
+> Dieses Dokument ist ein historischer Status-Snapshot vom 14.08.2026. Alle Aussagen zu damaliger Produktions-/Verkaufsreife, getrennten Produkten oder Hosting-Rollen dürfen NICHT als aktuell gelten. Einziges Kundenprodukt heißt nun HufManagerOS v1.0; Standard 19,95 €, Premium 49,90 €, Team Premium 199 € (Zieltarife, Umsetzung und Zahlungs-E2E weiter prüfen). Aktuell führender HufManager-Produktivstand auf OVH: verifizierter Live-Commit 53ed0add (Stand 09.10.2026); one.com XXL ist Entwicklungs-/Agentenbestand, keine zweite autorisierte HufManagerOS-PROD. Die v1.0-Bezeichnung ist ein Produkt-/Dokumentationsbeschluss, KEIN technischer Release-Nachweis. Supabase-Storage-/Mandantenrechte, Auth/Billing/Restore und Android/Offline müssen anhand neuer Evidenz geprüft werden. [Produktstrategie](product/HUFMANAGER_OS_PRODUCT_CANON_2026-10-08.md).
+
 # HUFI / HufManager — Current State
 
 > Aktueller Snapshot für Menschen und Agenten. Bei Widerspruch gilt: verifizierter Production-Stand schlägt ältere Planung oder Marketingtext.
