@@ -1,3 +1,5 @@
+> **Produktzuordnung 09.10.2026:** Das kundenseitige Zielprodukt heißt ab sofort **HufManagerOS v1.0**. Der frühere Name „HufiApp“ in diesem Design-Snapshot bezeichnet historische Produkt-/Code-Kontexte; Voice-, Credits- und Design-Komponenten können nach separater Prüfung in das eine HufManagerOS-Premium-Modell integriert werden. Das Designsystem selbst (Version 1.0.0) wird durch diese PRODUKTUMBENENNUNG nicht neu versioniert. Alte CSS-/Komponentenbezeichnungen und Referenzpfade nicht automatisch ändern. [Produktstrategie](../product/HUFMANAGER_OS_PRODUCT_CANON_2026-10-08.md).
+
 # Hufi Designsystem — Operative Produktfassung
 
 **Status:** Verbindlich für HufiApp-Entwicklung (Claude/Codex), Snapshot der strategischen Leitlinie
