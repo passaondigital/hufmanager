@@ -1,10 +1,14 @@
-# HufManager OS – aktueller Produkteinstieg
+# HufManagerOS v1.0 – Aktueller Dokumentationsstand
 
-**Stand: 08.10.2026** · Zielmarkt Deutschland, Österreich und Schweiz · Produktbeschluss: **[Kanonische HufManager-OS-Strategie](docs/product/HUFMANAGER_OS_PRODUCT_CANON_2026-10-08.md)**.
+**Stand 10.10.2026, 23:03 Uhr (Europe/Berlin).** Verbindlicher Produktname: **HufManagerOS v1.0** (Produktbezeichnung, **kein** bestätigtes technisches Release- oder Verkaufs-GO). Ein Produkt mit Standard 19,95 €, Premium 49,90 € und Team Premium 199 € als Zieltarife. Pferdebesitzer-Zugang im vorgesehenen Bereich kostenlos.
 
-Ein Produkt für Hufprofis, vom Berufsanfänger bis zum Team. Standard **19,95 €/Monat** (manuell), Premium **49,90 €/Monat** (manuell + Hufi Voice/Automatisierung, in Entwicklung), Team Premium **199 €/Monat** (inklusive Team, noch zu definierende Seats/KI-Guthaben). Pferdebesitzer nutzen den vorgesehenen Bereich kostenlos; Fachpartner-Modell ist offen. Pferd-zentrierte Vernetzung, Funnel/CRM/ERP, Provider-Landingpages, Material/Lager und perspektivisch Händler-APIs/MCP gehören zum Gesamtbild.
+**[Aktueller öffentlicher Projektstand, Prüfungen, Backup/Restore und Versionshistorie](docs/status/HUFMANAGEROS_CURRENT_STATUS.md)** · [Produktstrategie](docs/product/HUFMANAGER_OS_PRODUCT_CANON_2026-10-08.md).
 
-**Achtung:** Dies ist das beschlossene Zielmodell, nicht der bestätigte LIVE-Funktionsstand. Sicherheits-, Auth-, Billing-, Backup-, Mobile- und Deployment-Gates bleiben maßgeblich. Vor Entwicklung unbedingt `AGENTS.md`, `CLAUDE.md`, `/home/pascaladmin/CODEXTODO.md` und die aktuelle Recovery-Doku beachten. Keine produktiven Änderungen ohne Freigabe.
+Die bestehende Web-App wird betrieben; die historische Datenbanksicherung vom 08.10. wurde am 10.10. isoliert erfolgreich wiederhergestellt. Die neue tägliche Backup-Automatik ist installiert, der erste Nachtlauf zum Dokumentationsstichtag noch nicht bestätigt. Vollständige Demo-Rollen-, Storage-/Berechtigungs- und Kauf-E2E-Abnahmen bleiben offen; **SALE_READY=NO, RECOVERY_READY=NO**. Produktziele sind keine belegten Live-Features.
+
+**Entwicklung:** vor technischen Änderungen `AGENTS.md`, `CLAUDE.md` und die operative Queue `CODEXTODO.md` prüfen. Kein Code-/PROD-Deploy, keine DB-Änderung oder Offenlegung interner Betriebsdaten durch diese Dokumentationsaktualisierung.
+
+---
 
 ---
 
