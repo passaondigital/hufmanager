@@ -1,3 +1,5 @@
+> **HISTORISCHER SNAPSHOT vom 14.08.2026 – nicht als aktueller Live-/Go-Live-Nachweis lesen.** Seit 09.10.2026 heißt das eine Kundenprodukt **HufManagerOS v1.0**. Maßgeblich ist [die aktuelle öffentliche Statusakte vom 10.10.2026](status/HUFMANAGEROS_CURRENT_STATUS.md). Frühere Aussagen wie `READY_FOR_REAL_CUSTOMER=YES` beziehen sich ausschließlich auf den damaligen Testumfang und sind **keine** Freigabe für den aktuellen Stand. Historie wird zur Rückverfolgbarkeit unverändert darunter erhalten.
+
 # HUFI / HufManager — Current State
 
 > Aktueller Snapshot für Menschen und Agenten. Bei Widerspruch gilt: verifizierter Production-Stand schlägt ältere Planung oder Marketingtext.
