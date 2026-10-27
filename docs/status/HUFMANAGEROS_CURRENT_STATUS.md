@@ -82,3 +82,15 @@ Die ausführliche Master-Projektakte samt Quellregister liegt **zugriffsbeschrä
 ---
 
 *Erstellt aus dem Abgleich der bestehenden Projekt-/Release-/Produktdokumentation und der mitgeteilten Operatorprotokolle bis 10.10.2026, 23:03 Europe/Berlin; zusätzliche Supabase-Metadaten-Leseprüfung nach diesem Stichtag ausdrücklich gekennzeichnet. Keine Änderungen an App-Code, PROD-DB oder Secrets.*
+
+
+## 7. Verifizierter Inventar-Nachtrag – 27.10.2026, 17:06 MEZ
+
+**WAS / WO:** Read-only-Inventarprüfung des autoritativen Supabase-PROD-Projekts. **WIE / QUELLE:** direkte lesende Supabase-Projekt-, Migrationsledger- und Edge-Function-Abfragen vom 27.10.2026; Vergleich mit dem privaten Statusabgleich vom 27.10.2026, 11:05 MEZ. **WARUM:** Nachweisbarer Inventarstand ohne Verwechslung mit einer Produktfreigabe.
+
+- Projektstatus **ACTIVE_HEALTHY** (unverändert).
+- Registrierte Migrationen **471 → 478** (+7); gelistete Edge Functions **82 → 83**, aktuell **83/83 ACTIVE**. Diese Inventarwerte belegen **keine** erfolgreiche fachliche End-to-End-Abnahme und keine fehlerfreie produktive Funktion.
+- **RELEASE_READY=NO · SALE_READY=NO · RECOVERY_READY=NO.** Vollständiger isolierter Wiederherstellungsnachweis, Sicherheits-/Rollen-/Zahlungsablauf-Abnahme und reproduzierbare Live-Release-Provenienz weiterhin nicht neu bestätigt.
+- **NEXT_ACTION:** Abnahmen auf isolierter Umgebung und vollständigen externen Backup-/Restore-Nachweis unabhängig erbringen; vor Freigaben keine ungeprüften Produktivänderungen.
+
+**Hinweis:** Der oben dokumentierte Stichtag vom 10.10.2026 bleibt als historischer Snapshot unverändert. Dieser Nachtrag ist ausschließlich Dokumentation, kein Deployment, keine Migration und keine Verkaufsfreigabe.
