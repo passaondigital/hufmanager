@@ -94,3 +94,9 @@ Die ausführliche Master-Projektakte samt Quellregister liegt **zugriffsbeschrä
 - **NEXT_ACTION:** Abnahmen auf isolierter Umgebung und vollständigen externen Backup-/Restore-Nachweis unabhängig erbringen; vor Freigaben keine ungeprüften Produktivänderungen.
 
 **Hinweis:** Der oben dokumentierte Stichtag vom 10.10.2026 bleibt als historischer Snapshot unverändert. Dieser Nachtrag ist ausschließlich Dokumentation, kein Deployment, keine Migration und keine Verkaufsfreigabe.
+
+## 8. Inventar-Korrektur – 27.10.2026, 23:02 MEZ
+
+Eine erneute **lesende** Abfrage des autoritativen Supabase-PROD-Projekts ergab **82/82 Edge Functions ACTIVE**; die Liste wurde in derselben Kontrolle zweimal mit gleichem Ergebnis abgerufen. Gegenüber dem dokumentierten Stand von 17:06 MEZ (**83/83 ACTIVE**) ist dies eine **Inventardifferenz von −1**. **Die Ursache ist UNVERIFIED**; aus dem Zählwert allein lässt sich weder ein bestimmter Ausfall noch eine Löschung ableiten. Projektstatus **ACTIVE_HEALTHY**, Migrationsledger **478**; Security-Advisors **4 WARN/1 INFO**, Performance-Advisors **3 WARN/2 INFO** unverändert.
+
+**RELEASE_READY=NO · SALE_READY=NO · RECOVERY_READY=NO.** Dieser reine Dokumentationsnachtrag ist keine Änderung am Produktivsystem und keine Freigabe. Fachliche Wirkung der Inventardifferenz gesondert prüfen.
